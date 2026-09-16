@@ -82,6 +82,25 @@ Then add to your MCP configuration:
 
 > **Tip**: If you already have Jira/Confluence API tokens, the same token works for Bitbucket Cloud — no need to create a separate app password.
 
+### Autohand Code
+
+Use the same `uvx` server with your Atlassian credentials:
+
+```bash
+autohand mcp add mcp-atlassian env \
+  JIRA_URL=https://your-company.atlassian.net \
+  JIRA_USERNAME=your.email@company.com \
+  JIRA_API_TOKEN=your_api_token \
+  CONFLUENCE_URL=https://your-company.atlassian.net/wiki \
+  CONFLUENCE_USERNAME=your.email@company.com \
+  CONFLUENCE_API_TOKEN=your_api_token \
+  uvx mcp-atlassian
+```
+
+Add `--scope project` after `add` to keep the configuration in the current
+project. See [Autohand Code](https://github.com/autohandai/code-cli/) for current
+installation and CLI details.
+
 ### Start Using
 
 Ask your AI assistant to:

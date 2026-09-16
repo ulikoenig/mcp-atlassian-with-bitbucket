@@ -62,6 +62,12 @@ spec:
         - {{ .Values.config.enabledTools | quote }}
         {{- end }}
         env:
+        {{- if eq .Values.authMode "external" }}
+        - name: ATLASSIAN_EXTERNAL_AUTH_ENABLE
+          value: "true"
+        - name: IGNORE_HEADER_AUTH
+          value: "true"
+        {{- end }}
         # Confluence Configuration
         {{- if .Values.confluence.enabled }}
         - name: CONFLUENCE_URL
@@ -104,6 +110,13 @@ spec:
             secretKeyRef:
               name: {{ include "mcp-atlassian.fullname" . }}
               key: confluence-custom-headers
+        {{- end }}
+        {{- if .Values.confluence.passthroughHeaders }}
+        - name: CONFLUENCE_PASSTHROUGH_HEADERS
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "mcp-atlassian.fullname" . }}
+              key: confluence-passthrough-headers
         {{- end }}
         {{- end }}
 
@@ -150,6 +163,13 @@ spec:
               name: {{ include "mcp-atlassian.fullname" . }}
               key: jira-custom-headers
         {{- end }}
+        {{- if .Values.jira.passthroughHeaders }}
+        - name: JIRA_PASSTHROUGH_HEADERS
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "mcp-atlassian.fullname" . }}
+              key: jira-passthrough-headers
+        {{- end }}
         {{- end }}
 
         # OAuth Configuration
@@ -189,6 +209,38 @@ spec:
         {{- end }}
         {{- end }}
 
+        # OAuth Proxy + DCR Configuration
+        - name: ATLASSIAN_OAUTH_PROXY_ENABLE
+          value: {{ ternary "true" "false" .Values.oauthProxy.enabled | quote }}
+        - name: ATLASSIAN_OAUTH_REQUIRE_CONSENT
+          value: {{ ternary "true" "false" .Values.oauthProxy.requireConsent | quote }}
+        {{- if .Values.oauthProxy.allowedClientRedirectUris }}
+        - name: ATLASSIAN_OAUTH_ALLOWED_CLIENT_REDIRECT_URIS
+          value: {{ .Values.oauthProxy.allowedClientRedirectUris | quote }}
+        {{- end }}
+        {{- if .Values.oauthProxy.allowedGrantTypes }}
+        - name: ATLASSIAN_OAUTH_ALLOWED_GRANT_TYPES
+          value: {{ .Values.oauthProxy.allowedGrantTypes | quote }}
+        {{- end }}
+
+        # OAuth proxy client storage backend
+        - name: ATLASSIAN_OAUTH_CLIENT_STORAGE_MODE
+          value: {{ .Values.oauthClientStorage.mode | quote }}
+        {{- if eq .Values.oauthClientStorage.mode "factory" }}
+        - name: ATLASSIAN_OAUTH_CLIENT_STORAGE_FACTORY
+          value: {{ .Values.oauthClientStorage.factory.importPath | quote }}
+        {{- if .Values.oauthClientStorage.factory.configJsonSecret.name }}
+        - name: ATLASSIAN_OAUTH_CLIENT_STORAGE_CONFIG_JSON
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.oauthClientStorage.factory.configJsonSecret.name | quote }}
+              key: {{ .Values.oauthClientStorage.factory.configJsonSecret.key | quote }}
+        {{- else if .Values.oauthClientStorage.factory.configJson }}
+        - name: ATLASSIAN_OAUTH_CLIENT_STORAGE_CONFIG_JSON
+          value: {{ .Values.oauthClientStorage.factory.configJson | quote }}
+        {{- end }}
+        {{- end }}
+
         # Proxy Configuration
         {{- if .Values.proxy.enabled }}
         {{- if .Values.proxy.http }}
@@ -207,6 +259,14 @@ spec:
         - name: SOCKS_PROXY
           value: {{ .Values.proxy.socks }}
         {{- end }}
+        {{- if .Values.proxy.wpad.enabled }}
+        - name: ATLASSIAN_PROXY_WPAD_ENABLE
+          value: "true"
+        {{- end }}
+        {{- if .Values.proxy.wpad.url }}
+        - name: ATLASSIAN_PROXY_WPAD_URL
+          value: {{ .Values.proxy.wpad.url | quote }}
+        {{- end }}
         {{- if .Values.proxy.confluence.http }}
         - name: CONFLUENCE_HTTP_PROXY
           value: {{ .Values.proxy.confluence.http }}
@@ -219,6 +279,14 @@ spec:
         - name: CONFLUENCE_NO_PROXY
           value: {{ .Values.proxy.confluence.noProxy }}
         {{- end }}
+        {{- if ne .Values.proxy.confluence.wpad.enabled nil }}
+        - name: CONFLUENCE_PROXY_WPAD_ENABLE
+          value: {{ ternary "true" "false" .Values.proxy.confluence.wpad.enabled | quote }}
+        {{- end }}
+        {{- if .Values.proxy.confluence.wpad.url }}
+        - name: CONFLUENCE_PROXY_WPAD_URL
+          value: {{ .Values.proxy.confluence.wpad.url | quote }}
+        {{- end }}
         {{- if .Values.proxy.jira.http }}
         - name: JIRA_HTTP_PROXY
           value: {{ .Values.proxy.jira.http }}
@@ -230,6 +298,14 @@ spec:
         {{- if .Values.proxy.jira.noProxy }}
         - name: JIRA_NO_PROXY
           value: {{ .Values.proxy.jira.noProxy }}
+        {{- end }}
+        {{- if ne .Values.proxy.jira.wpad.enabled nil }}
+        - name: JIRA_PROXY_WPAD_ENABLE
+          value: {{ ternary "true" "false" .Values.proxy.jira.wpad.enabled | quote }}
+        {{- end }}
+        {{- if .Values.proxy.jira.wpad.url }}
+        - name: JIRA_PROXY_WPAD_URL
+          value: {{ .Values.proxy.jira.wpad.url | quote }}
         {{- end }}
         {{- end }}
 

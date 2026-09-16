@@ -1,6 +1,6 @@
 """Toolset definitions and filtering utilities for MCP Atlassian.
 
-Groups 68 tools into 21 named toolsets controlled via the TOOLSETS env var.
+Groups 162 tools into 37 named toolsets controlled via the TOOLSETS env var.
 Supports 'all', 'default', and comma-separated toolset names.
 """
 
@@ -22,7 +22,7 @@ class ToolsetDefinition:
     default: bool
 
 
-# --- Jira toolsets (15) ---
+# --- Jira toolsets (16) ---
 
 JIRA_TOOLSETS: dict[str, ToolsetDefinition] = {
     "jira_issues": ToolsetDefinition(
@@ -82,7 +82,7 @@ JIRA_TOOLSETS: dict[str, ToolsetDefinition] = {
     ),
     "jira_service_desk": ToolsetDefinition(
         name="jira_service_desk",
-        description="Jira Service Management queues and service desks",
+        description="Jira Service Management requests, queues, and service desks",
         default=False,
     ),
     "jira_forms": ToolsetDefinition(
@@ -100,9 +100,14 @@ JIRA_TOOLSETS: dict[str, ToolsetDefinition] = {
         description="Development info (branches, PRs, commits)",
         default=False,
     ),
+    "jira_project_analysis": ToolsetDefinition(
+        name="jira_project_analysis",
+        description="Project epic hierarchy and cross-project dependencies",
+        default=False,
+    ),
 }
 
-# --- Bitbucket toolsets (11) ---
+# --- Bitbucket toolsets (12) ---
 
 BITBUCKET_TOOLSETS: dict[str, ToolsetDefinition] = {
     "bitbucket_repositories": ToolsetDefinition(
@@ -167,7 +172,7 @@ BITBUCKET_TOOLSETS: dict[str, ToolsetDefinition] = {
     ),
 }
 
-# --- Confluence toolsets (6) ---
+# --- Confluence toolsets (8) ---
 
 CONFLUENCE_TOOLSETS: dict[str, ToolsetDefinition] = {
     "confluence_pages": ToolsetDefinition(
@@ -200,6 +205,16 @@ CONFLUENCE_TOOLSETS: dict[str, ToolsetDefinition] = {
         description="Attachment upload, download, and management",
         default=False,
     ),
+    "confluence_templates": ToolsetDefinition(
+        name="confluence_templates",
+        description="Cloud page template listing and page creation from templates",
+        default=False,
+    ),
+    "confluence_permissions": ToolsetDefinition(
+        name="confluence_permissions",
+        description="Content and space permission checking",
+        default=False,
+    ),
 }
 
 # --- Combined registry ---
@@ -208,6 +223,11 @@ ALL_TOOLSETS: dict[str, ToolsetDefinition] = {
     **JIRA_TOOLSETS,
     **CONFLUENCE_TOOLSETS,
     **BITBUCKET_TOOLSETS,
+    "legacy": ToolsetDefinition(
+        name="legacy",
+        description="Deprecated tools retained for migration compatibility",
+        default=False,
+    ),
 }
 
 DEFAULT_TOOLSETS: set[str] = {
@@ -218,11 +238,11 @@ DEFAULT_TOOLSETS: set[str] = {
 def get_enabled_toolsets() -> set[str]:
     """Parse the TOOLSETS env var into a set of enabled toolset names.
 
-    Supports keywords 'all' (all 21 toolsets) and 'default' (6 defaults),
+    Supports keywords 'all' (all 37 toolsets) and 'default' (11 defaults),
     plus comma-separated specific toolset names. Case-insensitive for keywords.
 
     When TOOLSETS is unset or empty, returns all toolsets with a deprecation
-    warning. In v0.22.0 the default will change to DEFAULT_TOOLSETS (6 core).
+    warning. In v0.22.0 the default will change to DEFAULT_TOOLSETS (11 core).
     Set ``TOOLSETS=all`` explicitly to preserve current behavior.
 
     Returns:
@@ -231,10 +251,10 @@ def get_enabled_toolsets() -> set[str]:
         names are given, returns an empty set (fail-closed).
 
     Examples:
-        TOOLSETS unset -> all 21 toolsets (with deprecation warning)
-        TOOLSETS="" -> all 21 toolsets (with deprecation warning)
-        TOOLSETS="all" -> all 21 names
-        TOOLSETS="default" -> 6 default names
+        TOOLSETS unset -> all 37 toolsets (with deprecation warning)
+        TOOLSETS="" -> all 37 toolsets (with deprecation warning)
+        TOOLSETS="all" -> all 36 names
+        TOOLSETS="default" -> 11 default names
         TOOLSETS="default,jira_agile" -> defaults + jira_agile
         TOOLSETS="typo_name" -> set() (fail-closed)
     """
@@ -243,7 +263,7 @@ def get_enabled_toolsets() -> set[str]:
         logger.info("TOOLSETS not set — all toolsets enabled.")
         logger.warning(
             "TOOLSETS is not set — currently defaults to all toolsets. "
-            "In v0.22.0, the default will change to 6 core toolsets only. "
+            "In v0.22.0, the default will change to 11 core toolsets only. "
             "Set TOOLSETS=all explicitly to preserve current behavior."
         )
         return set(ALL_TOOLSETS.keys())
@@ -256,7 +276,7 @@ def get_enabled_toolsets() -> set[str]:
         logger.info("TOOLSETS empty — all toolsets enabled.")
         logger.warning(
             "TOOLSETS is not set — currently defaults to all toolsets. "
-            "In v0.22.0, the default will change to 6 core toolsets only. "
+            "In v0.22.0, the default will change to 11 core toolsets only. "
             "Set TOOLSETS=all explicitly to preserve current behavior."
         )
         return set(ALL_TOOLSETS.keys())
