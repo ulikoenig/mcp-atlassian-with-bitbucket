@@ -111,7 +111,8 @@ class BitbucketClient:
             path: API path (e.g., /repositories/{workspace}/{repo_slug}).
             base_url: Optional base URL to use instead of the default API base
                 URL. Needed for APIs that live outside /rest/api/1.0 on
-                Server/DC, such as the search API.
+                Server/DC, such as the search, build status, or branch
+                permissions APIs.
 
         Returns:
             Full URL with base API path prepended.
@@ -212,6 +213,7 @@ class BitbucketClient:
         path: str,
         params: dict[str, Any] | None = None,
         max_results: int = 100,
+        base_url: str | None = None,
     ) -> list[dict[str, Any]]:
         """Paginate through API results.
 
@@ -221,6 +223,8 @@ class BitbucketClient:
             path: API path.
             params: Query parameters.
             max_results: Maximum total results to return.
+            base_url: Optional base URL to use instead of the default API base
+                URL.
 
         Returns:
             List of result items.
@@ -230,7 +234,7 @@ class BitbucketClient:
 
         if self.config.is_cloud:
             params.setdefault("pagelen", min(max_results, 100))
-            url = self._build_url(path)
+            url = self._build_url(path, base_url=base_url)
 
             while url and len(results) < max_results:
                 response = self._http.get(url, params=params)
@@ -249,7 +253,7 @@ class BitbucketClient:
 
             while len(results) < max_results:
                 params["start"] = start
-                data = self._request("GET", path, params=params)
+                data = self._request("GET", path, params=params, base_url=base_url)
 
                 values = data.get("values", [])
                 if not values:
@@ -1429,6 +1433,12 @@ class BitbucketClient:
     ) -> list[dict[str, Any]]:
         """List build statuses for a pull request.
 
+        On Server/DC build statuses live at the commit, not the pull request,
+        and are served from a dedicated REST namespace outside of
+        /rest/api/1.0 (/rest/build-status/latest), because the only endpoint
+        under /rest/api/... is for a single, named build status and requires
+        a "key" that is not available here.
+
         Args:
             repo_slug: Repository slug.
             pr_id: Pull request ID.
@@ -1452,15 +1462,17 @@ class BitbucketClient:
             project = project_key or self.config.project_key
             if not project:
                 raise ValueError("Project key is required for Bitbucket Server/DC")
-            # Server/DC: get merge status which includes build info
+            # Server/DC: resolve the PR to its source commit, then list that
+            # commit's build statuses.
             pr = self.get_pull_request(repo_slug, pr_id, project_key=project)
             source_hash = pr.get("fromRef", {}).get("latestCommit") or pr.get(
                 "fromRef", {}
             ).get("id", "")
             if source_hash:
                 return self._paginate(
-                    f"/projects/{project}/repos/{repo_slug}/commits/{source_hash}/builds",
+                    f"/commits/{source_hash}",
                     max_results=max_results,
+                    base_url=self.config.build_status_api_base_url,
                 )
             return []
 
@@ -1688,6 +1700,9 @@ class BitbucketClient:
     ) -> list[dict[str, Any]]:
         """List branch restrictions/permissions for a repository.
 
+        On Server/DC branch permissions are exposed from a dedicated REST
+        namespace outside of /rest/api/1.0, at /rest/branch-permissions/2.0.
+
         Args:
             repo_slug: Repository slug.
             workspace: Workspace slug (Cloud).
@@ -1713,6 +1728,7 @@ class BitbucketClient:
             return self._paginate(
                 f"/projects/{project}/repos/{repo_slug}/restrictions",
                 max_results=max_results,
+                base_url=self.config.branch_permissions_api_base_url,
             )
 
     # ------------------------------------------------------------------

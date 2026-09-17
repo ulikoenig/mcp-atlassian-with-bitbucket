@@ -194,3 +194,57 @@ class TestSearchApiBaseUrl:
             config.search_api_base_url
             == "https://bitbucket.company.com/rest/search/latest"
         )
+
+
+class TestBuildStatusApiBaseUrl:
+    """Tests for the build status API base URL."""
+
+    def test_cloud_uses_api_base_url(self):
+        """Cloud serves build status from the regular API base."""
+        config = BitbucketConfig(
+            url="https://bitbucket.org",
+            auth_type="basic",
+            username="user",
+            app_password="pass",
+            workspace="my-workspace",
+        )
+        assert config.build_status_api_base_url == config.api_base_url
+
+    def test_server_uses_own_namespace(self):
+        """Server/DC serves build status outside of /rest/api/1.0."""
+        config = BitbucketConfig(
+            url="https://bitbucket.company.com/",
+            auth_type="pat",
+            personal_token="test-pat",
+        )
+        assert (
+            config.build_status_api_base_url
+            == "https://bitbucket.company.com/rest/build-status/latest"
+        )
+
+
+class TestBranchPermissionsApiBaseUrl:
+    """Tests for the branch permissions API base URL."""
+
+    def test_cloud_uses_api_base_url(self):
+        """Cloud serves branch permissions from the regular API base."""
+        config = BitbucketConfig(
+            url="https://bitbucket.org",
+            auth_type="basic",
+            username="user",
+            app_password="pass",
+            workspace="my-workspace",
+        )
+        assert config.branch_permissions_api_base_url == config.api_base_url
+
+    def test_server_uses_own_namespace(self):
+        """Server/DC serves branch permissions outside of /rest/api/1.0."""
+        config = BitbucketConfig(
+            url="https://bitbucket.company.com/",
+            auth_type="pat",
+            personal_token="test-pat",
+        )
+        assert (
+            config.branch_permissions_api_base_url
+            == "https://bitbucket.company.com/rest/branch-permissions/2.0"
+        )
