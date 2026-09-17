@@ -808,12 +808,8 @@ class TestPullRequestStatusesServer:
         self, mock_paginate, mock_get_pr, mock_validate, server_config
     ):
         """Server/DC uses build-status API with correct base URL."""
-        mock_get_pr.return_value = {
-            "fromRef": {"latestCommit": "abc123def456"}
-        }
-        mock_paginate.return_value = [
-            {"state": "SUCCESSFUL", "key": "ci-build"}
-        ]
+        mock_get_pr.return_value = {"fromRef": {"latestCommit": "abc123def456"}}
+        mock_paginate.return_value = [{"state": "SUCCESSFUL", "key": "ci-build"}]
         client = BitbucketClient(config=server_config)
         result = client.list_pull_request_statuses(
             repo_slug="my-repo", pr_id=42, project_key="PROJ"

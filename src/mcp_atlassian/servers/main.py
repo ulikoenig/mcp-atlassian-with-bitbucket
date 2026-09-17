@@ -388,9 +388,7 @@ class AtlassianMCP(ErrorPreservingFastMCP[MainAppContext]):
                 "confluence", False
             ):
                 return False
-            if is_bitbucket_tool and not header_based_services.get(
-                "bitbucket", False
-            ):
+            if is_bitbucket_tool and not header_based_services.get("bitbucket", False):
                 return False
         return True
 
