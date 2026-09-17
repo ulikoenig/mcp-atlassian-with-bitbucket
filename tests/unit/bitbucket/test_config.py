@@ -248,3 +248,56 @@ class TestBranchPermissionsApiBaseUrl:
             config.branch_permissions_api_base_url
             == "https://bitbucket.company.com/rest/branch-permissions/2.0"
         )
+
+
+class TestBranchUtilsApiBaseUrl:
+    """Tests for the branch-utils API base URL (branch model, branch deletion)."""
+
+    def test_cloud_uses_api_base_url(self):
+        """Cloud serves this from the regular API base."""
+        config = BitbucketConfig(
+            url="https://bitbucket.org",
+            auth_type="basic",
+            username="user",
+            app_password="pass",
+            workspace="my-workspace",
+        )
+        assert config.branch_utils_api_base_url == config.api_base_url
+
+    def test_server_uses_own_namespace(self):
+        """Server/DC serves branch-utils outside of /rest/api/1.0."""
+        config = BitbucketConfig(
+            url="https://bitbucket.company.com/",
+            auth_type="pat",
+            personal_token="test-pat",
+        )
+        assert (
+            config.branch_utils_api_base_url
+            == "https://bitbucket.company.com/rest/branch-utils/latest"
+        )
+
+
+class TestGitApiBaseUrl:
+    """Tests for the low-level git API base URL (e.g. tag deletion)."""
+
+    def test_cloud_uses_api_base_url(self):
+        """Cloud serves this from the regular API base."""
+        config = BitbucketConfig(
+            url="https://bitbucket.org",
+            auth_type="basic",
+            username="user",
+            app_password="pass",
+            workspace="my-workspace",
+        )
+        assert config.git_api_base_url == config.api_base_url
+
+    def test_server_uses_own_namespace(self):
+        """Server/DC serves the git API outside of /rest/api/1.0."""
+        config = BitbucketConfig(
+            url="https://bitbucket.company.com/",
+            auth_type="pat",
+            personal_token="test-pat",
+        )
+        assert (
+            config.git_api_base_url == "https://bitbucket.company.com/rest/git/latest"
+        )

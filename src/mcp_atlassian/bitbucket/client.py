@@ -1632,6 +1632,9 @@ class BitbucketClient:
     ) -> None:
         """Delete a branch.
 
+        On Server/DC branch deletion is exposed from a dedicated REST
+        namespace outside of /rest/api/1.0, at /rest/branch-utils/latest.
+
         Args:
             repo_slug: Repository slug.
             branch_name: Branch name to delete.
@@ -1655,6 +1658,7 @@ class BitbucketClient:
                 "DELETE",
                 f"/projects/{project}/repos/{repo_slug}/branches",
                 json_data={"name": branch_name},
+                base_url=self.config.branch_utils_api_base_url,
             )
 
     def get_branching_model(
@@ -1664,6 +1668,10 @@ class BitbucketClient:
         project_key: str | None = None,
     ) -> dict[str, Any]:
         """Get the branching model for a repository.
+
+        On Server/DC the branch model configuration is exposed from a
+        dedicated REST namespace outside of /rest/api/1.0, at
+        /rest/branch-utils/latest.
 
         Args:
             repo_slug: Repository slug.
@@ -1688,7 +1696,8 @@ class BitbucketClient:
                 raise ValueError("Project key is required for Bitbucket Server/DC")
             return self._request(
                 "GET",
-                f"/projects/{project}/repos/{repo_slug}/settings/branching-model",
+                f"/projects/{project}/repos/{repo_slug}/branchmodel/configuration",
+                base_url=self.config.branch_utils_api_base_url,
             )
 
     def list_branch_restrictions(
@@ -1859,6 +1868,11 @@ class BitbucketClient:
     ) -> list[dict[str, Any]]:
         """List build statuses for a specific commit.
 
+        On Server/DC build statuses are served from a dedicated REST
+        namespace outside of /rest/api/1.0 (/rest/build-status/latest),
+        because the only endpoint under /rest/api/... is for a single,
+        named build status and requires a "key" that is not available here.
+
         Args:
             repo_slug: Repository slug.
             commit_hash: Commit SHA hash.
@@ -1883,8 +1897,9 @@ class BitbucketClient:
             if not project:
                 raise ValueError("Project key is required for Bitbucket Server/DC")
             return self._paginate(
-                f"/projects/{project}/repos/{repo_slug}/commits/{commit_hash}/builds",
+                f"/commits/{commit_hash}",
                 max_results=max_results,
+                base_url=self.config.build_status_api_base_url,
             )
 
     def create_commit_status(
@@ -2084,6 +2099,10 @@ class BitbucketClient:
     ) -> None:
         """Delete a tag.
 
+        On Server/DC tag deletion is exposed from a dedicated REST
+        namespace outside of /rest/api/1.0, at /rest/git/latest (unlike tag
+        creation, which works fine under /rest/api/1.0).
+
         Args:
             repo_slug: Repository slug.
             tag_name: Tag name to delete.
@@ -2106,6 +2125,7 @@ class BitbucketClient:
             self._request(
                 "DELETE",
                 f"/projects/{project}/repos/{repo_slug}/tags/{tag_name}",
+                base_url=self.config.git_api_base_url,
             )
 
     # ------------------------------------------------------------------

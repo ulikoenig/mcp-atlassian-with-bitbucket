@@ -512,7 +512,9 @@ class TestServerOperations:
         client = BitbucketClient(config=server_config)
         client.delete_tag(repo_slug="my-repo", tag_name="v1.0.0")
         mock_request.assert_called_once_with(
-            "DELETE", "/projects/PROJ/repos/my-repo/tags/v1.0.0"
+            "DELETE",
+            "/projects/PROJ/repos/my-repo/tags/v1.0.0",
+            base_url="https://bitbucket.company.com/rest/git/latest",
         )
 
 
@@ -901,3 +903,102 @@ class TestBranchRestrictionsServer:
         )
 
         assert result == []
+
+
+class TestCommitStatusesServer:
+    """Tests for list_commit_statuses on Server/DC."""
+
+    @patch.object(BitbucketClient, "_validate_connection")
+    @patch.object(BitbucketClient, "_paginate")
+    def test_server_lists_build_statuses(
+        self, mock_paginate, mock_validate, server_config
+    ):
+        """Server/DC uses build-status API with correct base URL."""
+        mock_paginate.return_value = [{"state": "SUCCESSFUL", "key": "ci-build"}]
+        client = BitbucketClient(config=server_config)
+        result = client.list_commit_statuses(
+            repo_slug="my-repo", commit_hash="abc123", project_key="PROJ"
+        )
+
+        assert len(result) == 1
+        assert result[0]["state"] == "SUCCESSFUL"
+        mock_paginate.assert_called_once_with(
+            "/commits/abc123",
+            max_results=25,
+            base_url="https://bitbucket.company.com/rest/build-status/latest",
+        )
+
+    @patch.object(BitbucketClient, "_validate_connection")
+    @patch.object(BitbucketClient, "_paginate")
+    def test_server_empty_statuses(self, mock_paginate, mock_validate, server_config):
+        """Server/DC returns empty list if no build statuses."""
+        mock_paginate.return_value = []
+        client = BitbucketClient(config=server_config)
+        result = client.list_commit_statuses(
+            repo_slug="my-repo", commit_hash="abc123", project_key="PROJ"
+        )
+
+        assert result == []
+
+
+class TestDeleteBranchServer:
+    """Tests for delete_branch on Server/DC."""
+
+    @patch.object(BitbucketClient, "_validate_connection")
+    @patch.object(BitbucketClient, "_request")
+    def test_server_deletes_branch(self, mock_request, mock_validate, server_config):
+        """Server/DC uses branch-utils API with correct base URL and body."""
+        mock_request.return_value = None
+        client = BitbucketClient(config=server_config)
+        client.delete_branch(
+            repo_slug="my-repo", branch_name="feature/x", project_key="PROJ"
+        )
+
+        mock_request.assert_called_once_with(
+            "DELETE",
+            "/projects/PROJ/repos/my-repo/branches",
+            json_data={"name": "feature/x"},
+            base_url="https://bitbucket.company.com/rest/branch-utils/latest",
+        )
+
+
+class TestGetBranchingModelServer:
+    """Tests for get_branching_model on Server/DC."""
+
+    @patch.object(BitbucketClient, "_validate_connection")
+    @patch.object(BitbucketClient, "_request")
+    def test_server_gets_branching_model(
+        self, mock_request, mock_validate, server_config
+    ):
+        """Server/DC uses branch-utils API with correct base URL."""
+        mock_request.return_value = {
+            "development": {"useDefault": True},
+            "types": [{"id": "FEATURE", "prefix": "feature/"}],
+        }
+        client = BitbucketClient(config=server_config)
+        result = client.get_branching_model(repo_slug="my-repo", project_key="PROJ")
+
+        assert result["types"][0]["id"] == "FEATURE"
+        mock_request.assert_called_once_with(
+            "GET",
+            "/projects/PROJ/repos/my-repo/branchmodel/configuration",
+            base_url="https://bitbucket.company.com/rest/branch-utils/latest",
+        )
+
+
+class TestDeleteTagServer:
+    """Tests for delete_tag on Server/DC."""
+
+    @patch.object(BitbucketClient, "_validate_connection")
+    @patch.object(BitbucketClient, "_request")
+    def test_server_deletes_tag(self, mock_request, mock_validate, server_config):
+        """Server/DC uses the git API namespace, not /rest/api/1.0."""
+        mock_request.return_value = None
+        client = BitbucketClient(config=server_config)
+        client.delete_tag(repo_slug="my-repo", tag_name="v1.0.0", project_key="PROJ")
+
+        mock_request.assert_called_once_with(
+            "DELETE",
+            "/projects/PROJ/repos/my-repo/tags/v1.0.0",
+            base_url="https://bitbucket.company.com/rest/git/latest",
+        )

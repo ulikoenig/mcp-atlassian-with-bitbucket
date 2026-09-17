@@ -142,6 +142,36 @@ class BitbucketConfig:
             return self.api_base_url
         return f"{self.url.rstrip('/')}/rest/branch-permissions/2.0"
 
+    @property
+    def branch_utils_api_base_url(self) -> str:
+        """Get the base URL for branch-utils requests (branch model, branch deletion).
+
+        Server/DC serves these from its own REST namespace instead of
+        /rest/api/1.0.
+
+        Returns:
+            For Cloud: https://api.bitbucket.org/2.0
+            For Server/DC: {url}/rest/branch-utils/latest
+        """
+        if self.is_cloud:
+            return self.api_base_url
+        return f"{self.url.rstrip('/')}/rest/branch-utils/latest"
+
+    @property
+    def git_api_base_url(self) -> str:
+        """Get the base URL for low-level git ref requests (e.g. tag deletion).
+
+        Server/DC serves these from its own REST namespace instead of
+        /rest/api/1.0.
+
+        Returns:
+            For Cloud: https://api.bitbucket.org/2.0
+            For Server/DC: {url}/rest/git/latest
+        """
+        if self.is_cloud:
+            return self.api_base_url
+        return f"{self.url.rstrip('/')}/rest/git/latest"
+
     @classmethod
     def from_env(cls) -> "BitbucketConfig":
         """Create configuration from environment variables.
