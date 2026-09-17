@@ -1,13 +1,17 @@
 # MCP Atlassian + Bitbucket
 
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
-![License](https://img.shields.io/github/license/sooperset/mcp-atlassian)
+![License](https://img.shields.io/github/license/ulikoenig/mcp-atlassian-with-bitbucket)
 
 Model Context Protocol (MCP) server for Atlassian products — **Jira**, **Confluence**, and **Bitbucket**. Supports both Cloud and Server/Data Center deployments.
 
-**136 tools** across 33 toolsets: 49 Jira + 23 Confluence + 64 Bitbucket.
+**162 tools** across 37 toolsets: 63 Jira + 35 Confluence + 64 Bitbucket.
 
-> Fork of [sooperset/mcp-atlassian](https://github.com/sooperset/mcp-atlassian) with comprehensive Bitbucket Cloud and Server/DC integration.
+> Fork of [jellythomas/mcp-atlassian-with-bitbucket](https://github.com/jellythomas/mcp-atlassian-with-bitbucket), which added comprehensive Bitbucket Cloud and Server/DC integration on top of [sooperset/mcp-atlassian](https://github.com/sooperset/mcp-atlassian). This fork adds further Bitbucket Server/DC fixes (real branch-utils, build-status, branch-permissions, and code-search APIs).
+>
+> **Integrated upstream state:**
+> - `jellythomas/mcp-atlassian-with-bitbucket` @ [`9face83`](https://github.com/jellythomas/mcp-atlassian-with-bitbucket/commit/9face8350494dff9c0daf0c04754721f0ecf3848) (tag `v1.0.5`, 2026-03-13)
+> - `sooperset/mcp-atlassian` @ [`2e25fb4`](https://github.com/sooperset/mcp-atlassian/commit/2e25fb4f30630e1047a98fb8e2fbbcf229450a1c) (52 commits past tag `v0.23.0`, 2026-09-15)
 
 ## Quick Start
 
@@ -48,7 +52,7 @@ For contributing or running from a cloned repository:
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/jellythomas/mcp-atlassian-with-bitbucket.git
+git clone https://github.com/ulikoenig/mcp-atlassian-with-bitbucket.git
 cd mcp-atlassian-with-bitbucket
 
 # 2. Install dependencies with uv
@@ -80,7 +84,7 @@ Then add to your MCP configuration:
 }
 ```
 
-> **Tip**: If you already have Jira/Confluence API tokens, the same token works for Bitbucket Cloud — no need to create a separate app password.
+> **Note**: Bitbucket Cloud uses its own scoped API tokens, separate from your Jira/Confluence Atlassian API token — see [Bitbucket Cloud](#bitbucket-cloud) below for how to create one.
 
 ### Autohand Code
 
@@ -266,14 +270,14 @@ You can also find it at: [bitbucket.org/account/workspaces](https://bitbucket.or
 
 ## Toolset Reference
 
-Tools are organized into **33 toolsets** controlled via the `TOOLSETS` env var. Default toolsets are enabled when `TOOLSETS=default`.
+Tools are organized into **37 toolsets** controlled via the `TOOLSETS` env var. Default toolsets are enabled when `TOOLSETS=default`.
 
 ### Bitbucket Toolsets (12)
 
 | Toolset | Tools | Default | Description |
 |---------|------:|---------|-------------|
 | `bitbucket_repositories` | 7 | Yes | Repository CRUD, search, fork |
-| `bitbucket_pull_requests` | 15 | Yes | PR lifecycle, review, merge, diff, comments |
+| `bitbucket_pull_requests` | 18 | Yes | PR lifecycle, review, merge, diff, comments |
 | `bitbucket_branches` | 5 | Yes | Branch management, branching model, restrictions |
 | `bitbucket_commits` | 6 | Yes | Commit history, compare, statuses, comments |
 | `bitbucket_source` | 5 | Yes | File browsing, code search, blame, history |
@@ -285,7 +289,7 @@ Tools are organized into **33 toolsets** controlled via the `TOOLSETS` env var. 
 | `bitbucket_snippets` | — | No | Code snippets (placeholder) |
 | `bitbucket_workspace` | 5 | No | Workspace/project members, default reviewers |
 
-### Jira Toolsets (15)
+### Jira Toolsets (16)
 
 | Toolset | Default | Description |
 |---------|---------|-------------|
@@ -304,8 +308,9 @@ Tools are organized into **33 toolsets** controlled via the `TOOLSETS` env var. 
 | `jira_forms` | No | ProForma forms |
 | `jira_metrics` | No | Issue dates and SLA metrics |
 | `jira_development` | No | Dev info (branches, PRs, commits) |
+| `jira_project_analysis` | No | Project epic hierarchy and cross-project dependencies |
 
-### Confluence Toolsets (6)
+### Confluence Toolsets (8)
 
 | Toolset | Default | Description |
 |---------|---------|-------------|
@@ -315,6 +320,10 @@ Tools are organized into **33 toolsets** controlled via the `TOOLSETS` env var. 
 | `confluence_users` | No | User search |
 | `confluence_analytics` | No | Page view analytics |
 | `confluence_attachments` | No | Attachment management |
+| `confluence_templates` | No | Cloud page template listing and page creation from templates |
+| `confluence_permissions` | No | Content and space permission checking |
+
+Additionally, a `legacy` toolset (off by default) retains deprecated tools kept for migration compatibility — it isn't tied to a single product.
 
 ### Toolset Configuration Examples
 
@@ -560,9 +569,30 @@ The recommended approach is to add the server directly in `~/.claude/settings.js
 
 > **Note**: The `claude mcp add` CLI command works too, but doesn't support inline `env` — you'd need to export variables in your shell profile instead.
 
-### Cursor / VS Code
+### Cursor
 
-Add to `.cursor/mcp.json` or `.vscode/mcp.json`:
+Add to `.cursor/mcp.json` (uses the `mcpServers` key, same format as Claude Desktop):
+
+```json
+{
+  "mcpServers": {
+    "mcp-atlassian-with-bitbucket": {
+      "command": "uvx",
+      "args": ["mcp-atlassian-with-bitbucket"],
+      "env": {
+        "BITBUCKET_URL": "https://bitbucket.org",
+        "BITBUCKET_USERNAME": "your_username",
+        "BITBUCKET_APP_PASSWORD": "your_app_password",
+        "BITBUCKET_WORKSPACE": "your_workspace"
+      }
+    }
+  }
+}
+```
+
+### VS Code
+
+Add to `.vscode/mcp.json` (uses the `servers` key, not `mcpServers`):
 
 ```json
 {
@@ -592,11 +622,11 @@ src/mcp_atlassian/
 ├── confluence/             # Confluence client (existing)
 ├── servers/
 │   ├── main.py            # Main MCP server mounting all sub-servers
-│   ├── jira.py            # 49 Jira tool definitions
-│   ├── confluence.py      # 23 Confluence tool definitions
+│   ├── jira.py            # 63 Jira tool definitions
+│   ├── confluence.py      # 35 Confluence tool definitions
 │   └── bitbucket.py       # 64 Bitbucket tool definitions
 └── utils/
-    ├── toolsets.py         # 33 toolset definitions and filtering
+    ├── toolsets.py         # 37 toolset definitions and filtering
     └── tools.py            # Tool-level filtering utilities
 ```
 
@@ -631,17 +661,18 @@ Use `compact: true` when calling `get_pull_request` to return only essential fie
 
 **Essential fields returned:**
 - `id`, `title`, `state`, `description`
-- `author` (display name, account ID)
-- `source_branch`, `destination_branch`
-- `reviewers` (list with names and approval status)
-- `created_on`, `updated_on`
+- `author` (display name only)
+- `source` / `destination` (each with `branch`, `repo`, `commit`)
+- `reviewers` (list of display names), `approved_by` (list of display names who approved)
+- `created_on`, `updated_on`, `comment_count`, `task_count`
+- `merge_commit`, `close_source_branch`, `draft`, `links.html`
 
 **Example usage in your AI assistant:**
 > "Get PR #42 details in compact mode"
 
 ### Save Diff to File
 
-Use `save_to_file: true` when calling `get_pull_request_diff` to write the diff to a temporary file (`/tmp/bitbucket.diff`) instead of returning the raw text. Returns a metadata object with:
+Use `save_to_file: true` when calling `get_pull_request_diff` to write the diff to a file in the system temp directory instead of returning the raw text (e.g. `/tmp/bitbucket.diff` on Linux/macOS, `%TEMP%\bitbucket.diff` on Windows). Returns a metadata object with:
 
 ```json
 {
