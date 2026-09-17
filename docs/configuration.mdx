@@ -320,7 +320,7 @@ Toolsets provide group-level tool control. Instead of listing individual tool na
 enable entire groups of related tools at once using the `TOOLSETS` environment variable.
 
 ```bash
-# Restrict to core tools only (~35 tools across 6 core toolsets)
+# Restrict to core tools only (~76 tools across 11 core toolsets)
 TOOLSETS=default
 
 # Core tools plus agile boards/sprints
@@ -342,7 +342,8 @@ uvx mcp-atlassian --toolsets "default,jira_agile"
 ```
 
 **Core toolsets** (included with `TOOLSETS=default`):
-`jira_issues`, `jira_fields`, `jira_comments`, `jira_transitions`, `confluence_pages`, `confluence_comments`
+`jira_issues`, `jira_fields`, `jira_comments`, `jira_transitions`, `confluence_pages`, `confluence_comments`,
+`bitbucket_repositories`, `bitbucket_pull_requests`, `bitbucket_branches`, `bitbucket_commits`, `bitbucket_source`
 
 The opt-in **`legacy` toolset** contains deprecated tools retained while users
 migrate to their replacement tools. Use `TOOLSETS=legacy` to expose only those
@@ -353,7 +354,7 @@ When both `TOOLSETS` and `ENABLED_TOOLS` are set, they intersect — a tool must
 both filters. If `TOOLSETS` is not set, all toolsets are currently enabled.
 
 <Warning>
-In v0.22.0, the default will change from all toolsets to 6 core toolsets only.
+In v0.22.0, the default will change from all toolsets to 11 core toolsets only.
 Set `TOOLSETS=all` explicitly to preserve current behavior.
 </Warning>
 

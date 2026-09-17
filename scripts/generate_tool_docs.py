@@ -276,7 +276,15 @@ class ToolDoc:
 
 @dataclass(frozen=True)
 class ToolCounts:
-    """Registered tool and toolset counts used in generated documentation."""
+    """Registered tool and toolset counts used in generated documentation.
+
+    `total_tools`/`core_tools` cover Jira and Confluence only, matching the
+    scope of the Mintlify tool-reference pages this script renders.
+    `all_tools`/`all_core_tools` additionally include Bitbucket tools, which
+    have no generated Mintlify pages but are documented in README.md; they
+    exist so cross-file count checks (e.g. .env.example) can validate
+    whole-server totals.
+    """
 
     total_tools: int
     jira_tools: int
@@ -286,6 +294,8 @@ class ToolCounts:
     jira_toolsets: int
     confluence_toolsets: int
     core_toolsets: int
+    all_tools: int = 0
+    all_core_tools: int = 0
 
 
 @dataclass
@@ -389,6 +399,25 @@ async def get_all_tools() -> dict[str, dict[str, Any]]:
     return all_tools
 
 
+async def get_bitbucket_tool_counts() -> tuple[int, int]:
+    """Return (total, core) tool counts for the Bitbucket server.
+
+    Bitbucket tools are intentionally not mapped into CATEGORY_TOOLS or
+    rendered as Mintlify pages (docs/tools/ only covers Jira and
+    Confluence); this only feeds the cross-file total/core count checks.
+    """
+    from mcp_atlassian.servers.bitbucket import bitbucket_mcp
+    from mcp_atlassian.utils.toolsets import DEFAULT_TOOLSETS, get_toolset_tag
+
+    bb_tools = await bitbucket_mcp.list_tools()
+    total = len(bb_tools)
+    core = sum(
+        get_toolset_tag(getattr(tool, "tags", None) or set()) in DEFAULT_TOOLSETS
+        for tool in bb_tools
+    )
+    return total, core
+
+
 # ---------------------------------------------------------------------------
 # Override loading
 # ---------------------------------------------------------------------------
@@ -473,7 +502,10 @@ def build_tool_docs(
     return category_docs
 
 
-def get_tool_counts(tools: dict[str, dict[str, Any]]) -> ToolCounts:
+def get_tool_counts(
+    tools: dict[str, dict[str, Any]],
+    bitbucket_totals: tuple[int, int],
+) -> ToolCounts:
     """Calculate tool and toolset counts from their live registries."""
     from mcp_atlassian.utils.toolsets import (
         ALL_TOOLSETS,
@@ -483,17 +515,22 @@ def get_tool_counts(tools: dict[str, dict[str, Any]]) -> ToolCounts:
         get_toolset_tag,
     )
 
+    bitbucket_tools, bitbucket_core_tools = bitbucket_totals
+    core_tools = sum(
+        get_toolset_tag(info["tags"]) in DEFAULT_TOOLSETS for info in tools.values()
+    )
+
     return ToolCounts(
         total_tools=len(tools),
         jira_tools=sum(name.startswith("jira_") for name in tools),
         confluence_tools=sum(name.startswith("confluence_") for name in tools),
-        core_tools=sum(
-            get_toolset_tag(info["tags"]) in DEFAULT_TOOLSETS for info in tools.values()
-        ),
+        core_tools=core_tools,
         total_toolsets=len(ALL_TOOLSETS),
         jira_toolsets=len(JIRA_TOOLSETS),
         confluence_toolsets=len(CONFLUENCE_TOOLSETS),
         core_toolsets=len(DEFAULT_TOOLSETS),
+        all_tools=len(tools) + bitbucket_tools,
+        all_core_tools=core_tools + bitbucket_core_tools,
     )
 
 
@@ -652,7 +689,7 @@ def generate_pages(
         output_dir,
         reference_output,
     ).items():
-        out_path.write_text(rendered)
+        out_path.write_text(rendered, encoding="utf-8")
         print(f"  wrote {out_path}")
 
 
@@ -703,13 +740,13 @@ def check_coverage(tools: dict[str, dict[str, Any]]) -> bool:
 COUNT_RULES = (
     CountRule(
         "README.md",
-        re.compile(r"\*\*(\d+)\s+tools?\s+total\*\*", re.IGNORECASE),
-        "total_tools",
+        re.compile(r"\*\*(\d+)\s+tools?\*\*\s+across", re.IGNORECASE),
+        "all_tools",
     ),
     CountRule(
         ".env.example",
         re.compile(r"Only core tools \(~?(\d+)\s+tools?\)", re.IGNORECASE),
-        "core_tools",
+        "all_core_tools",
     ),
     CountRule(
         ".env.example",
@@ -719,7 +756,7 @@ COUNT_RULES = (
     CountRule(
         ".env.example",
         re.compile(r"All (\d+)\s+toolsets? \((\d+)\s+tools?\)", re.IGNORECASE),
-        "total_tools",
+        "all_tools",
         group=2,
     ),
     CountRule(
@@ -728,7 +765,7 @@ COUNT_RULES = (
             r"If unset, all toolsets are enabled \((\d+)\s+tools?\)",
             re.IGNORECASE,
         ),
-        "total_tools",
+        "all_tools",
     ),
     CountRule(
         "docs.json",
@@ -769,7 +806,7 @@ COUNT_RULES = (
             r"core tools only \(~?(\d+)\s+tools? across (\d+)\s+core toolsets?\)",
             re.IGNORECASE,
         ),
-        "core_tools",
+        "all_core_tools",
     ),
     CountRule(
         "docs/configuration.mdx",
@@ -794,14 +831,17 @@ COUNT_RULES = (
 COUNT_FILES = tuple(dict.fromkeys(rule.relative_path for rule in COUNT_RULES))
 
 
-def check_counts(tools: dict[str, dict[str, Any]]) -> bool:
+def check_counts(
+    tools: dict[str, dict[str, Any]],
+    bitbucket_totals: tuple[int, int],
+) -> bool:
     """Verify documented tool and toolset counts match live registries."""
-    counts = get_tool_counts(tools)
+    counts = get_tool_counts(tools, bitbucket_totals)
 
     ok = True
     for rule in COUNT_RULES:
         path = ROOT / rule.relative_path
-        text = path.read_text()
+        text = path.read_text(encoding="utf-8")
         matches = list(rule.pattern.finditer(text))
         if not matches:
             print(
@@ -867,7 +907,7 @@ def check_generated_pages(
                 f"ERROR: generated documentation is missing: {_display_path(path)}",
                 file=sys.stderr,
             )
-        elif path.read_text() != rendered:
+        elif path.read_text(encoding="utf-8") != rendered:
             print(
                 f"ERROR: generated documentation is out of date: {_display_path(path)}",
                 file=sys.stderr,
@@ -912,14 +952,15 @@ def main() -> None:
     args = parser.parse_args()
 
     tools = asyncio.run(get_all_tools())
+    bitbucket_totals = asyncio.run(get_bitbucket_tool_counts())
 
     if args.check:
         coverage_ok = check_coverage(tools)
-        counts_ok = check_counts(tools)
+        counts_ok = check_counts(tools, bitbucket_totals)
         overrides = load_overrides(OVERRIDES_DIR)
         category_docs = build_tool_docs(tools, overrides)
         toolset_docs = build_toolset_docs(tools)
-        counts = get_tool_counts(tools)
+        counts = get_tool_counts(tools, bitbucket_totals)
         generated_ok = check_generated_pages(
             category_docs,
             toolset_docs,
@@ -933,7 +974,7 @@ def main() -> None:
     overrides = load_overrides(OVERRIDES_DIR)
     category_docs = build_tool_docs(tools, overrides)
     toolset_docs = build_toolset_docs(tools)
-    counts = get_tool_counts(tools)
+    counts = get_tool_counts(tools, bitbucket_totals)
 
     total = sum(len(docs) for docs in category_docs.values())
     print(
