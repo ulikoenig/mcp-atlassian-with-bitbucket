@@ -72,6 +72,8 @@ jobs:
           # Use tags and labels from metadata action
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          # Attach an SPDX SBOM attestation to the published image
+          sbom: true
           build-args: |
             VERSION=${{ steps.meta.outputs.version }}
           # Enable Docker layer caching
