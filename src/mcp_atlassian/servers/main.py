@@ -1009,3 +1009,62 @@ async def _health_check_route(request: Request) -> JSONResponse:
 
 
 logger.info("Added /healthz endpoint for Kubernetes probes")
+
+
+async def oauth_discovery_not_found(request: Request) -> JSONResponse:
+    """JSON 404 for OAuth discovery well-known paths without an OAuth provider.
+
+    Several MCP clients (observed: Claude Code CLI, all versions from at least 2.1.87
+    through 2.1.284) unconditionally probe ``/.well-known/oauth-authorization-server``
+    (and ``/.well-known/oauth-protected-resource``) after a 401 from the MCP endpoint,
+    even when the client already sent static credentials via configured headers. When
+    this server has no auth provider attached (the default; see
+    ``_build_auth_provider``), these paths are not routes we define, so they fall
+    through to Starlette's default 404 handler - which returns a plain-text
+    ``Not Found`` body. Some clients then try to ``JSON.parse`` that body and crash
+    with a parse error instead of gracefully falling back to the configured header,
+    e.g.:
+
+        HTTP 404: Invalid OAuth error response: SyntaxError: JSON Parse error:
+        Unexpected identifier "Not". Raw body: Not Found
+
+    Confirmed upstream (anthropics/claude-code #80785, #46640, #34008): no client-side
+    fix or opt-out flag exists as of Claude Code 2.1.284. A community-reported
+    workaround (anthropics/claude-code #46640, comment by @m13v) is to serve a JSON
+    body (even an empty object) instead of plain text at exactly this 404 - which is
+    what this route does. Registered ONLY when ``main_mcp.auth is None`` (see below):
+    with a real OAuth provider attached (``ATLASSIAN_OAUTH_PROXY_ENABLE=true``),
+    FastMCP/the OAuth proxy already serves real discovery metadata at these same
+    paths, and these stubs must never shadow that.
+    """
+    return JSONResponse({"error": "not_found"}, status_code=404)
+
+
+if main_mcp.auth is None:
+
+    @main_mcp.custom_route(
+        "/.well-known/oauth-authorization-server",
+        methods=["GET"],
+        include_in_schema=False,
+    )
+    async def _oauth_authorization_server_discovery_route(
+        request: Request,
+    ) -> JSONResponse:
+        return await oauth_discovery_not_found(request)
+
+    @main_mcp.custom_route(
+        "/.well-known/oauth-protected-resource",
+        methods=["GET"],
+        include_in_schema=False,
+    )
+    async def _oauth_protected_resource_discovery_route(
+        request: Request,
+    ) -> JSONResponse:
+        return await oauth_discovery_not_found(request)
+
+    logger.info(
+        "No OAuth provider attached: added JSON-404 stubs at the OAuth discovery "
+        "well-known paths so clients that probe them before using static header "
+        "auth (e.g. Claude Code CLI) get a parseable response instead of a "
+        "plain-text 404 (see anthropics/claude-code#80785)."
+    )
