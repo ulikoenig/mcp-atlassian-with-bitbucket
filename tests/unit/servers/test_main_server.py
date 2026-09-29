@@ -170,6 +170,37 @@ async def test_streamable_http_app_health_check_endpoint():
 
 
 @pytest.mark.anyio
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/.well-known/oauth-authorization-server",
+        "/.well-known/oauth-protected-resource",
+    ],
+)
+async def test_oauth_discovery_well_known_returns_json_404_without_auth_provider(
+    path: str,
+) -> None:
+    """Regression test for anthropics/claude-code#80785: without an auth provider
+    attached (the default in this deployment), these paths must return a JSON body
+    on 404, not Starlette's default plain-text "Not Found" - some MCP clients try to
+    JSON.parse the 404 body of an OAuth discovery probe and crash on non-JSON text
+    instead of falling back to the configured static header auth."""
+    assert main_mcp.auth is None, (
+        "This test assumes no OAuth provider is configured "
+        "(ATLASSIAN_OAUTH_PROXY_ENABLE unset); the stub routes under test are "
+        "only registered in that case."
+    )
+    app = main_mcp.http_app()
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get(path)
+
+        assert response.status_code == 404
+        assert response.headers["content-type"].startswith("application/json")
+        assert response.json() == {"error": "not_found"}
+
+
+@pytest.mark.anyio
 async def test_streamable_http_path_is_normalized_without_trailing_slash():
     app = main_mcp.http_app(transport="streamable-http", path="/mcp/")
     assert app.state.path == "/mcp"
