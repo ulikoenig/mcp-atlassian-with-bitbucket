@@ -35,12 +35,18 @@ dependencies = [
     "tzdata>=2024.1; platform_system=='Windows'",
 ]
 
+[project.urls]
+Homepage = "https://github.com/ulikoenig/mcp-atlassian-with-bitbucket"
+Repository = "https://github.com/ulikoenig/mcp-atlassian-with-bitbucket"
+Issues = "https://github.com/ulikoenig/mcp-atlassian-with-bitbucket/issues"
+Changelog = "https://github.com/ulikoenig/mcp-atlassian-with-bitbucket/blob/main/CHANGELOG.md"
+
 [project.optional-dependencies]
 wpad = ["pypac>=0.17.2"]
 
 [[project.authors]]
-name = "Jelly Thomas"
-email = "jellythom2107@gmail.com"
+name = "Uli König"
+email = "mcp_atlassian@ulikoenig.de"
 
 [build-system]
 requires = ["hatchling", "uv-dynamic-versioning>=0.7.0"]
