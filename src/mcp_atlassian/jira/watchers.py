@@ -4,6 +4,7 @@ import logging
 from typing import Any
 
 from ..models.jira.common import JiraUser
+from ..privacy.runtime import privacy_safe_value
 from .client import JiraClient
 
 logger = logging.getLogger("mcp-jira")
@@ -59,9 +60,10 @@ class WatchersMixin(JiraClient):
             Success confirmation dictionary.
         """
         self.jira.issue_add_watcher(issue_key, user_identifier)
+        user_display = privacy_safe_value(user_identifier)
         return {
             "success": True,
-            "message": (f"User '{user_identifier}' added as watcher to {issue_key}"),
+            "message": (f"User '{user_display}' added as watcher to {issue_key}"),
             "issue_key": issue_key,
             "user": user_identifier,
         }
@@ -88,11 +90,12 @@ class WatchersMixin(JiraClient):
         if not username and not account_id:
             raise ValueError("Either username or account_id must be provided")
 
-        user_display = account_id or username
+        user_identifier = account_id or username
+        user_display = privacy_safe_value(user_identifier)
         self.jira.issue_delete_watcher(issue_key, user=username, account_id=account_id)
         return {
             "success": True,
             "message": (f"User '{user_display}' removed from watching {issue_key}"),
             "issue_key": issue_key,
-            "user": user_display,
+            "user": user_identifier,
         }

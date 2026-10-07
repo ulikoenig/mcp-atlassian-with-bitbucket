@@ -6,6 +6,10 @@ import pytest
 
 from mcp_atlassian.confluence.config import ConfluenceConfig
 from mcp_atlassian.confluence.restrictions import RestrictionsMixin
+from mcp_atlassian.privacy import (
+    begin_identity_privacy_runtime,
+    reset_identity_privacy_runtime,
+)
 from mcp_atlassian.utils.oauth import OAuthConfig
 
 
@@ -135,6 +139,38 @@ class TestGetPageRestrictions:
             absolute=True,
         )
 
+    def test_get_restrictions_preserves_identity_type_in_privacy_runtime(
+        self, restrictions_mixin
+    ):
+        """Cloud account IDs remain distinguishable from service logins."""
+        restrictions_mixin.confluence.get.return_value = {
+            "read": {
+                "restrictions": {
+                    "user": {
+                        "results": [
+                            {
+                                "accountId": "CANARY-CLOUD-ACCOUNT-ID",
+                                "displayName": "CANARY PERSON",
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+
+        token = begin_identity_privacy_runtime()
+        try:
+            result = restrictions_mixin.get_page_restrictions("123")
+        finally:
+            reset_identity_privacy_runtime(token)
+
+        assert result["read"]["users"] == [
+            {
+                "account_id": "CANARY-CLOUD-ACCOUNT-ID",
+                "display_name": "CANARY PERSON",
+            }
+        ]
+
 
 class TestSetPageRestrictions:
     def test_set_restrictions_calls_put_with_correct_payload(self, restrictions_mixin):
@@ -225,3 +261,42 @@ class TestSetPageRestrictions:
             == "https://api.atlassian.com/ex/confluence/cloud-123/wiki"
             "/rest/api/content/123/restriction"
         )
+
+    def test_set_restrictions_preserves_cloud_account_id_type_in_privacy_runtime(
+        self, restrictions_mixin
+    ):
+        """The response is typed while the outbound API payload stays unchanged."""
+        restrictions_mixin.confluence._session.put.return_value = MagicMock()
+
+        token = begin_identity_privacy_runtime()
+        try:
+            result = restrictions_mixin.set_page_restrictions(
+                "123",
+                read_users=["CANARY-CLOUD-ACCOUNT-ID"],
+            )
+        finally:
+            reset_identity_privacy_runtime(token)
+
+        payload = restrictions_mixin.confluence._session.put.call_args.kwargs["json"]
+        read_op = next(o for o in payload if o["operation"] == "read")
+        assert read_op["restrictions"]["user"] == [
+            {"type": "known", "accountId": "CANARY-CLOUD-ACCOUNT-ID"}
+        ]
+        assert result["read"]["users"] == [{"account_id": "CANARY-CLOUD-ACCOUNT-ID"}]
+
+    def test_set_restrictions_preserves_dc_username_type_in_privacy_runtime(
+        self, restrictions_mixin_server_dc
+    ):
+        """Server/DC usernames remain available for service classification."""
+        restrictions_mixin_server_dc.confluence._session.put.return_value = MagicMock()
+
+        token = begin_identity_privacy_runtime()
+        try:
+            result = restrictions_mixin_server_dc.set_page_restrictions(
+                "123",
+                edit_users=["service-account"],
+            )
+        finally:
+            reset_identity_privacy_runtime(token)
+
+        assert result["update"]["users"] == [{"username": "service-account"}]

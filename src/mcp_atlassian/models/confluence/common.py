@@ -8,6 +8,8 @@ import logging
 import warnings
 from typing import Any
 
+from mcp_atlassian.privacy.runtime import is_identity_privacy_runtime_active
+
 from ..base import ApiModel
 from ..constants import (
     UNASSIGNED,
@@ -22,6 +24,8 @@ class ConfluenceUser(ApiModel):
     """
 
     account_id: str | None = None
+    username: str | None = None
+    user_key: str | None = None
     display_name: str = UNASSIGNED
     email: str | None = None
     profile_picture: str | None = None
@@ -63,6 +67,8 @@ class ConfluenceUser(ApiModel):
 
         return cls(
             account_id=data.get("accountId"),
+            username=data.get("username") or data.get("name"),
+            user_key=data.get("userKey") or data.get("key"),
             display_name=data.get("displayName", UNASSIGNED),
             email=data.get("email"),
             profile_picture=profile_pic,
@@ -77,6 +83,18 @@ class ConfluenceUser(ApiModel):
             "display_name": self.display_name,
             "email": self.email,
             "profile_picture": self.profile_picture,
+        }
+
+    def to_identity_dict(self) -> dict[str, Any]:
+        """Return structured identity data for the privacy adapter."""
+        return {
+            "account_id": self.account_id,
+            "username": self.username,
+            "user_key": self.user_key,
+            "display_name": self.display_name,
+            "email": self.email,
+            "profile_picture": self.profile_picture,
+            "is_active": self.is_active,
         }
 
 
@@ -171,6 +189,12 @@ class ConfluenceAttachment(ApiModel):
         if self.created:
             result["created"] = self.created
         if self.author_display_name:
-            result["author_display_name"] = self.author_display_name
+            if is_identity_privacy_runtime_active():
+                result["author"] = {
+                    "account_id": self.author_account_id,
+                    "display_name": self.author_display_name,
+                }
+            else:
+                result["author_display_name"] = self.author_display_name
 
         return result

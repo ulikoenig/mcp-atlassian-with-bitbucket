@@ -17,6 +17,15 @@ from mcp_atlassian.jira.constants import DEFAULT_READ_JIRA_FIELDS
 from mcp_atlassian.jira.forms_common import convert_datetime_to_timestamp
 from mcp_atlassian.models.jira import JiraAttachment
 from mcp_atlassian.models.jira.common import JiraUser
+from mcp_atlassian.privacy.alias_roundtrip import (
+    is_identity_alias,
+    resolve_identity_alias,
+)
+from mcp_atlassian.privacy.registry import ToolService
+from mcp_atlassian.privacy.runtime import (
+    is_identity_privacy_runtime_active,
+    privacy_safe_exception_detail,
+)
 from mcp_atlassian.servers.async_utils import run_jira_fetcher_call
 from mcp_atlassian.servers.dependencies import get_jira_fetcher
 from mcp_atlassian.servers.error_handling import ErrorPreservingFastMCP
@@ -30,6 +39,60 @@ from mcp_atlassian.utils.media import (
 )
 
 logger = logging.getLogger(__name__)
+
+_JIRA_IDENTITY_INPUT_KEYS = (
+    "accountId",
+    "account_id",
+    "username",
+    "name",
+    "key",
+)
+
+
+def _resolve_jira_identity_input(value: Any, jira: Any) -> Any:
+    """Resolve a caller-bound alias in one Jira identity write field."""
+    prefer_local_id = bool(jira.config.is_cloud)
+    instance = str(jira.config.url)
+    if isinstance(value, str):
+        return resolve_identity_alias(
+            value,
+            service=ToolService.JIRA,
+            instance=instance,
+            prefer_local_id=prefer_local_id,
+        )
+    if not isinstance(value, dict):
+        return value
+
+    aliases = {
+        candidate
+        for key in _JIRA_IDENTITY_INPUT_KEYS
+        if isinstance((candidate := value.get(key)), str)
+        and is_identity_alias(candidate)
+    }
+    if not aliases:
+        return value
+    resolved = {
+        resolve_identity_alias(
+            alias,
+            service=ToolService.JIRA,
+            instance=instance,
+            prefer_local_id=prefer_local_id,
+        )
+        for alias in aliases
+    }
+    if len(resolved) != 1:
+        raise ValueError("Jira identity object contains conflicting aliases")
+    identifier = resolved.pop()
+    return {"accountId": identifier} if prefer_local_id else {"name": identifier}
+
+
+def _resolve_jira_assignee_field(fields: dict[str, Any], jira: Any) -> dict[str, Any]:
+    """Return a copy with an assignee alias resolved when present."""
+    if "assignee" not in fields:
+        return fields
+    resolved = dict(fields)
+    resolved["assignee"] = _resolve_jira_identity_input(resolved["assignee"], jira)
+    return resolved
 
 
 # Regex patterns for Jira key validation.
@@ -572,7 +635,9 @@ async def add_watcher(
         Field(
             description=(
                 "User to add as watcher. For Jira Cloud, use the"
-                " account ID. For Jira Server/DC, use the username."
+                " account ID. For Jira Server/DC, use the username. When "
+                "identity alias roundtrip is enabled, a caller-bound pid:v1: "
+                "alias from a protected Jira response is also accepted."
             ),
         ),
     ],
@@ -591,7 +656,8 @@ async def add_watcher(
         ValueError: If the Jira client is not configured or available.
     """
     jira = await get_jira_fetcher(ctx)
-    result = jira.add_watcher(issue_key, user_identifier)
+    resolved_user = _resolve_jira_identity_input(user_identifier, jira)
+    result = jira.add_watcher(issue_key, str(resolved_user))
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 
@@ -615,14 +681,20 @@ async def remove_watcher(
     username: Annotated[
         str | None,
         Field(
-            description=("Username to remove (for Jira Server/DC)."),
+            description=(
+                "Username to remove (for Jira Server/DC), or a caller-bound "
+                "pid:v1: alias when identity alias roundtrip is enabled."
+            ),
             default=None,
         ),
     ] = None,
     account_id: Annotated[
         str | None,
         Field(
-            description=("Account ID to remove (for Jira Cloud)."),
+            description=(
+                "Account ID to remove (for Jira Cloud), or a caller-bound "
+                "pid:v1: alias when identity alias roundtrip is enabled."
+            ),
             default=None,
         ),
     ] = None,
@@ -642,7 +714,21 @@ async def remove_watcher(
         ValueError: If the Jira client is not configured or available.
     """
     jira = await get_jira_fetcher(ctx)
-    result = jira.remove_watcher(issue_key, username=username, account_id=account_id)
+    resolved_username = (
+        _resolve_jira_identity_input(username, jira) if username is not None else None
+    )
+    resolved_account_id = (
+        _resolve_jira_identity_input(account_id, jira)
+        if account_id is not None
+        else None
+    )
+    result = jira.remove_watcher(
+        issue_key,
+        username=str(resolved_username) if resolved_username is not None else None,
+        account_id=(
+            str(resolved_account_id) if resolved_account_id is not None else None
+        ),
+    )
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 
@@ -769,7 +855,9 @@ async def get_issue(
     expand_additions = []
     if "changelog" in include_sections:
         expand_additions.append("changelog")
-    if use_display_names:
+    if is_identity_privacy_runtime_active():
+        expand_additions.extend(["names", "schema"])
+    elif use_display_names:
         expand_additions.append("names")
     expand = _merge_expand(expand, expand_additions)
 
@@ -928,7 +1016,9 @@ async def search(
     if fields and fields != "*all":
         fields_list = [f.strip() for f in fields.split(",")]
 
-    if use_display_names:
+    if is_identity_privacy_runtime_active():
+        expand = _merge_expand(expand, ["names", "schema"])
+    elif use_display_names:
         expand = _merge_expand(expand, ["names"])
 
     search_result = await run_jira_fetcher_call(
@@ -1826,7 +1916,11 @@ async def create_issue(
     assignee: Annotated[
         str | None,
         Field(
-            description="(Optional) Assignee's user identifier (string): Email, display name, or account ID (e.g., 'user@example.com', 'John Doe', 'accountid:...')",
+            description=(
+                "(Optional) Assignee user identifier: email, display name, "
+                "account ID, or a caller-bound pid:v1: alias when identity "
+                "alias roundtrip is enabled."
+            ),
             default=None,
         ),
     ] = None,
@@ -1884,6 +1978,7 @@ async def create_issue(
         ValueError: If in read-only mode or Jira client is unavailable.
     """
     jira = await get_jira_fetcher(ctx)
+    assignee = _resolve_jira_identity_input(assignee, jira)
     # Parse components from comma-separated string to list
     components_list = None
     if components and isinstance(components, str):
@@ -1891,7 +1986,10 @@ async def create_issue(
             comp.strip() for comp in components.split(",") if comp.strip()
         ]
 
-    extra_fields = _parse_additional_fields(additional_fields)
+    extra_fields = _resolve_jira_assignee_field(
+        _parse_additional_fields(additional_fields),
+        jira,
+    )
 
     issue = jira.create_issue(
         project_key=project_key,
@@ -1966,6 +2064,10 @@ async def batch_create_issues(
         raise ValueError("Invalid JSON in issues")
     except Exception as e:
         raise ValueError(f"Invalid input for issues: {e}") from e
+    issues_list = [
+        _resolve_jira_assignee_field(issue, jira) if isinstance(issue, dict) else issue
+        for issue in issues_list
+    ]
 
     # Create issues in batch
     created_issues = jira.batch_create_issues(issues_list, validate_only=validate_only)
@@ -2081,7 +2183,9 @@ async def update_issue(
         str | None,
         Field(
             description=(
-                "JSON string of fields to update. For 'assignee', provide a string identifier (email, name, or accountId). "
+                "JSON string of fields to update. For 'assignee', provide a "
+                "string identifier (email, name, accountId, or a caller-bound "
+                "pid:v1: alias when identity alias roundtrip is enabled). "
                 "For 'description', provide text in Markdown format; on Jira Cloud, "
                 "use '{expand:Title}...{expand}' for a collapsible section "
                 "and '{status:color=green|title=Done}' for an inline status "
@@ -2238,7 +2342,10 @@ async def update_issue(
         ValueError: If in read-only mode or Jira client unavailable, or invalid input.
     """
     jira = await get_jira_fetcher(ctx)
-    update_fields = _parse_additional_fields(fields, param_name="fields")
+    update_fields = _resolve_jira_assignee_field(
+        _parse_additional_fields(fields, param_name="fields"),
+        jira,
+    )
 
     return_fields_list: str | list[str] | None = return_fields
     if return_fields and return_fields != "*all":
@@ -2251,7 +2358,10 @@ async def update_issue(
             comp.strip() for comp in components.split(",") if comp.strip()
         ]
 
-    extra_fields = _parse_additional_fields(additional_fields)
+    extra_fields = _resolve_jira_assignee_field(
+        _parse_additional_fields(additional_fields),
+        jira,
+    )
 
     # Parse attachments
     attachment_paths = []
@@ -2319,11 +2429,14 @@ async def update_issue(
                         f"{failure.get('error', 'upload failed')}"
                     )
         except Exception as e:  # noqa: BLE001 - preserve later operations
+            detail = privacy_safe_exception_detail(e)
             logger.error(
-                f"Error updating fields for issue {issue_key}: {str(e)}",
+                "Error updating fields for issue %s: %s",
+                issue_key,
+                detail,
                 exc_info=True,
             )
-            operations_failed.append(f"fields_updated: {e}")
+            operations_failed.append(f"fields_updated: {detail}")
 
     if transition:
         try:
@@ -2336,22 +2449,28 @@ async def update_issue(
             )
             operations_performed.append(f"transitioned_to:{transition}")
         except Exception as e:  # noqa: BLE001 - preserve later operations
+            detail = privacy_safe_exception_detail(e)
             logger.error(
-                f"Error transitioning issue {issue_key}: {str(e)}",
+                "Error transitioning issue %s: %s",
+                issue_key,
+                detail,
                 exc_info=True,
             )
-            operations_failed.append(f"transition: {e}")
+            operations_failed.append(f"transition: {detail}")
 
     if comment:
         try:
             jira.add_comment(issue_key, comment, visibility)
             operations_performed.append("comment_added")
         except Exception as e:  # noqa: BLE001 - preserve later operations
+            detail = privacy_safe_exception_detail(e)
             logger.error(
-                f"Error adding comment to issue {issue_key}: {str(e)}",
+                "Error adding comment to issue %s: %s",
+                issue_key,
+                detail,
                 exc_info=True,
             )
-            operations_failed.append(f"comment: {e}")
+            operations_failed.append(f"comment: {detail}")
 
     if worklog:
         try:
@@ -2362,17 +2481,26 @@ async def update_issue(
             )
             operations_performed.append("worklog_added")
         except Exception as e:  # noqa: BLE001 - preserve later operations
+            detail = privacy_safe_exception_detail(e)
             logger.error(
-                f"Error adding worklog to issue {issue_key}: {str(e)}",
+                "Error adding worklog to issue %s: %s",
+                issue_key,
+                detail,
                 exc_info=True,
             )
-            operations_failed.append(f"worklog: {e}")
+            operations_failed.append(f"worklog: {detail}")
 
     try:
         issue = jira.get_issue(issue_key, fields=return_fields_list)
     except Exception as e:  # noqa: BLE001 - preserve the latest issue result
-        logger.error(f"Error re-fetching issue {issue_key}: {str(e)}", exc_info=True)
-        operations_failed.append(f"refetch: {e}")
+        detail = privacy_safe_exception_detail(e)
+        logger.error(
+            "Error re-fetching issue %s: %s",
+            issue_key,
+            detail,
+            exc_info=True,
+        )
+        operations_failed.append(f"refetch: {detail}")
 
     result = issue.to_simplified_dict() if issue is not None else {"key": issue_key}
     if attachment_results is not None:
@@ -2421,7 +2549,9 @@ async def assign_issue(
             description=(
                 "User identifier (email, display name, account ID, login name, or "
                 "JIRAUSER key), or a JSON object string from "
-                "jira_search_assignable_users. Pass null or empty string to unassign."
+                "jira_search_assignable_users. A caller-bound pid:v1: alias is "
+                "accepted when identity alias roundtrip is enabled. Pass null or "
+                "empty string to unassign."
             ),
             default=None,
         ),
@@ -2460,6 +2590,7 @@ async def assign_issue(
                 raise ValueError(f"assignee is not valid JSON: {e}") from e
             if not isinstance(parsed_assignee, dict):
                 raise ValueError("assignee JSON must be an object.")
+        parsed_assignee = _resolve_jira_identity_input(parsed_assignee, jira)
 
         issue = jira.assign_issue(issue_key=issue_key, assignee=parsed_assignee)
         result = issue.to_simplified_dict()

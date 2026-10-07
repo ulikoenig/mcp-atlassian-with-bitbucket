@@ -157,6 +157,56 @@ This sets:
 The factory callable should return an async key/value compatible storage object
 used by FastMCP OAuth proxy client registration storage.
 
+### Structured Identity Privacy (opt-in)
+
+Identity privacy is disabled by default. For pseudonymization, create an
+existing Secret containing the private policy and a Base64-encoded key of at
+least 32 bytes:
+
+```bash
+kubectl create secret generic mcp-atlassian-identity-privacy \
+  --from-file=identity-policy.json=identity-policy.json \
+  --from-file=identity-keyring.json=identity-keyring.json
+```
+
+Mount it read-only and configure the feature through the chart's existing
+extension points:
+
+```yaml
+extraEnv:
+  - name: MCP_ATLASSIAN_IDENTITY_PRIVACY_MODE
+    value: pseudonymize
+  - name: MCP_ATLASSIAN_IDENTITY_POLICY_FILE
+    value: /run/secrets/identity-privacy/identity-policy.json
+  - name: MCP_ATLASSIAN_PSEUDONYM_KEYRING_FILE
+    value: /run/secrets/identity-privacy/identity-keyring.json
+  - name: MCP_ATLASSIAN_PSEUDONYM_CORRELATION_SCOPE
+    value: deployment
+  - name: MCP_ATLASSIAN_PSEUDONYM_CORRELATION_DOMAIN
+    value: my-mcp-deployment
+  - name: MCP_ATLASSIAN_PSEUDONYM_ROTATION_HOURS
+    value: "24"
+  - name: MCP_ATLASSIAN_IDENTITY_SELF_IDENTIFICATION_ENABLED
+    value: "true"
+  - name: MCP_ATLASSIAN_IDENTITY_ALIAS_ROUNDTRIP_ENABLED
+    value: "false"
+
+volumes:
+  - name: identity-privacy
+    secret:
+      secretName: mcp-atlassian-identity-privacy
+
+volumeMounts:
+  - name: identity-privacy
+    mountPath: /run/secrets/identity-privacy
+    readOnly: true
+```
+
+See [Structured Identity Privacy](../docs/identity-privacy.md) for policy
+syntax, scope boundaries, raw-content behavior, and fail-closed semantics.
+When alias roundtrip is enabled, use one replica or request affinity because
+the caller-bound alias cache is process-local.
+
 ### Health Checks and Readiness Probe
 
 The MCP server exposes a `/healthz` endpoint that returns `{"status": "ok"}` for Kubernetes health checks. This endpoint is automatically used for the readiness probe when using HTTP transport modes (`sse` or `streamable-http`).

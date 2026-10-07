@@ -143,6 +143,7 @@ class SearchMixin(JiraClient, IssueOperationsProto):
                 # Fetch issues using v3 API with nextPageToken pagination
                 all_issues: list[dict[str, Any]] = []
                 field_names: dict[str, Any] = {}
+                field_schemas: dict[str, Any] = {}
                 next_page_token: str | None = page_token
 
                 while len(all_issues) < limit:
@@ -170,6 +171,9 @@ class SearchMixin(JiraClient, IssueOperationsProto):
                     names = response.get("names")
                     if isinstance(names, dict):
                         field_names.update(names)
+                    schemas = response.get("schema")
+                    if isinstance(schemas, dict):
+                        field_schemas.update(schemas)
 
                     # Check for more pages
                     next_page_token = response.get("nextPageToken")
@@ -188,6 +192,8 @@ class SearchMixin(JiraClient, IssueOperationsProto):
                     response_dict["nextPageToken"] = next_page_token
                 if field_names:
                     response_dict["names"] = field_names
+                if field_schemas:
+                    response_dict["schema"] = field_schemas
 
                 search_result = JiraSearchResult.from_api_response(
                     response_dict,

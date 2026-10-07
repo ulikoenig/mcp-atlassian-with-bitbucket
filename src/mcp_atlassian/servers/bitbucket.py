@@ -7,6 +7,9 @@ from typing import Annotated
 from fastmcp import Context, FastMCP
 from pydantic import Field
 
+from mcp_atlassian.bitbucket import BitbucketClient
+from mcp_atlassian.privacy.alias_roundtrip import resolve_identity_alias
+from mcp_atlassian.privacy.registry import ToolService
 from mcp_atlassian.servers.dependencies import get_bitbucket_fetcher
 from mcp_atlassian.utils.decorators import check_write_access
 
@@ -16,6 +19,25 @@ bitbucket_mcp = FastMCP(
     name="Bitbucket MCP Service",
     instructions="Provides tools for interacting with Atlassian Bitbucket (Cloud and Server/Data Center).",
 )
+
+
+def _resolve_bitbucket_reviewers(
+    reviewers: str | None,
+    client: BitbucketClient,
+) -> list[str] | None:
+    if not reviewers:
+        return None
+    config = client.config
+    return [
+        resolve_identity_alias(
+            reviewer.strip(),
+            service=ToolService.BITBUCKET,
+            instance=str(config.url),
+            prefer_local_id=bool(config.is_cloud),
+        )
+        for reviewer in reviewers.split(",")
+        if reviewer.strip()
+    ]
 
 
 # ==================================================================
@@ -455,7 +477,10 @@ async def create_pull_request(
     reviewers: Annotated[
         str | None,
         Field(
-            description="Comma-separated list of reviewer usernames or UUIDs.",
+            description=(
+                "Comma-separated reviewer usernames, UUIDs, or caller-bound "
+                "pid:v1: aliases when identity alias roundtrip is enabled."
+            ),
             default=None,
         ),
     ] = None,
@@ -466,7 +491,7 @@ async def create_pull_request(
 ) -> str:
     """Create a new pull request."""
     client = await get_bitbucket_fetcher(ctx)
-    reviewer_list = [r.strip() for r in reviewers.split(",")] if reviewers else None
+    reviewer_list = _resolve_bitbucket_reviewers(reviewers, client)
     result = client.create_pull_request(
         repo_slug=repo_slug,
         title=title,
@@ -598,14 +623,17 @@ async def update_pull_request(
     reviewers: Annotated[
         str | None,
         Field(
-            description="Comma-separated list of new reviewer usernames/UUIDs.",
+            description=(
+                "Comma-separated reviewer usernames, UUIDs, or caller-bound "
+                "pid:v1: aliases when identity alias roundtrip is enabled."
+            ),
             default=None,
         ),
     ] = None,
 ) -> str:
     """Update a pull request's title, description, destination, or reviewers."""
     client = await get_bitbucket_fetcher(ctx)
-    reviewer_list = [r.strip() for r in reviewers.split(",")] if reviewers else None
+    reviewer_list = _resolve_bitbucket_reviewers(reviewers, client)
     result = client.update_pull_request(
         repo_slug=repo_slug,
         pr_id=pr_id,
@@ -2304,7 +2332,15 @@ async def get_default_reviewers(
 async def add_default_reviewer(
     ctx: Context,
     repo_slug: Annotated[str, Field(description="Repository slug.")],
-    username: Annotated[str, Field(description="Username or UUID of the reviewer.")],
+    username: Annotated[
+        str,
+        Field(
+            description=(
+                "Reviewer username, UUID, or a caller-bound pid:v1: alias when "
+                "identity alias roundtrip is enabled."
+            )
+        ),
+    ],
     workspace: Annotated[
         str | None,
         Field(description="Workspace slug (Cloud).", default=None),
@@ -2316,6 +2352,12 @@ async def add_default_reviewer(
 ) -> str:
     """Add a default reviewer to a repository."""
     client = await get_bitbucket_fetcher(ctx)
+    username = resolve_identity_alias(
+        username,
+        service=ToolService.BITBUCKET,
+        instance=str(client.config.url),
+        prefer_local_id=bool(client.config.is_cloud),
+    )
     result = client.add_default_reviewer(
         repo_slug=repo_slug,
         username=username,

@@ -49,10 +49,10 @@ class JiraSearchResult(ApiModel):
 
         issues = []
         issues_data = data.get("issues", [])
-        # The 'names' map (field ID → display name) lives at the top level
-        # of search responses.  Propagate it into each issue dict so that
-        # JiraIssue.from_api_response can populate display names.
+        # Field metadata lives at the top level of search responses. Propagate
+        # it into every issue so custom-field display names and schemas survive.
         top_level_names = data.get("names")
+        top_level_schema = data.get("schema")
         base_url = kwargs.get("base_url")
         if isinstance(issues_data, list):
             base_url = kwargs.get("base_url")
@@ -60,6 +60,8 @@ class JiraSearchResult(ApiModel):
                 if issue_data:
                     if top_level_names and isinstance(issue_data, dict):
                         issue_data = {**issue_data, "names": top_level_names}
+                    if top_level_schema and isinstance(issue_data, dict):
+                        issue_data = {**issue_data, "schema": top_level_schema}
                     requested_fields = kwargs.get("requested_fields")
                     issues.append(
                         JiraIssue.from_api_response(

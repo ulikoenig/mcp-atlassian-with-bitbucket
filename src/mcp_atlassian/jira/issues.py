@@ -13,6 +13,7 @@ from ..exceptions import MCPAtlassianAuthenticationError
 from ..models.jira import JiraIssue
 from ..models.jira.adf import merge_adf_with_preserved_media
 from ..models.jira.common import JiraChangelog
+from ..privacy.runtime import is_identity_privacy_runtime_active
 from ..utils import parse_date
 from .client import JiraClient
 from .constants import DEFAULT_READ_JIRA_FIELDS
@@ -31,6 +32,21 @@ logger = logging.getLogger("mcp-jira")
 # Friendly aliases that users may pass for the epic link custom field
 _EPIC_LINK_ALIASES = frozenset({"epickey", "epic_link", "epiclink", "epic link"})
 _EPIC_NAME_FIELD_SCHEMA = "com.pyxis.greenhopper.jira:gh-epic-label"
+
+
+def _privacy_issue_expand(expand: str | None) -> str | None:
+    if not is_identity_privacy_runtime_active():
+        return expand
+    values = [value.strip() for value in (expand or "").split(",") if value.strip()]
+    for required in ("names", "schema"):
+        if required not in values:
+            values.append(required)
+    return ",".join(values)
+
+
+def _privacy_issue_metadata_kwargs() -> dict[str, str]:
+    expand = _privacy_issue_expand(None)
+    return {"expand": expand} if expand is not None else {}
 
 
 class IssuesMixin(
@@ -181,7 +197,7 @@ class IssuesMixin(
             # Handle non-default fields string
 
             # Build expand parameter if provided
-            expand_param = expand
+            expand_param = _privacy_issue_expand(expand)
 
             # Convert properties to proper format if it's a list
             properties_param: str | None = None
@@ -766,7 +782,10 @@ class IssuesMixin(
                         )
 
             # Get the full issue data and convert to JiraIssue model
-            issue_data = self.jira.get_issue(issue_key)
+            issue_data = self.jira.get_issue(
+                issue_key,
+                **_privacy_issue_metadata_kwargs(),
+            )
             if not isinstance(issue_data, dict):
                 msg = f"Unexpected return value type from `jira.get_issue`: {type(issue_data)}"
                 logger.error(msg)
@@ -1410,7 +1429,11 @@ class IssuesMixin(
                     # Continue with the update even if attachments fail
 
             # Get the updated issue data and convert to JiraIssue model
-            issue_data = self.jira.get_issue(issue_key, fields=return_fields_param)
+            issue_data = self.jira.get_issue(
+                issue_key,
+                fields=return_fields_param,
+                **_privacy_issue_metadata_kwargs(),
+            )
             if isinstance(issue_data, str):
                 # atlassian-python-api can return a string on Jira Server/DC
                 # when response.json() fails. Try parsing it as JSON first.
@@ -1544,7 +1567,11 @@ class IssuesMixin(
 
         # If no status change is requested, return the issue
         if not status:
-            issue_data = self.jira.get_issue(issue_key, fields=return_fields_param)
+            issue_data = self.jira.get_issue(
+                issue_key,
+                fields=return_fields_param,
+                **_privacy_issue_metadata_kwargs(),
+            )
             if not isinstance(issue_data, dict):
                 msg = f"Unexpected return value type from `jira.get_issue`: {type(issue_data)}"
                 logger.error(msg)
@@ -1645,7 +1672,11 @@ class IssuesMixin(
         )
 
         # Get the updated issue data
-        issue_data = self.jira.get_issue(issue_key, fields=return_fields_param)
+        issue_data = self.jira.get_issue(
+            issue_key,
+            fields=return_fields_param,
+            **_privacy_issue_metadata_kwargs(),
+        )
         if not isinstance(issue_data, dict):
             msg = f"Unexpected return value type from `jira.get_issue`: {type(issue_data)}"
             logger.error(msg)
@@ -1797,7 +1828,10 @@ class IssuesMixin(
             if isinstance(processed_issues, list) and processed_issues:
                 lookup_key = str(processed_issues[0])
 
-            issue_data = self.jira.get_issue(lookup_key)
+            issue_data = self.jira.get_issue(
+                lookup_key,
+                **_privacy_issue_metadata_kwargs(),
+            )
             if not isinstance(issue_data, dict):
                 msg = f"Unexpected return value type from `jira.get_issue`: {type(issue_data)}"
                 logger.error(msg)
@@ -2085,7 +2119,10 @@ class IssuesMixin(
                 if issue_key:
                     try:
                         # Fetch the full issue data
-                        issue_data = self.jira.get_issue(issue_key)
+                        issue_data = self.jira.get_issue(
+                            issue_key,
+                            **_privacy_issue_metadata_kwargs(),
+                        )
                         if not isinstance(issue_data, dict):
                             msg = f"Unexpected return value type from `jira.get_issue`: {type(issue_data)}"
                             logger.error(msg)

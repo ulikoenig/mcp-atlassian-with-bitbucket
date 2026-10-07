@@ -6,6 +6,26 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+**Structured Identity Privacy (opt-in)**
+
+- Final FastMCP response guard for Jira, Confluence, and Bitbucket structured
+  identities, disabled by default
+- Configurable anonymization or UTC-rotating HMAC pseudonymization with
+  deployment-, connector-, or instance-scoped correlation
+- Private policy file for affiliation, human/service classification, service
+  clear-text exceptions, and selected Jira custom text fields
+- Request-local self-identification, explicit raw/mixed response policies, and
+  fail-closed transformation behavior
+- Optional caller- and tenant-bound alias roundtrip for Jira assignee/watcher
+  and Bitbucket reviewer writes, with epoch expiry and fail-closed rejection
+- Versioned pseudonym keyring with one active key, bounded predecessor
+  acceptance, `pid:v2` key IDs, and controlled key retirement
+- Reproducible German/English free-text PII/NER evaluation and public synthetic
+  Golden Set; general text scanning remains disabled because measured
+  precision/recall did not meet the release gates
+- Historical identity-log inventory and controlled retention/purge runbook;
+  no production deletion is performed without CISO/DPO and operations approval
+
 **Bitbucket Cloud & Server/DC Support (64 tools)**
 
 - **Bitbucket client** (`bitbucket/client.py`) — Unified client supporting both Cloud (API 2.0) and Server/Data Center (API 1.0) with automatic platform detection

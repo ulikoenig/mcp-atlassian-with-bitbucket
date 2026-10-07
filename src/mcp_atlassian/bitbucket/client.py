@@ -12,6 +12,8 @@ from typing import Any
 
 import httpx
 
+from mcp_atlassian.privacy.runtime import is_identity_privacy_runtime_active
+
 from .config import BitbucketConfig
 
 # Retry configuration
@@ -656,6 +658,41 @@ class BitbucketClient:
                 or user_obj.get("name")
             )
 
+        def _compact_user_source(user_obj: Any) -> dict[str, Any] | None:
+            if not user_obj or not isinstance(user_obj, dict):
+                return None
+            identity_keys = {
+                "type",
+                "display_name",
+                "displayName",
+                "nickname",
+                "name",
+                "username",
+                "userName",
+                "account_id",
+                "accountId",
+                "uuid",
+                "id",
+                "slug",
+                "key",
+                "email",
+                "emailAddress",
+                "active",
+                "links",
+                "self",
+                "avatar",
+                "avatar_url",
+                "avatarUrl",
+            }
+            return {
+                key: value for key, value in user_obj.items() if key in identity_keys
+            }
+
+        def _compact_identity(user_obj: Any) -> Any:
+            if is_identity_privacy_runtime_active():
+                return _compact_user_source(user_obj)
+            return _user_name(user_obj)
+
         def _branch_info(ref: Any) -> dict[str, str | None] | None:
             if not ref or not isinstance(ref, dict):
                 return None
@@ -671,14 +708,16 @@ class BitbucketClient:
 
         reviewers = data.get("reviewers") or []
         participants = data.get("participants") or []
+        author = data.get("author", {})
+        author_user = (
+            author.get("user") if isinstance(author, dict) else None
+        ) or author
 
         return {
             "id": data.get("id"),
             "title": data.get("title"),
             "state": data.get("state"),
-            "author": _user_name(
-                data.get("author", {}).get("user") or data.get("author")
-            ),
+            "author": _compact_identity(author_user),
             "source": _branch_info(data.get("source")),
             "destination": _branch_info(data.get("destination")),
             "description": data.get("description")
@@ -687,11 +726,16 @@ class BitbucketClient:
             "updated_on": data.get("updated_on"),
             "comment_count": data.get("comment_count"),
             "task_count": data.get("task_count"),
-            "reviewers": [_user_name(r.get("user") or r) for r in reviewers],
+            "reviewers": [
+                _compact_identity(r.get("user") or r)
+                for r in reviewers
+                if isinstance(r, dict)
+            ],
             "approved_by": [
-                _user_name(p.get("user") or p)
+                _compact_identity(p.get("user") or p)
                 for p in participants
-                if p.get("approved") or p.get("status") == "approved"
+                if isinstance(p, dict)
+                and (p.get("approved") or p.get("status") == "approved")
             ],
             "merge_commit": (data.get("merge_commit") or {}).get("hash"),
             "close_source_branch": data.get("close_source_branch"),

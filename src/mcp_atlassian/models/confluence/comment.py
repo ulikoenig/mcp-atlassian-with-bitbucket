@@ -6,6 +6,8 @@ This module provides Pydantic models for Confluence page comments.
 import logging
 from typing import Any
 
+from mcp_atlassian.privacy.runtime import is_identity_privacy_runtime_active
+
 from ..base import ApiModel, TimestampMixin
 from ..constants import (
     CONFLUENCE_DEFAULT_ID,
@@ -172,7 +174,11 @@ class ConfluenceComment(ApiModel, TimestampMixin):
             result["title"] = self.title
 
         if self.author:
-            result["author"] = self.author.display_name
+            result["author"] = (
+                self.author.to_identity_dict()
+                if is_identity_privacy_runtime_active()
+                else self.author.display_name
+            )
 
         if self.parent_comment_id:
             result["parent_comment_id"] = self.parent_comment_id

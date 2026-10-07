@@ -9,6 +9,8 @@ from typing import Any
 
 from pydantic import Field
 
+from mcp_atlassian.privacy.runtime import is_identity_privacy_runtime_active
+
 from ..base import ApiModel, TimestampMixin
 from ..constants import (
     CONFLUENCE_DEFAULT_ID,
@@ -67,7 +69,11 @@ class ConfluenceVersion(ApiModel, TimestampMixin):
             result["message"] = self.message
 
         if self.by:
-            result["by"] = self.by.display_name
+            result["by"] = (
+                self.by.to_identity_dict()
+                if is_identity_privacy_runtime_active()
+                else self.by.display_name
+            )
 
         return result
 
@@ -280,13 +286,21 @@ class ConfluencePage(ApiModel, TimestampMixin):
 
         # Add author information if available
         if self.author:
-            result["author"] = self.author.display_name
+            result["author"] = (
+                self.author.to_identity_dict()
+                if is_identity_privacy_runtime_active()
+                else self.author.display_name
+            )
 
         # Add version information if available
         if self.version:
             result["version"] = self.version.number
             if self.version.by:
-                result["version_author"] = self.version.by.display_name
+                result["version_author"] = (
+                    self.version.by.to_identity_dict()
+                    if is_identity_privacy_runtime_active()
+                    else self.version.by.display_name
+                )
             if self.version.when:
                 # Raw ISO 8601, unlike created/updated: the timezone offset is
                 # what makes this usable for activity tracking (see #1375)

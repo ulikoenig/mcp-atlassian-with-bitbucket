@@ -154,7 +154,7 @@ Add a user as a watcher to a Jira issue.
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `issue_key` | `string` | Yes | Jira issue key (e.g., 'PROJ-123') |
-| `user_identifier` | `string` | Yes | User to add as watcher. For Jira Cloud, use the account ID. For Jira Server/DC, use the username. |
+| `user_identifier` | `string` | Yes | User to add as watcher. For Jira Cloud, use the account ID. For Jira Server/DC, use the username. When identity alias roundtrip is enabled, a caller-bound pid:v1: alias from a protected Jira response is also accepted. |
 
 ---
 
@@ -169,7 +169,7 @@ Remove a user from watching a Jira issue.
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `issue_key` | `string` | Yes | Jira issue key (e.g., 'PROJ-123') |
-| `username` | `string` | No | Username to remove (for Jira Server/DC). |
-| `account_id` | `string` | No | Account ID to remove (for Jira Cloud). |
+| `username` | `string` | No | Username to remove (for Jira Server/DC), or a caller-bound pid:v1: alias when identity alias roundtrip is enabled. |
+| `account_id` | `string` | No | Account ID to remove (for Jira Cloud), or a caller-bound pid:v1: alias when identity alias roundtrip is enabled. |
 
 ---
