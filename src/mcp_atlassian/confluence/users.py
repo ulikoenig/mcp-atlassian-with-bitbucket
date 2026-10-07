@@ -86,8 +86,8 @@ class UsersMixin(ConfluenceClient):
             user_data = self.confluence.get("rest/api/user/current")
             if not isinstance(user_data, dict):
                 logger.error(
-                    f"Confluence /rest/api/user/current endpoint returned non-dict data type: {type(user_data)}. "
-                    f"Response text (partial): {str(user_data)[:500]}"
+                    "Confluence current-user endpoint returned type: %s",
+                    type(user_data).__name__,
                 )
                 raise MCPAtlassianAuthenticationError(
                     "Confluence token validation failed: Did not receive valid JSON user data from /rest/api/user/current endpoint."

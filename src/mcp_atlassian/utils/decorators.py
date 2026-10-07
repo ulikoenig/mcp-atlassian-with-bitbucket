@@ -13,6 +13,10 @@ from fastmcp.tools.function_tool import ToolMeta
 from requests.exceptions import HTTPError
 
 from mcp_atlassian.exceptions import MCPAtlassianAuthenticationError
+from mcp_atlassian.privacy.runtime import (
+    is_identity_privacy_runtime_active,
+    privacy_safe_exception_detail,
+)
 from mcp_atlassian.utils.toolsets import TOOLSET_TAG_PREFIX
 
 logger = logging.getLogger(__name__)
@@ -104,9 +108,22 @@ def handle_tool_errors(func: F) -> F:
         except ToolError:
             raise
         except Exception as e:
-            detail = str(e).strip() or type(e).__name__
-            logger.error(f"Error in tool '{tool_name}': {detail}", exc_info=True)
-            message = f"Error calling tool '{tool_name}': {detail}"
+            detail = privacy_safe_exception_detail(e)
+            if is_identity_privacy_runtime_active():
+                logger.error(
+                    "Error in tool '%s': %s",
+                    tool_name,
+                    type(e).__name__,
+                )
+                message = f"Error calling tool '{tool_name}'"
+            else:
+                logger.error(
+                    "Error in tool '%s': %s",
+                    tool_name,
+                    detail,
+                    exc_info=True,
+                )
+                message = f"Error calling tool '{tool_name}': {detail}"
             raise ToolError(message) from e
 
     return wrapper  # type: ignore
@@ -212,36 +229,76 @@ def handle_atlassian_api_errors(service_name: str = "Atlassian API") -> Callable
                     raise MCPAtlassianAuthenticationError(error_msg) from http_err
                 else:
                     operation_name = getattr(func, "__name__", "API operation")
-                    logger.error(
-                        f"HTTP error during {operation_name}: {http_err}",
-                        exc_info=False,
-                    )
+                    if is_identity_privacy_runtime_active():
+                        logger.error(
+                            "HTTP error during %s: status=%s",
+                            operation_name,
+                            getattr(http_err.response, "status_code", "unknown"),
+                        )
+                    else:
+                        logger.error(
+                            "HTTP error during %s: %s",
+                            operation_name,
+                            http_err,
+                            exc_info=False,
+                        )
                     raise http_err
             except KeyError as e:
                 operation_name = getattr(func, "__name__", "API operation")
-                logger.error(f"Missing key in {operation_name} results: {str(e)}")
-                message = (
-                    f"{operation_name} returned an unexpected response from "
-                    f"{service_name}: missing key {e}"
+                detail = privacy_safe_exception_detail(e)
+                logger.error(
+                    "Missing key in %s results: %s",
+                    operation_name,
+                    detail,
                 )
+                message = f"{operation_name} returned an unexpected response"
+                if not is_identity_privacy_runtime_active():
+                    message = (
+                        f"{operation_name} returned an unexpected response from "
+                        f"{service_name}: missing key {e}"
+                    )
                 raise ValueError(message) from e
             except requests.RequestException as e:
                 operation_name = getattr(func, "__name__", "API operation")
-                logger.error(f"Network error during {operation_name}: {str(e)}")
-                message = f"Network error during {operation_name}: {e}"
+                detail = privacy_safe_exception_detail(e)
+                logger.error(
+                    "Network error during %s: %s",
+                    operation_name,
+                    detail,
+                )
+                message = f"Network error during {operation_name}"
+                if not is_identity_privacy_runtime_active():
+                    message = f"{message}: {e}"
                 raise ValueError(message) from e
             except (ValueError, TypeError) as e:
                 operation_name = getattr(func, "__name__", "API operation")
-                logger.error(f"Error processing {operation_name} results: {str(e)}")
-                message = f"Error processing {operation_name} results: {e}"
+                detail = privacy_safe_exception_detail(e)
+                logger.error(
+                    "Error processing %s results: %s",
+                    operation_name,
+                    detail,
+                )
+                message = f"Error processing {operation_name} results"
+                if not is_identity_privacy_runtime_active():
+                    message = f"{message}: {e}"
                 raise ValueError(message) from e
             except Exception as e:  # noqa: BLE001 - Intentional fallback with logging
                 operation_name = getattr(func, "__name__", "API operation")
-                logger.error(f"Unexpected error during {operation_name}: {str(e)}")
-                logger.debug(
-                    f"Full exception details for {operation_name}:", exc_info=True
+                detail = privacy_safe_exception_detail(e)
+                logger.error(
+                    "Unexpected error during %s: %s",
+                    operation_name,
+                    detail,
                 )
-                message = f"Unexpected error during {operation_name}: {e}"
+                if not is_identity_privacy_runtime_active():
+                    logger.debug(
+                        "Full exception details for %s:",
+                        operation_name,
+                        exc_info=True,
+                    )
+                message = f"Unexpected error during {operation_name}"
+                if not is_identity_privacy_runtime_active():
+                    message = f"{message}: {e}"
                 raise RuntimeError(message) from e
 
         return wrapper

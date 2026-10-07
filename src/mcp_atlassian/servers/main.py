@@ -24,6 +24,7 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 from mcp_atlassian.bitbucket.config import BitbucketConfig, _is_bitbucket_cloud_url
 from mcp_atlassian.confluence.config import ConfluenceConfig
 from mcp_atlassian.jira.config import JiraConfig
+from mcp_atlassian.privacy import install_identity_privacy
 from mcp_atlassian.utils.env import is_env_truthy
 from mcp_atlassian.utils.environment import get_available_services
 from mcp_atlassian.utils.io import is_read_only_mode
@@ -823,9 +824,7 @@ class UserTokenMiddleware:
             scope["state"]["user_atlassian_api_token"] = api_token
             scope["state"]["user_atlassian_auth_type"] = "basic"
             scope["state"]["user_atlassian_token"] = None
-            logger.debug(
-                f"UserTokenMiddleware: Basic auth extracted for email: {email}"
-            )
+            logger.debug("UserTokenMiddleware: Basic auth credentials extracted")
 
         elif auth_header.strip():
             # Non-empty but unsupported auth type
@@ -1001,6 +1000,7 @@ main_mcp = AtlassianMCP(
 main_mcp.mount(jira_mcp, namespace="jira")
 main_mcp.mount(confluence_mcp, namespace="confluence")
 main_mcp.mount(bitbucket_mcp, namespace="bitbucket")
+install_identity_privacy(main_mcp)
 
 
 @main_mcp.custom_route("/healthz", methods=["GET"], include_in_schema=False)

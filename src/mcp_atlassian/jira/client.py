@@ -252,11 +252,7 @@ class JiraClient:
             )
             current_user = self.jira.myself()
             if current_user:
-                logger.info(
-                    f"Jira authentication successful. "
-                    f"Current user: {current_user.get('displayName', 'Unknown')} "
-                    f"({current_user.get('emailAddress', 'No email')})"
-                )
+                logger.info("Jira authentication successful.")
             else:
                 logger.warning(
                     "Jira authentication test returned empty user info - "

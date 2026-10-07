@@ -10,6 +10,8 @@ from typing import Any, Literal
 
 from pydantic import Field
 
+from mcp_atlassian.privacy.runtime import is_identity_privacy_runtime_active
+
 from ..base import ApiModel, TimestampMixin
 from ..constants import (
     EMPTY_STRING,
@@ -81,6 +83,10 @@ class JiraIssue(ApiModel, TimestampMixin):
     fix_versions: list[str] = Field(default_factory=list)
     versions: list[str] = Field(default_factory=list)
     custom_fields: dict[str, Any] = Field(default_factory=dict)
+    custom_field_schemas: dict[str, dict[str, Any]] = Field(
+        default_factory=dict,
+        exclude=True,
+    )
     requested_fields: Literal["*all"] | list[str] | None = None
     project: JiraProject | None = None
     resolution: JiraResolution | None = None
@@ -463,6 +469,8 @@ class JiraIssue(ApiModel, TimestampMixin):
         # Store custom fields
         custom_fields = {}
         fields_name_map = data.get("names", {})
+        fields_schema_map = data.get("schema", {})
+        custom_field_schemas: dict[str, dict[str, Any]] = {}
         for orig_field_id, orig_field_value in fields.items():
             if orig_field_id.startswith("customfield_"):
                 value_obj_to_store = {"value": orig_field_value}
@@ -470,6 +478,13 @@ class JiraIssue(ApiModel, TimestampMixin):
                 if human_readable_name:
                     value_obj_to_store["name"] = human_readable_name
                 custom_fields[orig_field_id] = value_obj_to_store
+                field_schema = (
+                    fields_schema_map.get(orig_field_id)
+                    if isinstance(fields_schema_map, dict)
+                    else None
+                )
+                if isinstance(field_schema, dict):
+                    custom_field_schemas[orig_field_id] = field_schema
 
         # Handle requested_fields parameter
         requested_fields_param = kwargs.get("requested_fields")
@@ -514,6 +529,7 @@ class JiraIssue(ApiModel, TimestampMixin):
             fix_versions=fix_versions,
             versions=versions,
             custom_fields=custom_fields,
+            custom_field_schemas=custom_field_schemas,
             requested_fields=requested_fields_param,
             changelogs=changelogs,
             issuelinks=cls._extract_issue_links(fields),
@@ -666,13 +682,10 @@ class JiraIssue(ApiModel, TimestampMixin):
         if self.custom_fields:
             if self.requested_fields == "*all":
                 for internal_id, field_data_obj in self.custom_fields.items():
-                    processed_value = self._process_custom_field_value(
-                        field_data_obj.get("value")
+                    result[internal_id] = self._custom_field_output(
+                        internal_id,
+                        field_data_obj,
                     )
-                    output_value_obj = {"value": processed_value}
-                    if "name" in field_data_obj:
-                        output_value_obj["name"] = field_data_obj["name"]
-                    result[internal_id] = output_value_obj
             elif isinstance(self.requested_fields, list):
                 for requested_key_or_name in self.requested_fields:
                     found_by_id_or_name = False
@@ -681,14 +694,10 @@ class JiraIssue(ApiModel, TimestampMixin):
                         and requested_key_or_name in self.custom_fields
                     ):
                         field_data_obj = self.custom_fields[requested_key_or_name]
-                        output_value_obj = {
-                            "value": self._process_custom_field_value(
-                                field_data_obj.get("value")
-                            )
-                        }
-                        if "name" in field_data_obj:
-                            output_value_obj["name"] = field_data_obj["name"]
-                        result[requested_key_or_name] = output_value_obj
+                        result[requested_key_or_name] = self._custom_field_output(
+                            requested_key_or_name,
+                            field_data_obj,
+                        )
                         found_by_id_or_name = True
                     else:
                         for internal_id, field_data_obj in self.custom_fields.items():
@@ -696,13 +705,10 @@ class JiraIssue(ApiModel, TimestampMixin):
                                 field_data_obj.get("name", "").lower()
                                 == requested_key_or_name.lower()
                             ):
-                                output_value_obj = {
-                                    "value": self._process_custom_field_value(
-                                        field_data_obj.get("value")
-                                    )
-                                }
-                                output_value_obj["name"] = field_data_obj["name"]
-                                result[internal_id] = output_value_obj
+                                result[internal_id] = self._custom_field_output(
+                                    internal_id,
+                                    field_data_obj,
+                                )
                                 found_by_id_or_name = True
                                 break
                     if not found_by_id_or_name and requested_key_or_name.startswith(
@@ -711,18 +717,63 @@ class JiraIssue(ApiModel, TimestampMixin):
                         full_id = "customfield_" + requested_key_or_name[3:]
                         if full_id in self.custom_fields:
                             field_data_obj = self.custom_fields[full_id]
-                            output_value_obj = {
-                                "value": self._process_custom_field_value(
-                                    field_data_obj.get("value")
-                                )
-                            }
-                            if "name" in field_data_obj:
-                                output_value_obj["name"] = field_data_obj["name"]
-                            result[full_id] = output_value_obj
+                            result[full_id] = self._custom_field_output(
+                                full_id,
+                                field_data_obj,
+                            )
 
         return {k: v for k, v in result.items() if v is not None}
 
-    def _process_custom_field_value(self, field_value: Any) -> Any:
+    def _custom_field_output(
+        self,
+        field_id: str,
+        field_data: dict[str, Any],
+    ) -> dict[str, Any]:
+        schema = self.custom_field_schemas.get(field_id)
+        identity_schema = (
+            self._identity_schema_marker(schema)
+            if is_identity_privacy_runtime_active()
+            else None
+        )
+        output: dict[str, Any] = {
+            "value": self._process_custom_field_value(
+                field_data.get("value"),
+                preserve_identity=identity_schema is not None,
+            )
+        }
+        if "name" in field_data:
+            output["name"] = field_data["name"]
+        if identity_schema is not None:
+            output["_identity_schema"] = identity_schema
+        return output
+
+    @staticmethod
+    def _identity_schema_marker(
+        schema: dict[str, Any] | None,
+    ) -> str | None:
+        if not schema:
+            return None
+        schema_type = schema.get("type")
+        schema_items = schema.get("items")
+        custom = str(schema.get("custom", "")).casefold()
+        if schema_type == "array" and (
+            schema_items == "user"
+            or "multiuserpicker" in custom
+            or "sd-request-participants" in custom
+        ):
+            return "array:user"
+        if schema_type == "user" or (
+            "userpicker" in custom and "multiuserpicker" not in custom
+        ):
+            return "user"
+        return None
+
+    def _process_custom_field_value(
+        self,
+        field_value: Any,
+        *,
+        preserve_identity: bool = False,
+    ) -> Any:
         """
         Process a custom field value for simplified dict output.
 
@@ -732,6 +783,9 @@ class JiraIssue(ApiModel, TimestampMixin):
         Returns:
             Processed value suitable for API response
         """
+        if preserve_identity:
+            return field_value
+
         if field_value is None or isinstance(field_value, str | int | float | bool):
             return field_value
 

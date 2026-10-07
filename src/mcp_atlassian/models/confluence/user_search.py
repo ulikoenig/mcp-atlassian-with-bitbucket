@@ -8,6 +8,8 @@ from typing import Any
 
 from pydantic import Field
 
+from mcp_atlassian.privacy.runtime import is_identity_privacy_runtime_active
+
 from ..base import ApiModel, TimestampMixin
 from .common import ConfluenceUser
 
@@ -67,13 +69,17 @@ class ConfluenceUserSearchResult(ApiModel):
         }
 
         if self.user:
-            result["user"] = {
-                "account_id": self.user.account_id,
-                "display_name": self.user.display_name,
-                "email": self.user.email,
-                "profile_picture": self.user.profile_picture,
-                "is_active": self.user.is_active,
-            }
+            result["user"] = (
+                self.user.to_identity_dict()
+                if is_identity_privacy_runtime_active()
+                else {
+                    "account_id": self.user.account_id,
+                    "display_name": self.user.display_name,
+                    "email": self.user.email,
+                    "profile_picture": self.user.profile_picture,
+                    "is_active": self.user.is_active,
+                }
+            )
 
         if self.url:
             result["url"] = self.url

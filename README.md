@@ -268,6 +268,30 @@ You can also find it at: [bitbucket.org/account/workspaces](https://bitbucket.or
 | `READ_ONLY_MODE` | `false` | Block all write operations |
 | `MCP_VERBOSE` | `false` | Enable verbose logging |
 
+### Structured Identity Privacy (Opt-in)
+
+Structured user identities in Jira, Confluence, and Bitbucket responses can be
+anonymized or time-bounded pseudonymized at the final MCP response boundary.
+The public default is `off`, so existing deployments and response shapes remain
+unchanged until the feature is explicitly enabled.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `MCP_ATLASSIAN_IDENTITY_PRIVACY_MODE` | `off` | `off`, `anonymize`, or `pseudonymize` |
+| `MCP_ATLASSIAN_IDENTITY_POLICY_FILE` | — | Optional JSON policy for affiliation, human/service classification, and selected Jira text fields |
+| `MCP_ATLASSIAN_PSEUDONYM_KEY` | — | Base64-encoded key of at least 32 bytes; use this or the key-file setting, never both |
+| `MCP_ATLASSIAN_PSEUDONYM_KEY_FILE` | — | File containing the Base64-encoded pseudonym key |
+| `MCP_ATLASSIAN_PSEUDONYM_KEYRING_FILE` | — | Versioned JSON keyring with one active key and up to four accepted predecessors; mutually exclusive with the other key sources |
+| `MCP_ATLASSIAN_PSEUDONYM_CORRELATION_SCOPE` | `deployment` | `deployment`, `connector`, or `instance` |
+| `MCP_ATLASSIAN_PSEUDONYM_CORRELATION_DOMAIN` | — | Required for deployment-scoped pseudonyms |
+| `MCP_ATLASSIAN_PSEUDONYM_ROTATION_HOURS` | `24` | UTC-aligned alias rotation period |
+| `MCP_ATLASSIAN_IDENTITY_SELF_IDENTIFICATION_ENABLED` | `true` | Mark the authenticated caller as `is_current_user: true` / `You` without revealing the raw identity |
+| `MCP_ATLASSIAN_IDENTITY_ALIAS_ROUNDTRIP_ENABLED` | `false` | Allow caller- and tenant-bound pseudonym aliases in supported identity write workflows |
+| `MCP_ATLASSIAN_UNSTRUCTURED_CONTENT_POLICY` | `allow` | `allow` registered raw content or `deny` it entirely |
+
+See [Structured Identity Privacy](docs/identity-privacy.md) for policy syntax,
+Docker and Kubernetes/Helm examples, failure behavior, and scope limitations.
+
 ## Toolset Reference
 
 Tools are organized into **37 toolsets** controlled via the `TOOLSETS` env var. Default toolsets are enabled when `TOOLSETS=default`.
@@ -690,7 +714,10 @@ This prevents large diffs from flooding the LLM context window. Read the file se
 
 ## Security
 
-Never share API tokens or app passwords. Keep `.env` files secure and out of version control. See [SECURITY.md](SECURITY.md).
+Never share API tokens, app passwords, pseudonym keys, or private identity
+policies. Keep `.env` and mounted secret files secure and out of version
+control. See [SECURITY.md](SECURITY.md) and
+[Structured Identity Privacy](docs/identity-privacy.md).
 
 ## Contributing
 

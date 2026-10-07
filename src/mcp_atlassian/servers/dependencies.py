@@ -21,6 +21,8 @@ from starlette.requests import Request
 from mcp_atlassian.bitbucket import BitbucketClient, BitbucketConfig
 from mcp_atlassian.confluence import ConfluenceConfig, ConfluenceFetcher
 from mcp_atlassian.jira import JiraConfig, JiraFetcher
+from mcp_atlassian.privacy.current_user import record_current_identity
+from mcp_atlassian.privacy.registry import ToolService
 from mcp_atlassian.servers.context import MainAppContext
 from mcp_atlassian.utils.env import (
     get_header_names,
@@ -38,6 +40,43 @@ if TYPE_CHECKING:
     from mcp_atlassian.jira.config import JiraConfig as UserJiraConfigType
 
 logger = logging.getLogger("mcp-atlassian.servers.dependencies")
+
+_CURRENT_IDENTITIES_STATE_KEY = "identity_privacy_current_identifiers"
+
+
+def _service_for_spec(spec: _ServiceSpec) -> ToolService:
+    return ToolService(spec.name.lower())
+
+
+def _record_request_current_identity(
+    request: Request,
+    service: ToolService,
+    *values: object,
+) -> None:
+    record_current_identity(service, *values)
+    valid_values = tuple(
+        value for value in values if isinstance(value, str) and value.strip()
+    )
+    if not valid_values:
+        return
+    stored_state = getattr(
+        request.state,
+        _CURRENT_IDENTITIES_STATE_KEY,
+        None,
+    )
+    stored = dict(stored_state) if isinstance(stored_state, dict) else {}
+    existing = tuple(stored.get(service.value, ()))
+    stored[service.value] = existing + valid_values
+    setattr(request.state, _CURRENT_IDENTITIES_STATE_KEY, stored)
+
+
+def _restore_request_current_identity(
+    request: Request,
+    service: ToolService,
+) -> None:
+    stored = getattr(request.state, _CURRENT_IDENTITIES_STATE_KEY, {})
+    values = stored.get(service.value, ()) if isinstance(stored, dict) else ()
+    record_current_identity(service, *values)
 
 
 # ---------------------------------------------------------------------------
@@ -248,17 +287,18 @@ def _jira_on_validated(
     user_email: str | None,
 ) -> None:
     """Post-validation logging for Jira (user ID only)."""
+    _record_request_current_identity(
+        request,
+        ToolService.JIRA,
+        validation_data,
+        user_email,
+    )
     if auth_branch == "header_pat":
-        logger.debug(
-            f"{fn_name}: Validated header-based Jira token "
-            f"for user ID: {validation_data}"
-        )
+        logger.debug("%s: Validated header-based Jira credentials", fn_name)
     elif auth_branch == "basic":
-        logger.debug(
-            f"{fn_name}: Validated Jira basic auth for user ID: {validation_data}"
-        )
+        logger.debug("%s: Validated Jira basic credentials", fn_name)
     else:  # oauth_pat
-        logger.debug(f"{fn_name}: Validated Jira token for user ID: {validation_data}")
+        logger.debug("%s: Validated Jira token credentials", fn_name)
 
 
 def _confluence_on_validated(
@@ -272,32 +312,35 @@ def _confluence_on_validated(
     derived_email = (
         validation_data.get("email") if isinstance(validation_data, dict) else None
     )
-    display_name = (
-        validation_data.get("displayName")
-        if isinstance(validation_data, dict)
-        else None
+    confluence_identifiers: list[object] = [user_email, derived_email]
+    if isinstance(validation_data, dict):
+        confluence_identifiers.extend(
+            validation_data.get(key)
+            for key in (
+                "username",
+                "name",
+                "userKey",
+                "key",
+                "accountId",
+                "account_id",
+                "email",
+                "emailAddress",
+            )
+        )
+    _record_request_current_identity(
+        request,
+        ToolService.CONFLUENCE,
+        *confluence_identifiers,
     )
     if auth_branch == "header_pat":
-        logger.debug(
-            f"{fn_name}: Validated header-based Confluence token. "
-            f"User context: Email='{derived_email}', "
-            f"DisplayName='{display_name}'"
-        )
+        logger.debug("%s: Validated header-based Confluence credentials", fn_name)
         # Always backfill email in PAT header branch
         if derived_email and validation_data and isinstance(validation_data, dict):
             request.state.user_atlassian_email = validation_data["email"]
     elif auth_branch == "basic":
-        logger.debug(
-            f"{fn_name}: Validated basic auth. "
-            f"User: {user_email}, DisplayName='{display_name}'"
-        )
+        logger.debug("%s: Validated Confluence basic credentials", fn_name)
     else:  # oauth_pat
-        logger.debug(
-            f"{fn_name}: Validated Confluence token. "
-            f"User context: "
-            f"Email='{user_email or derived_email}', "
-            f"DisplayName='{display_name}'"
-        )
+        logger.debug("%s: Validated Confluence token credentials", fn_name)
         # Backfill only when email not already known
         if (
             not user_email
@@ -843,6 +886,10 @@ async def _get_fetcher(ctx: Context, spec: _ServiceSpec) -> Any:
         # Use fetcher from request.state if already present
         cached = getattr(request.state, spec.state_key, None)
         if cached:
+            _restore_request_current_identity(
+                request,
+                _service_for_spec(spec),
+            )
             logger.debug(f"{fn_name}: Returning {spec.name}Fetcher from request.state.")
             return cached
         user_auth_type = getattr(request.state, "user_atlassian_auth_type", None)
@@ -898,7 +945,7 @@ async def _get_fetcher(ctx: Context, spec: _ServiceSpec) -> Any:
             }
             logger.info(
                 f"Creating user-specific {spec.name}Fetcher "
-                f"(type: basic) for user {user_email}"
+                "(type: basic) for authenticated user"
             )
             user_config = _create_user_config_for_fetcher(
                 base_config=global_config,
@@ -945,8 +992,7 @@ async def _get_fetcher(ctx: Context, spec: _ServiceSpec) -> Any:
             cloud_id_info = f" with cloudId {user_cloud_id}" if user_cloud_id else ""
             logger.info(
                 f"Creating user-specific {spec.name}Fetcher "
-                f"(type: {resolved_auth_type}) for user "
-                f"{user_email or 'unknown'} "
+                f"(type: {resolved_auth_type}) for authenticated user "
                 f"(token ...<redacted>){cloud_id_info}"
             )
             user_config = _create_user_config_for_fetcher(
@@ -1042,6 +1088,10 @@ async def _get_fetcher(ctx: Context, spec: _ServiceSpec) -> Any:
             global_config_fallback = _with_request_passthrough_headers(
                 request, spec, global_config_fallback
             )
+        record_current_identity(
+            _service_for_spec(spec),
+            getattr(global_config_fallback, "username", None),
+        )
         return spec.fetcher_class(config=global_config_fallback)
 
     logger.error(f"{spec.name} configuration could not be resolved.")
@@ -1108,6 +1158,14 @@ async def get_bitbucket_fetcher(ctx: Context) -> BitbucketClient:
         request: Request = get_http_request()
         cached = getattr(request.state, "bitbucket_client", None)
         if cached:
+            _restore_request_current_identity(
+                request,
+                ToolService.BITBUCKET,
+            )
+            record_current_identity(
+                ToolService.BITBUCKET,
+                getattr(cached.config, "username", None),
+            )
             logger.debug(f"{fn_name}: Returning BitbucketClient from request.state.")
             return cached
 
@@ -1139,6 +1197,10 @@ async def get_bitbucket_fetcher(ctx: Context) -> BitbucketClient:
     if global_config:
         logger.debug(
             f"{fn_name}: Using global BitbucketClient. Auth type: {global_config.auth_type}"
+        )
+        record_current_identity(
+            ToolService.BITBUCKET,
+            global_config.username,
         )
         return BitbucketClient(config=global_config)
 

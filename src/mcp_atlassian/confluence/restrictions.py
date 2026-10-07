@@ -5,10 +5,24 @@ from typing import Any
 
 from requests.exceptions import HTTPError
 
+from ..privacy.runtime import is_identity_privacy_runtime_active
 from ..utils.decorators import handle_auth_errors
 from .client import ConfluenceClient
 
 logger = logging.getLogger("mcp-atlassian")
+
+
+def _privacy_user_source(data: dict[str, Any]) -> dict[str, Any]:
+    """Preserve identifier semantics until the final privacy adapter."""
+    values = {
+        "account_id": data.get("accountId"),
+        "username": data.get("username") or data.get("name"),
+        "user_key": data.get("userKey") or data.get("key"),
+        "display_name": data.get("displayName"),
+        "email": data.get("email") or data.get("emailAddress"),
+        "profile_picture": data.get("profilePicture"),
+    }
+    return {key: value for key, value in values.items() if value is not None}
 
 
 class RestrictionsMixin(ConfluenceClient):
@@ -60,11 +74,18 @@ class RestrictionsMixin(ConfluenceClient):
                 users = restrictions.get("user", {})
                 if isinstance(users, dict):
                     for u in users.get("results", []):
-                        account_id = (
+                        if not isinstance(u, dict):
+                            continue
+                        identifier = (
                             u.get("accountId") or u.get("username") or u.get("name")
                         )
-                        if account_id:
-                            result[op_key]["users"].append(account_id)
+                        if not identifier:
+                            continue
+                        result[op_key]["users"].append(
+                            _privacy_user_source(u)
+                            if is_identity_privacy_runtime_active()
+                            else identifier
+                        )
 
                 groups = restrictions.get("group", {})
                 if isinstance(groups, dict):
@@ -132,6 +153,11 @@ class RestrictionsMixin(ConfluenceClient):
             def _group_entry(name: str) -> dict[str, str]:
                 return {"type": "group", "name": name}
 
+            def _result_users(users: list[str]) -> list[Any]:
+                if not is_identity_privacy_runtime_active():
+                    return users
+                return [_privacy_user_source(_user_entry(user)) for user in users]
+
             payload = [
                 {
                     "operation": "read",
@@ -160,8 +186,11 @@ class RestrictionsMixin(ConfluenceClient):
             response.raise_for_status()
 
             return {
-                "read": {"users": read_users, "groups": read_groups},
-                "update": {"users": edit_users, "groups": edit_groups},
+                "read": {"users": _result_users(read_users), "groups": read_groups},
+                "update": {
+                    "users": _result_users(edit_users),
+                    "groups": edit_groups,
+                },
             }
         except HTTPError:
             raise

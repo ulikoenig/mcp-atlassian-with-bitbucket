@@ -9,6 +9,10 @@ from unidecode import unidecode
 
 from mcp_atlassian.exceptions import MCPAtlassianAuthenticationError
 from mcp_atlassian.models.jira.common import JiraUser
+from mcp_atlassian.privacy.runtime import (
+    is_identity_privacy_runtime_active,
+    privacy_safe_exception_detail,
+)
 from mcp_atlassian.utils.decorators import handle_auth_errors
 
 from .client import JiraClient
@@ -63,12 +67,25 @@ class UsersMixin(JiraClient):
 
             if not isinstance(myself_data, dict):
                 error_msg = "Failed to get user data: response was not a dictionary."
-                logger.error(
-                    f"{error_msg} Response type: {type(myself_data)}, Response: {str(myself_data)[:200]}"
-                )
+                if is_identity_privacy_runtime_active():
+                    logger.error(
+                        "%s Response type: %s",
+                        error_msg,
+                        type(myself_data).__name__,
+                    )
+                else:
+                    logger.error(
+                        "%s Response type: %s, Response: %s",
+                        error_msg,
+                        type(myself_data),
+                        str(myself_data)[:200],
+                    )
                 raise Exception(error_msg)
 
-            logger.debug(f"Received myself_data: {str(myself_data)[:500]}")
+            if is_identity_privacy_runtime_active():
+                logger.debug("Received current Jira user data.")
+            else:
+                logger.debug("Received myself_data: %s", str(myself_data)[:500])
 
             account_id = None
             if isinstance(myself_data.get("accountId"), str):
@@ -85,7 +102,9 @@ class UsersMixin(JiraClient):
                 account_id = myself_data["name"]
 
             if account_id is None:
-                error_msg = f"Could not find accountId, key, or name in user data: {str(myself_data)[:200]}"
+                error_msg = "Could not find accountId, key, or name in user data"
+                if not is_identity_privacy_runtime_active():
+                    error_msg = f"{error_msg}: {str(myself_data)[:200]}"
                 raise ValueError(error_msg)
 
             self._current_user_account_id = account_id
@@ -102,20 +121,36 @@ class UsersMixin(JiraClient):
                     "increase MCP_ATLASSIAN_VALIDATION_CACHE_TTL to reduce "
                     "validation call frequency."
                 ) from http_err
-            response_content = ""
-            if http_err.response is not None:
-                try:
-                    response_content = http_err.response.text
-                except Exception:
-                    response_content = "(could not decode response content)"
-            logger.error(
-                f"HTTPError getting current user account ID: {http_err}. Response: {response_content[:500]}"
-            )
-            error_msg = f"Unable to get current user account ID: {http_err}"
+            if is_identity_privacy_runtime_active():
+                logger.error(
+                    "HTTP error getting current user account ID: status=%s",
+                    (
+                        http_err.response.status_code
+                        if http_err.response is not None
+                        else "unknown"
+                    ),
+                )
+                error_msg = "Unable to get current user account ID."
+            else:
+                response_content = ""
+                if http_err.response is not None:
+                    try:
+                        response_content = http_err.response.text
+                    except Exception:
+                        response_content = "(could not decode response content)"
+                logger.error(
+                    "HTTPError getting current user account ID: %s. Response: %s",
+                    http_err,
+                    response_content[:500],
+                )
+                error_msg = f"Unable to get current user account ID: {http_err}"
             raise Exception(error_msg) from http_err
         except Exception as e:
-            logger.error(f"Error getting current user account ID: {e}", exc_info=True)
-            error_msg = f"Unable to get current user account ID: {e}"
+            detail = privacy_safe_exception_detail(e)
+            logger.error("Error getting current user account ID: %s", detail)
+            error_msg = "Unable to get current user account ID"
+            if not is_identity_privacy_runtime_active():
+                error_msg = f"{error_msg}: {detail}"
             raise Exception(error_msg) from e
 
     def _get_account_id(self, assignee: str, issue_key: str | None = None) -> str:

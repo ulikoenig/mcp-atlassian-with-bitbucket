@@ -672,6 +672,49 @@ async def test_get_issue(jira_client, mock_jira_fetcher):
 
 
 @pytest.mark.anyio
+@patch(
+    "src.mcp_atlassian.servers.jira.is_identity_privacy_runtime_active",
+    return_value=True,
+)
+async def test_get_issue_privacy_runtime_requests_field_metadata(
+    mock_privacy_runtime,
+    jira_client,
+    mock_jira_fetcher,
+):
+    """Privacy mode requests names/schema without changing the tool schema."""
+    response = await jira_client.call_tool(
+        "jira_get_issue",
+        {"issue_key": "TEST-123"},
+    )
+
+    content = json.loads(response.content[0].text)
+    assert content["expand_param"] == "names,schema"
+    mock_privacy_runtime.assert_called()
+
+
+@pytest.mark.anyio
+@patch(
+    "src.mcp_atlassian.servers.jira.is_identity_privacy_runtime_active",
+    return_value=True,
+)
+async def test_search_privacy_runtime_requests_field_metadata(
+    mock_privacy_runtime,
+    jira_client,
+    mock_jira_fetcher,
+):
+    """Search also requests names/schema for schema-aware custom fields."""
+    mock_jira_fetcher.search_issues.reset_mock()
+
+    await jira_client.call_tool(
+        "jira_search",
+        {"jql": "project = TEST"},
+    )
+
+    assert mock_jira_fetcher.search_issues.call_args.kwargs["expand"] == "names,schema"
+    mock_privacy_runtime.assert_called()
+
+
+@pytest.mark.anyio
 async def test_search(jira_client, mock_jira_fetcher):
     """Test the search tool with fixture data."""
     response = await jira_client.call_tool(
@@ -2999,6 +3042,43 @@ async def test_update_issue_transition_comment_is_added_once_when_refetch_fails(
         "transition: transition response fetch failed",
         "refetch: re-fetch failed",
     ]
+
+
+@pytest.mark.anyio
+@patch(
+    "src.mcp_atlassian.servers.jira.privacy_safe_exception_detail",
+    side_effect=lambda error: type(error).__name__,
+)
+async def test_update_issue_privacy_runtime_hides_partial_error_details(
+    mock_safe_detail,
+    jira_client,
+    mock_jira_fetcher,
+):
+    """Partial-success responses must not echo exception text in privacy mode."""
+    mock_jira_fetcher.get_available_transitions.return_value = [
+        {"id": "31", "name": "Done"}
+    ]
+    mock_jira_fetcher.transition_issue.side_effect = RuntimeError(
+        "CANARY TRANSITION PERSON"
+    )
+    mock_jira_fetcher.get_issue.side_effect = RuntimeError("CANARY REFETCH PERSON")
+
+    response = await jira_client.call_tool(
+        "jira_update_issue",
+        {
+            "issue_key": "TEST-123",
+            "transition": "Done",
+            "comment": "Transition comment",
+        },
+    )
+
+    result = json.loads(response.content[0].text)
+    assert result["operations_failed"] == [
+        "transition: RuntimeError",
+        "refetch: RuntimeError",
+    ]
+    assert "CANARY" not in response.content[0].text
+    assert mock_safe_detail.call_count == 2
 
 
 @pytest.mark.anyio
