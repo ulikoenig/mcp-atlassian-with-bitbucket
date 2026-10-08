@@ -5,6 +5,7 @@ import mimetypes
 import os
 from pathlib import Path
 from typing import Any
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from ..models.jira import JiraAttachment
 from ..utils.io import validate_safe_path
@@ -18,6 +19,20 @@ logger = logging.getLogger("mcp-jira")
 
 class AttachmentsMixin(JiraClient, AttachmentsOperationsProto):
     """Mixin for Jira attachment operations."""
+
+    def _attachment_content_url(self, url: str) -> str:
+        """Request Cloud content directly instead of following its media redirect."""
+        if not self.config.is_cloud:
+            return url
+
+        parsed = urlsplit(url)
+        query = [
+            (key, "false" if key == "redirect" else value)
+            for key, value in parse_qsl(parsed.query, keep_blank_values=True)
+        ]
+        if not any(key == "redirect" for key, _ in query):
+            query.append(("redirect", "false"))
+        return urlunsplit(parsed._replace(query=urlencode(query)))
 
     def download_attachment(self, url: str, target_path: str) -> bool:
         """
@@ -59,7 +74,9 @@ class AttachmentsMixin(JiraClient, AttachmentsOperationsProto):
             os.makedirs(os.path.dirname(target_path), exist_ok=True)
 
             # Use the Jira session to download the file
-            response = self.jira._session.get(url, stream=True)
+            response = self.jira._session.get(
+                self._attachment_content_url(url), stream=True
+            )
             response.raise_for_status()
 
             # Write the file to disk
@@ -98,7 +115,9 @@ class AttachmentsMixin(JiraClient, AttachmentsOperationsProto):
 
         try:
             logger.info(f"Fetching attachment from {url}")
-            response = self.jira._session.get(url, stream=True)
+            response = self.jira._session.get(
+                self._attachment_content_url(url), stream=True
+            )
             response.raise_for_status()
 
             chunks: list[bytes] = []

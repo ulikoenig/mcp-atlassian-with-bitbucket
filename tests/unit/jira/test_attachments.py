@@ -92,11 +92,48 @@ class TestAttachmentsMixin:
             # Assertions
             assert result is True
             attachments_mixin.jira._session.get.assert_called_once_with(
-                "https://test.url/attachment", stream=True
+                "https://test.url/attachment?redirect=false", stream=True
             )
             mock_file.assert_called_once_with(expected_path, "wb")
             mock_file().write.assert_called_once_with(b"test content")
             mock_makedirs.assert_called_once()
+
+    def test_fetch_attachment_content_cloud_disables_redirect(
+        self, attachments_mixin: AttachmentsMixin
+    ):
+        """Cloud downloads request binary content directly for every file type."""
+        mock_response = MagicMock()
+        mock_response.iter_content.return_value = [b"\x00binary\xffcontent"]
+        mock_response.raise_for_status = MagicMock()
+        attachments_mixin.jira._session.get.return_value = mock_response
+
+        result = attachments_mixin.fetch_attachment_content(
+            "https://test.url/attachment?download=true"
+        )
+
+        assert result == b"\x00binary\xffcontent"
+        attachments_mixin.jira._session.get.assert_called_once_with(
+            "https://test.url/attachment?download=true&redirect=false", stream=True
+        )
+
+    def test_attachment_content_server_keeps_url_unchanged(
+        self, attachments_mixin: AttachmentsMixin
+    ):
+        """Server/DC keeps its existing attachment URL behavior."""
+        attachments_mixin.config.url = "https://jira.example"
+        mock_response = MagicMock()
+        mock_response.iter_content.return_value = [b"server-content"]
+        mock_response.raise_for_status = MagicMock()
+        attachments_mixin.jira._session.get.return_value = mock_response
+
+        result = attachments_mixin.fetch_attachment_content(
+            "https://jira.example/attachment?download=true"
+        )
+
+        assert result == b"server-content"
+        attachments_mixin.jira._session.get.assert_called_once_with(
+            "https://jira.example/attachment?download=true", stream=True
+        )
 
     def test_download_attachment_relative_path(
         self, attachments_mixin: AttachmentsMixin
@@ -964,7 +1001,7 @@ class TestAttachmentsMixin:
 
         assert result == b"chunk1chunk2"
         attachments_mixin.jira._session.get.assert_called_once_with(
-            "https://test.url/attachment", stream=True
+            "https://test.url/attachment?redirect=false", stream=True
         )
 
     def test_fetch_attachment_content_no_url(self, attachments_mixin: AttachmentsMixin):
