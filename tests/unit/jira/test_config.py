@@ -6,9 +6,9 @@ from unittest.mock import patch
 
 import pytest
 
-from mcp_atlassian.jira.config import JiraConfig
-from mcp_atlassian.utils.oauth import OAuthConfig
-from mcp_atlassian.utils.proxy import DEFAULT_PROXY_WPAD_URL
+from mcp_atlassian_with_bitbucket_and_privacy.jira.config import JiraConfig
+from mcp_atlassian_with_bitbucket_and_privacy.utils.oauth import OAuthConfig
+from mcp_atlassian_with_bitbucket_and_privacy.utils.proxy import DEFAULT_PROXY_WPAD_URL
 
 
 def test_from_env_basic_auth():
@@ -328,7 +328,9 @@ def test_from_env_internal_only_projects_warns_on_invalid_key(caplog):
 
 def test_is_cloud_oauth_with_cloud_id():
     """Test that is_cloud returns True for OAuth with cloud_id regardless of URL."""
-    from mcp_atlassian.utils.oauth import BYOAccessTokenOAuthConfig
+    from mcp_atlassian_with_bitbucket_and_privacy.utils.oauth import (
+        BYOAccessTokenOAuthConfig,
+    )
 
     # OAuth with cloud_id and no URL - should be Cloud
     oauth_config = BYOAccessTokenOAuthConfig(

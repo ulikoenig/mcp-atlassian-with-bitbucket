@@ -1,6 +1,6 @@
 ---
 title: "Troubleshooting"
-description: "Fix auth errors (401/403), field issues, rate limiting, SSL problems, and debug MCP Atlassian connections"
+description: "Fix auth errors (401/403), field issues, rate limiting, SSL problems, and debug MCP Atlassian with Bitbucket and Privacy connections"
 ---
 
 ## Common Issues
@@ -18,7 +18,7 @@ description: "Fix auth errors (401/403), field issues, rate limiting, SSL proble
   </Accordion>
 
   <Accordion title="SSL Certificate Issues">
-    mcp-atlassian uses the OS native trust store by default (via
+    mcp-atlassian-with-bitbucket-and-privacy uses the OS native trust store by default (via
     [truststore](https://truststore.readthedocs.io/)), so certificates
     signed by enterprise CAs installed in Windows Certificate Store,
     macOS Keychain, or the Linux system CA bundle are trusted
@@ -82,10 +82,10 @@ Test your configuration interactively:
 
 ```bash
 # With uvx
-npx @modelcontextprotocol/inspector uvx mcp-atlassian
+npx @modelcontextprotocol/inspector uvx mcp-atlassian-with-bitbucket-and-privacy
 
 # With local development version
-npx @modelcontextprotocol/inspector uv --directory /path/to/mcp-atlassian run mcp-atlassian
+npx @modelcontextprotocol/inspector uv --directory /path/to/mcp-atlassian-with-bitbucket-and-privacy run mcp-atlassian-with-bitbucket-and-privacy
 ```
 
 ## Debugging Custom Headers
@@ -186,7 +186,7 @@ Header values containing sensitive information are automatically masked in logs.
     **Cause:** OAuth access token has expired and refresh failed.
 
     **Fix:**
-    1. Re-run the OAuth setup: `mcp-atlassian --oauth-setup`
+    1. Re-run the OAuth setup: `mcp-atlassian-with-bitbucket-and-privacy --oauth-setup`
     2. Ensure your app has `offline_access` scope for refresh tokens
     3. Check if the OAuth app is still active in your Atlassian developer console
   </Accordion>
@@ -243,7 +243,7 @@ Header values containing sensitive information are automatically masked in logs.
     **Cause:** File exceeds the 50MB attachment limit.
 
     **Fix:**
-    - MCP Atlassian limits inline attachment downloads to 50MB
+    - MCP Atlassian with Bitbucket and Privacy limits inline attachment downloads to 50MB
     - For larger files, access attachments directly via the Jira/Confluence web UI
     - Consider compressing files before uploading
   </Accordion>
@@ -313,6 +313,6 @@ Header values containing sensitive information are automatically masked in logs.
 
 ## Getting Help
 
-- Check [GitHub Issues](https://github.com/sooperset/mcp-atlassian/issues) for known problems
-- Review [SECURITY.md](https://github.com/sooperset/mcp-atlassian/blob/main/SECURITY.md) for security-related concerns
+- Check [GitHub Issues](https://github.com/ulikoenig/mcp-atlassian-with-bitbucket/issues) for known problems
+- Review [SECURITY.md](https://github.com/ulikoenig/mcp-atlassian-with-bitbucket/blob/main/SECURITY.md) for security-related concerns
 - Open a new issue with debug logs if the problem persists

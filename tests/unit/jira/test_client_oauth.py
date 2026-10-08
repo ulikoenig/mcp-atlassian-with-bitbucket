@@ -5,10 +5,15 @@ from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
 
-from mcp_atlassian.exceptions import MCPAtlassianAuthenticationError
-from mcp_atlassian.jira.client import JiraClient
-from mcp_atlassian.jira.config import JiraConfig
-from mcp_atlassian.utils.oauth import BYOAccessTokenOAuthConfig, OAuthConfig
+from mcp_atlassian_with_bitbucket_and_privacy.exceptions import (
+    MCPAtlassianAuthenticationError,
+)
+from mcp_atlassian_with_bitbucket_and_privacy.jira.client import JiraClient
+from mcp_atlassian_with_bitbucket_and_privacy.jira.config import JiraConfig
+from mcp_atlassian_with_bitbucket_and_privacy.utils.oauth import (
+    BYOAccessTokenOAuthConfig,
+    OAuthConfig,
+)
 
 
 class TestJiraClientOAuth:
@@ -37,12 +42,14 @@ class TestJiraClientOAuth:
 
         # Mock dependencies
         with (
-            patch("mcp_atlassian.jira.client.Jira") as mock_jira,
             patch(
-                "mcp_atlassian.jira.client.configure_oauth_session"
+                "mcp_atlassian_with_bitbucket_and_privacy.jira.client.Jira"
+            ) as mock_jira,
+            patch(
+                "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_oauth_session"
             ) as mock_configure_oauth,
             patch(
-                "mcp_atlassian.jira.client.configure_ssl_verification"
+                "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_ssl_verification"
             ) as mock_configure_ssl,
             patch.object(
                 OAuthConfig,
@@ -127,16 +134,18 @@ class TestJiraClientOAuth:
 
         # Mock dependencies with OAuth configuration failure
         with (
-            patch("mcp_atlassian.jira.client.Jira") as mock_jira,
+            patch(
+                "mcp_atlassian_with_bitbucket_and_privacy.jira.client.Jira"
+            ) as mock_jira,
             # Patch where the function is imported, not where it's defined
             patch(
-                "mcp_atlassian.jira.client.configure_oauth_session"
+                "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_oauth_session"
             ) as mock_configure_oauth,
             patch(
-                "mcp_atlassian.jira.client.configure_ssl_verification"
+                "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_ssl_verification"
             ) as mock_configure_ssl,
             patch(
-                "mcp_atlassian.preprocessing.jira.JiraPreprocessor"
+                "mcp_atlassian_with_bitbucket_and_privacy.preprocessing.jira.JiraPreprocessor"
             ) as mock_preprocessor,
             patch.object(
                 OAuthConfig,
@@ -174,12 +183,14 @@ class TestJiraClientOAuth:
 
         # Mock dependencies
         with (
-            patch("mcp_atlassian.jira.client.Jira") as mock_jira,
             patch(
-                "mcp_atlassian.jira.client.configure_oauth_session"
+                "mcp_atlassian_with_bitbucket_and_privacy.jira.client.Jira"
+            ) as mock_jira,
+            patch(
+                "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_oauth_session"
             ) as mock_configure_oauth,
             patch(
-                "mcp_atlassian.jira.client.configure_ssl_verification"
+                "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_ssl_verification"
             ) as mock_configure_ssl,
         ):
             # Configure the mock to return success for OAuth configuration
@@ -244,11 +255,15 @@ class TestJiraClientOAuth:
 
         # Mock dependencies with OAuth configuration failure
         with (
-            patch("mcp_atlassian.jira.client.Jira"),  # No need to assert mock_jira
             patch(
-                "mcp_atlassian.jira.client.configure_oauth_session"
+                "mcp_atlassian_with_bitbucket_and_privacy.jira.client.Jira"
+            ),  # No need to assert mock_jira
+            patch(
+                "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_oauth_session"
             ) as mock_configure_oauth,
-            patch("mcp_atlassian.jira.client.configure_ssl_verification"),
+            patch(
+                "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_ssl_verification"
+            ),
         ):
             # Configure the mock to return failure for OAuth configuration
             mock_configure_oauth.return_value = False
@@ -277,8 +292,10 @@ class TestJiraClientOAuth:
 
         # Mock dependencies - configure_oauth_session will be called with real logic
         with (
-            patch("mcp_atlassian.jira.client.Jira"),
-            patch("mcp_atlassian.jira.client.configure_ssl_verification"),
+            patch("mcp_atlassian_with_bitbucket_and_privacy.jira.client.Jira"),
+            patch(
+                "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_ssl_verification"
+            ),
             # We want to test the actual behavior of configure_oauth_session here for empty token
         ):
             # Verify error is raised
@@ -310,7 +327,7 @@ class TestJiraClientOAuth:
         with (
             patch.dict(os.environ, env_vars),
             patch(
-                "mcp_atlassian.jira.config.get_oauth_config_from_env",
+                "mcp_atlassian_with_bitbucket_and_privacy.jira.config.get_oauth_config_from_env",
                 return_value=mock_oauth_config,
             ),
             patch.object(
@@ -322,12 +339,15 @@ class TestJiraClientOAuth:
             patch.object(
                 mock_oauth_config, "ensure_valid_token", return_value=True
             ) as mock_ensure_valid_env,
-            patch("mcp_atlassian.jira.client.Jira") as mock_jira,
             patch(
-                "mcp_atlassian.jira.client.configure_oauth_session", return_value=True
+                "mcp_atlassian_with_bitbucket_and_privacy.jira.client.Jira"
+            ) as mock_jira,
+            patch(
+                "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_oauth_session",
+                return_value=True,
             ) as mock_configure_oauth,
             patch(
-                "mcp_atlassian.jira.client.configure_ssl_verification"
+                "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_ssl_verification"
             ) as mock_configure_ssl,
         ):
             # Initialize client from environment
@@ -376,15 +396,18 @@ class TestJiraClientOAuth:
         with (
             patch.dict(os.environ, env_vars),
             patch(
-                "mcp_atlassian.jira.config.get_oauth_config_from_env",
+                "mcp_atlassian_with_bitbucket_and_privacy.jira.config.get_oauth_config_from_env",
                 return_value=mock_byo_oauth_config,
             ),
-            patch("mcp_atlassian.jira.client.Jira") as mock_jira,
             patch(
-                "mcp_atlassian.jira.client.configure_oauth_session", return_value=True
+                "mcp_atlassian_with_bitbucket_and_privacy.jira.client.Jira"
+            ) as mock_jira,
+            patch(
+                "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_oauth_session",
+                return_value=True,
             ) as mock_configure_oauth,
             patch(
-                "mcp_atlassian.jira.client.configure_ssl_verification"
+                "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_ssl_verification"
             ) as mock_configure_ssl,
         ):
             client = JiraClient()  # Initializes from env via JiraConfig.from_env()
@@ -423,7 +446,7 @@ class TestJiraClientOAuth:
         with (
             patch.dict(os.environ, env_vars, clear=True),
             patch(
-                "mcp_atlassian.jira.config.get_oauth_config_from_env",
+                "mcp_atlassian_with_bitbucket_and_privacy.jira.config.get_oauth_config_from_env",
                 return_value=None,  # Simulate no config found
             ),
         ):
@@ -450,13 +473,15 @@ class TestJiraClientOAuth:
         )
 
         with (
-            patch("mcp_atlassian.jira.client.Jira") as mock_jira,
             patch(
-                "mcp_atlassian.jira.client.configure_oauth_session",
+                "mcp_atlassian_with_bitbucket_and_privacy.jira.client.Jira"
+            ) as mock_jira,
+            patch(
+                "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_oauth_session",
                 return_value=True,
             ),
             patch(
-                "mcp_atlassian.jira.client.configure_ssl_verification"
+                "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_ssl_verification"
             ) as mock_configure_ssl,
         ):
             client = JiraClient(config=config)
@@ -489,14 +514,18 @@ class TestJiraClientOAuth:
         )
 
         with (
-            patch("mcp_atlassian.jira.client.Jira") as mock_jira,
             patch(
-                "mcp_atlassian.jira.client.configure_oauth_session",
+                "mcp_atlassian_with_bitbucket_and_privacy.jira.client.Jira"
+            ) as mock_jira,
+            patch(
+                "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_oauth_session",
                 return_value=True,
             ),
-            patch("mcp_atlassian.jira.client.configure_ssl_verification"),
             patch(
-                "mcp_atlassian.jira.client.apply_proxy_configuration"
+                "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_ssl_verification"
+            ),
+            patch(
+                "mcp_atlassian_with_bitbucket_and_privacy.jira.client.apply_proxy_configuration"
             ) as mock_apply_proxy,
         ):
             mock_apply_proxy.side_effect = lambda **kwargs: kwargs["session"]
@@ -529,14 +558,18 @@ class TestJiraClientOAuth:
         )
 
         with (
-            patch("mcp_atlassian.jira.client.Jira") as mock_jira,
             patch(
-                "mcp_atlassian.jira.client.configure_oauth_session",
+                "mcp_atlassian_with_bitbucket_and_privacy.jira.client.Jira"
+            ) as mock_jira,
+            patch(
+                "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_oauth_session",
                 return_value=True,
             ),
-            patch("mcp_atlassian.jira.client.configure_ssl_verification"),
             patch(
-                "mcp_atlassian.jira.client.apply_proxy_configuration"
+                "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_ssl_verification"
+            ),
+            patch(
+                "mcp_atlassian_with_bitbucket_and_privacy.jira.client.apply_proxy_configuration"
             ) as mock_apply_proxy,
         ):
             mock_apply_proxy.side_effect = lambda **kwargs: kwargs["session"]
@@ -568,8 +601,10 @@ class TestJiraClientOAuth:
         )
 
         with (
-            patch("mcp_atlassian.jira.client.Jira"),
-            patch("mcp_atlassian.jira.client.configure_ssl_verification"),
+            patch("mcp_atlassian_with_bitbucket_and_privacy.jira.client.Jira"),
+            patch(
+                "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_ssl_verification"
+            ),
         ):
             with pytest.raises(ValueError, match="Cloud OAuth authentication requires"):
                 JiraClient(config=config)

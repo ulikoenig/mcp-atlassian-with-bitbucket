@@ -1,6 +1,9 @@
 """Tests for custom headers parsing functionality."""
 
-from mcp_atlassian.utils.env import get_custom_headers, get_header_names
+from mcp_atlassian_with_bitbucket_and_privacy.utils.env import (
+    get_custom_headers,
+    get_header_names,
+)
 
 
 class TestParseCustomHeaders:

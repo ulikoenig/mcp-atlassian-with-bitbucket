@@ -4,8 +4,11 @@ from unittest.mock import MagicMock, call
 
 import pytest
 
-from mcp_atlassian.jira import JiraFetcher
-from mcp_atlassian.models.jira import JiraQueueIssuesResult, JiraServiceDeskQueuesResult
+from mcp_atlassian_with_bitbucket_and_privacy.jira import JiraFetcher
+from mcp_atlassian_with_bitbucket_and_privacy.models.jira import (
+    JiraQueueIssuesResult,
+    JiraServiceDeskQueuesResult,
+)
 
 
 @pytest.fixture

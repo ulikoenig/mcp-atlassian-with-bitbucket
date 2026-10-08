@@ -10,8 +10,10 @@ from typing import Any
 
 import pytest
 
-from mcp_atlassian.preprocessing.confluence import ConfluencePreprocessor
-from mcp_atlassian.preprocessing.jira import JiraPreprocessor
+from mcp_atlassian_with_bitbucket_and_privacy.preprocessing.confluence import (
+    ConfluencePreprocessor,
+)
+from mcp_atlassian_with_bitbucket_and_privacy.preprocessing.jira import JiraPreprocessor
 from tests.utils.mocks import MockConfluenceClient
 
 
@@ -866,7 +868,9 @@ class TestTableLayout:
         self, confluence_preprocessor
     ):
         """_apply_table_layout adds attributes to bare <table> tags."""
-        from mcp_atlassian.preprocessing.confluence import ConfluencePreprocessor
+        from mcp_atlassian_with_bitbucket_and_privacy.preprocessing.confluence import (
+            ConfluencePreprocessor,
+        )
 
         html = "<table><tr><td>A</td></tr></table><table><tr><td>B</td></tr></table>"
         result = ConfluencePreprocessor._apply_table_layout(html, "full-width")
@@ -875,7 +879,9 @@ class TestTableLayout:
 
     def test_apply_table_layout_replaces_existing_attrs(self, confluence_preprocessor):
         """_apply_table_layout replaces existing data-table-width/layout attrs."""
-        from mcp_atlassian.preprocessing.confluence import ConfluencePreprocessor
+        from mcp_atlassian_with_bitbucket_and_privacy.preprocessing.confluence import (
+            ConfluencePreprocessor,
+        )
 
         html = '<table data-table-width="760" data-layout="default"><tr><td>X</td></tr></table>'
         result = ConfluencePreprocessor._apply_table_layout(html, "full-width")

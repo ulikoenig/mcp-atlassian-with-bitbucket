@@ -5,11 +5,11 @@ from unittest.mock import MagicMock, call, patch
 
 import pytest
 
-from mcp_atlassian.jira import JiraFetcher
-from mcp_atlassian.jira.config import JiraConfig
-from mcp_atlassian.jira.projects import ProjectsMixin
-from mcp_atlassian.models.jira.issue import JiraIssue
-from mcp_atlassian.models.jira.search import JiraSearchResult
+from mcp_atlassian_with_bitbucket_and_privacy.jira import JiraFetcher
+from mcp_atlassian_with_bitbucket_and_privacy.jira.config import JiraConfig
+from mcp_atlassian_with_bitbucket_and_privacy.jira.projects import ProjectsMixin
+from mcp_atlassian_with_bitbucket_and_privacy.models.jira.issue import JiraIssue
+from mcp_atlassian_with_bitbucket_and_privacy.models.jira.search import JiraSearchResult
 
 
 @pytest.fixture

@@ -5,8 +5,8 @@ from unittest.mock import MagicMock, mock_open, patch
 
 import pytest
 
-from mcp_atlassian.jira import JiraFetcher
-from mcp_atlassian.jira.attachments import AttachmentsMixin
+from mcp_atlassian_with_bitbucket_and_privacy.jira import JiraFetcher
+from mcp_atlassian_with_bitbucket_and_privacy.jira.attachments import AttachmentsMixin
 
 # Test scenarios for AttachmentsMixin
 #
@@ -154,7 +154,7 @@ class TestAttachmentsMixin:
             patch("os.path.abspath") as mock_abspath,
             patch("os.path.isabs") as mock_isabs,
             patch("os.getcwd", return_value="/absolute/path"),
-            patch("mcp_atlassian.jira.attachments.validate_safe_path"),
+            patch("mcp_atlassian_with_bitbucket_and_privacy.jira.attachments.validate_safe_path"),
         ):
             mock_exists.return_value = True
             mock_getsize.return_value = 12
@@ -282,7 +282,7 @@ class TestAttachmentsMixin:
             ) as mock_download,
             patch("pathlib.Path.mkdir") as mock_mkdir,
             patch(
-                "mcp_atlassian.models.jira.JiraAttachment.from_api_response",
+                "mcp_atlassian_with_bitbucket_and_privacy.models.jira.JiraAttachment.from_api_response",
                 side_effect=[mock_attachment1, mock_attachment2],
             ),
             patch("os.getcwd", return_value="/tmp"),
@@ -331,13 +331,13 @@ class TestAttachmentsMixin:
             ) as mock_download,
             patch("pathlib.Path.mkdir") as mock_mkdir,
             patch(
-                "mcp_atlassian.models.jira.JiraAttachment.from_api_response",
+                "mcp_atlassian_with_bitbucket_and_privacy.models.jira.JiraAttachment.from_api_response",
                 return_value=mock_attachment,
             ),
             patch("os.path.isabs") as mock_isabs,
             patch("os.path.abspath") as mock_abspath,
             patch("os.getcwd", return_value="/absolute/path"),
-            patch("mcp_atlassian.jira.attachments.validate_safe_path"),
+            patch("mcp_atlassian_with_bitbucket_and_privacy.jira.attachments.validate_safe_path"),
         ):
             mock_isabs.return_value = False
             mock_abspath.return_value = "/absolute/path/attachments"
@@ -447,7 +447,7 @@ class TestAttachmentsMixin:
             ) as mock_download,
             patch("pathlib.Path.mkdir") as mock_mkdir,
             patch(
-                "mcp_atlassian.models.jira.JiraAttachment.from_api_response",
+                "mcp_atlassian_with_bitbucket_and_privacy.models.jira.JiraAttachment.from_api_response",
                 side_effect=[mock_attachment1, mock_attachment2],
             ),
             patch("os.getcwd", return_value="/tmp"),
@@ -492,7 +492,7 @@ class TestAttachmentsMixin:
         with (
             patch("pathlib.Path.mkdir") as mock_mkdir,
             patch(
-                "mcp_atlassian.models.jira.JiraAttachment.from_api_response",
+                "mcp_atlassian_with_bitbucket_and_privacy.models.jira.JiraAttachment.from_api_response",
                 return_value=mock_attachment,
             ),
             patch("os.getcwd", return_value="/tmp"),
@@ -1067,7 +1067,7 @@ class TestAttachmentsMixin:
                 side_effect=[b"content1", b"image_data"],
             ) as mock_fetch,
             patch(
-                "mcp_atlassian.models.jira.JiraAttachment.from_api_response",
+                "mcp_atlassian_with_bitbucket_and_privacy.models.jira.JiraAttachment.from_api_response",
                 side_effect=[mock_attachment1, mock_attachment2],
             ),
         ):
@@ -1164,7 +1164,7 @@ class TestAttachmentsMixin:
                 side_effect=[b"good_data", None],
             ),
             patch(
-                "mcp_atlassian.models.jira.JiraAttachment.from_api_response",
+                "mcp_atlassian_with_bitbucket_and_privacy.models.jira.JiraAttachment.from_api_response",
                 side_effect=[mock_attachment1, mock_attachment2],
             ),
         ):
@@ -1198,7 +1198,7 @@ class TestAttachmentsMixin:
         mock_attachment.content_type = None
 
         with patch(
-            "mcp_atlassian.models.jira.JiraAttachment.from_api_response",
+            "mcp_atlassian_with_bitbucket_and_privacy.models.jira.JiraAttachment.from_api_response",
             return_value=mock_attachment,
         ):
             result = attachments_mixin.get_issue_attachment_contents("TEST-123")
@@ -1239,7 +1239,7 @@ class TestAttachmentsMixin:
                 "fetch_attachment_content",
             ) as mock_fetch,
             patch(
-                "mcp_atlassian.models.jira.JiraAttachment.from_api_response",
+                "mcp_atlassian_with_bitbucket_and_privacy.models.jira.JiraAttachment.from_api_response",
                 return_value=mock_attachment,
             ),
         ):
@@ -1280,7 +1280,7 @@ class TestAttachmentsMixin:
                 return_value=b"data",
             ) as mock_fetch,
             patch(
-                "mcp_atlassian.models.jira.JiraAttachment.from_api_response",
+                "mcp_atlassian_with_bitbucket_and_privacy.models.jira.JiraAttachment.from_api_response",
                 return_value=mock_attachment,
             ),
         ):
@@ -1320,7 +1320,7 @@ class TestAttachmentsMixin:
                 return_value=b"small content",
             ) as mock_fetch,
             patch(
-                "mcp_atlassian.models.jira.JiraAttachment.from_api_response",
+                "mcp_atlassian_with_bitbucket_and_privacy.models.jira.JiraAttachment.from_api_response",
                 return_value=mock_attachment,
             ),
         ):
@@ -1382,7 +1382,7 @@ class TestAttachmentsMixin:
                 side_effect=[b"small data", b"medium data"],
             ) as mock_fetch,
             patch(
-                "mcp_atlassian.models.jira.JiraAttachment.from_api_response",
+                "mcp_atlassian_with_bitbucket_and_privacy.models.jira.JiraAttachment.from_api_response",
                 side_effect=[mock_small, mock_huge, mock_medium],
             ),
         ):
@@ -1522,7 +1522,7 @@ class TestAttachmentsMixin:
             }
         }
 
-        from mcp_atlassian.models.jira import JiraAttachment
+        from mcp_atlassian_with_bitbucket_and_privacy.models.jira import JiraAttachment
 
         result = attachments_mixin.get_issue_attachments("TEST-123")
         assert len(result) == 2

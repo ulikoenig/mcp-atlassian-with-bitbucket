@@ -5,8 +5,11 @@ from __future__ import annotations
 import pytest
 from mcp.shared.auth import OAuthClientInformationFull
 
-from mcp_atlassian.servers.main import _build_auth_provider
-from mcp_atlassian.utils.oauth import CLOUD_AUTHORIZE_URL, CLOUD_TOKEN_URL
+from mcp_atlassian_with_bitbucket_and_privacy.servers.main import _build_auth_provider
+from mcp_atlassian_with_bitbucket_and_privacy.utils.oauth import (
+    CLOUD_AUTHORIZE_URL,
+    CLOUD_TOKEN_URL,
+)
 
 
 def _set_required_oauth_env(monkeypatch, *, redirect_uri: str) -> None:
@@ -86,7 +89,8 @@ def test_build_auth_provider_falls_back_to_jira_url(monkeypatch):
     monkeypatch.delenv("CONFLUENCE_URL", raising=False)
     monkeypatch.setenv("JIRA_URL", "https://jira.example.com")
     _set_required_oauth_env(
-        monkeypatch, redirect_uri="https://mcp.example.com/mcp-atlassian/callback"
+        monkeypatch,
+        redirect_uri="https://mcp.example.com/mcp-atlassian-with-bitbucket-and-privacy/callback",
     )
 
     provider = _build_auth_provider()
@@ -147,28 +151,39 @@ def test_build_auth_provider_infers_base_url_from_redirect_uri(monkeypatch):
     monkeypatch.delenv("ATLASSIAN_OAUTH_INSTANCE_URL", raising=False)
     monkeypatch.setenv("JIRA_URL", "https://jira.example.com")
     _set_required_oauth_env(
-        monkeypatch, redirect_uri="https://mcp.example.com/mcp-atlassian/callback"
+        monkeypatch,
+        redirect_uri="https://mcp.example.com/mcp-atlassian-with-bitbucket-and-privacy/callback",
     )
 
     provider = _build_auth_provider()
 
     assert provider is not None
-    assert str(provider.base_url) == "https://mcp.example.com/mcp-atlassian"
+    assert (
+        str(provider.base_url)
+        == "https://mcp.example.com/mcp-atlassian-with-bitbucket-and-privacy"
+    )
     assert provider._redirect_path == "/callback"
 
 
 def test_build_auth_provider_prefers_public_base_url(monkeypatch):
-    monkeypatch.setenv("PUBLIC_BASE_URL", "https://mcp.example.com/mcp-atlassian")
+    monkeypatch.setenv(
+        "PUBLIC_BASE_URL",
+        "https://mcp.example.com/mcp-atlassian-with-bitbucket-and-privacy",
+    )
     monkeypatch.delenv("ATLASSIAN_OAUTH_INSTANCE_URL", raising=False)
     monkeypatch.setenv("JIRA_URL", "https://jira.example.com")
     _set_required_oauth_env(
-        monkeypatch, redirect_uri="https://mcp.example.com/mcp-atlassian/callback"
+        monkeypatch,
+        redirect_uri="https://mcp.example.com/mcp-atlassian-with-bitbucket-and-privacy/callback",
     )
 
     provider = _build_auth_provider()
 
     assert provider is not None
-    assert str(provider.base_url) == "https://mcp.example.com/mcp-atlassian"
+    assert (
+        str(provider.base_url)
+        == "https://mcp.example.com/mcp-atlassian-with-bitbucket-and-privacy"
+    )
     assert provider._redirect_path == "/callback"
 
 
@@ -190,7 +205,8 @@ def test_build_auth_provider_allows_chatgpt_oauth_redirect(monkeypatch):
     monkeypatch.delenv("ATLASSIAN_OAUTH_INSTANCE_URL", raising=False)
     monkeypatch.setenv("JIRA_URL", "https://jira.example.com")
     _set_required_oauth_env(
-        monkeypatch, redirect_uri="https://mcp.example.com/mcp-atlassian/callback"
+        monkeypatch,
+        redirect_uri="https://mcp.example.com/mcp-atlassian-with-bitbucket-and-privacy/callback",
     )
 
     provider = _build_auth_provider()
@@ -210,7 +226,8 @@ def test_build_auth_provider_uses_env_redirect_uris(monkeypatch):
     monkeypatch.delenv("ATLASSIAN_OAUTH_INSTANCE_URL", raising=False)
     monkeypatch.setenv("JIRA_URL", "https://jira.example.com")
     _set_required_oauth_env(
-        monkeypatch, redirect_uri="https://mcp.example.com/mcp-atlassian/callback"
+        monkeypatch,
+        redirect_uri="https://mcp.example.com/mcp-atlassian-with-bitbucket-and-privacy/callback",
     )
 
     provider = _build_auth_provider()
@@ -225,7 +242,8 @@ def test_build_auth_provider_can_disable_consent(monkeypatch):
     monkeypatch.delenv("ATLASSIAN_OAUTH_INSTANCE_URL", raising=False)
     monkeypatch.setenv("JIRA_URL", "https://jira.example.com")
     _set_required_oauth_env(
-        monkeypatch, redirect_uri="https://mcp.example.com/mcp-atlassian/callback"
+        monkeypatch,
+        redirect_uri="https://mcp.example.com/mcp-atlassian-with-bitbucket-and-privacy/callback",
     )
 
     provider = _build_auth_provider()
@@ -286,7 +304,8 @@ async def test_register_client_hardens_grant_types_and_scopes(monkeypatch):
     monkeypatch.delenv("ATLASSIAN_OAUTH_INSTANCE_URL", raising=False)
     monkeypatch.setenv("JIRA_URL", "https://jira.example.com")
     _set_required_oauth_env(
-        monkeypatch, redirect_uri="https://mcp.example.com/mcp-atlassian/callback"
+        monkeypatch,
+        redirect_uri="https://mcp.example.com/mcp-atlassian-with-bitbucket-and-privacy/callback",
     )
 
     provider = _build_auth_provider()

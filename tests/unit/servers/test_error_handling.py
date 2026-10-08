@@ -4,8 +4,10 @@ import logging
 
 import pytest
 
-from mcp_atlassian.servers.error_handling import ErrorPreservingFastMCP
-from mcp_atlassian.utils.decorators import deprecated_tool
+from mcp_atlassian_with_bitbucket_and_privacy.servers.error_handling import (
+    ErrorPreservingFastMCP,
+)
+from mcp_atlassian_with_bitbucket_and_privacy.utils.decorators import deprecated_tool
 
 
 @pytest.mark.anyio
@@ -51,7 +53,10 @@ async def test_deprecated_tool_is_preserved_in_registered_mcp_tool(
     assert listed[tool_name].description == registered.description
     assert listed[tool_name].tags == registered.tags
 
-    with caplog.at_level(logging.WARNING, logger="mcp_atlassian.utils.decorators"):
+    with caplog.at_level(
+        logging.WARNING,
+        logger="mcp_atlassian_with_bitbucket_and_privacy.utils.decorators",
+    ):
         first_result = await server._call_tool_mcp(tool_name, {})
         second_result = await server._call_tool_mcp(tool_name, {})
 

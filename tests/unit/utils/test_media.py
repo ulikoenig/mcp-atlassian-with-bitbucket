@@ -4,7 +4,7 @@ import base64
 
 import pytest
 
-from mcp_atlassian.utils.media import (
+from mcp_atlassian_with_bitbucket_and_privacy.utils.media import (
     ATTACHMENT_MAX_BYTES,
     fetch_and_encode_attachment,
     is_image_attachment,

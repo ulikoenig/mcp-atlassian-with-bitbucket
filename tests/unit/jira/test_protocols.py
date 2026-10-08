@@ -3,12 +3,12 @@
 import inspect
 from typing import Any, get_type_hints
 
-from mcp_atlassian.jira.protocols import (
+from mcp_atlassian_with_bitbucket_and_privacy.jira.protocols import (
     AttachmentsOperationsProto,
     UsersOperationsProto,
 )
-from mcp_atlassian.models.jira import JiraIssue
-from mcp_atlassian.models.jira.search import JiraSearchResult
+from mcp_atlassian_with_bitbucket_and_privacy.models.jira import JiraIssue
+from mcp_atlassian_with_bitbucket_and_privacy.models.jira.search import JiraSearchResult
 
 
 class TestProtocolCompliance:

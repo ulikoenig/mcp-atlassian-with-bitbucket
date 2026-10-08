@@ -9,7 +9,7 @@ from requests.adapters import HTTPAdapter
 from requests.sessions import Session
 from urllib3.util.retry import Retry
 
-from mcp_atlassian.utils.http import (
+from mcp_atlassian_with_bitbucket_and_privacy.utils.http import (
     DEFAULT_RETRY_BACKOFF,
     DEFAULT_RETRY_STATUSES,
     DEFAULT_RETRY_TOTAL,
@@ -239,7 +239,7 @@ def test_format_rate_limit_error_handles_http_date_retry_after():
 
 
 def test_configure_concurrency_disabled_by_default():
-    from mcp_atlassian.utils.http import _THROTTLED_ATTR
+    from mcp_atlassian_with_bitbucket_and_privacy.utils.http import _THROTTLED_ATTR
 
     session = Session()
     configure_concurrency(session, service="Test")
@@ -284,7 +284,7 @@ def test_configure_concurrency_caps_parallel_sends(monkeypatch: pytest.MonkeyPat
 
 
 def test_configure_concurrency_is_idempotent(monkeypatch: pytest.MonkeyPatch):
-    from mcp_atlassian.utils.http import _THROTTLED_ATTR
+    from mcp_atlassian_with_bitbucket_and_privacy.utils.http import _THROTTLED_ATTR
 
     monkeypatch.setenv("ATLASSIAN_MAX_CONCURRENT_REQUESTS", "3")
     session = Session()
@@ -341,7 +341,7 @@ def test_configure_concurrency_shares_semaphore_across_sessions(
 
 
 def test_configure_rate_limit_disabled_by_default():
-    from mcp_atlassian.utils.http import _RATE_LIMITED_ATTR
+    from mcp_atlassian_with_bitbucket_and_privacy.utils.http import _RATE_LIMITED_ATTR
 
     session = Session()
     configure_rate_limit(session, service="Test")
@@ -381,8 +381,13 @@ def test_configure_rate_limit_shares_bucket_across_sessions(
     def advance_clock(seconds: float) -> None:
         clock[0] += seconds
 
-    monkeypatch.setattr("mcp_atlassian.utils.http.time.monotonic", lambda: clock[0])
-    monkeypatch.setattr("mcp_atlassian.utils.http.time.sleep", advance_clock)
+    monkeypatch.setattr(
+        "mcp_atlassian_with_bitbucket_and_privacy.utils.http.time.monotonic",
+        lambda: clock[0],
+    )
+    monkeypatch.setattr(
+        "mcp_atlassian_with_bitbucket_and_privacy.utils.http.time.sleep", advance_clock
+    )
 
     s1, s2 = Session(), Session()
     for sess in (s1, s2):
@@ -417,7 +422,9 @@ def _build_circuit_session(status_codes_iter):
 
 
 def test_circuit_breaker_disabled_by_default():
-    from mcp_atlassian.utils.http import _CIRCUIT_BREAKER_ATTR
+    from mcp_atlassian_with_bitbucket_and_privacy.utils.http import (
+        _CIRCUIT_BREAKER_ATTR,
+    )
 
     session = Session()
     configure_circuit_breaker(session, service="Test")
@@ -452,7 +459,7 @@ def test_circuit_breaker_resets_on_success(monkeypatch: pytest.MonkeyPatch):
     for _ in range(5):
         adapter.send(MagicMock())  # must not raise
 
-    from mcp_atlassian.utils.http import _circuit_breaker
+    from mcp_atlassian_with_bitbucket_and_privacy.utils.http import _circuit_breaker
 
     assert _circuit_breaker is not None
     assert _circuit_breaker.failures == 2  # last two 429s, no trip

@@ -2,7 +2,10 @@
 
 import pytest
 
-from mcp_atlassian.privacy import IdentityPolicy, normalize_login
+from mcp_atlassian_with_bitbucket_and_privacy.privacy import (
+    IdentityPolicy,
+    normalize_login,
+)
 
 
 def test_policy_defaults_are_safe() -> None:

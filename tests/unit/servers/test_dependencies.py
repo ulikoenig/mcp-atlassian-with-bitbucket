@@ -10,10 +10,13 @@ from unittest.mock import MagicMock, patch
 import pytest
 from starlette.datastructures import Headers
 
-from mcp_atlassian.confluence import ConfluenceConfig, ConfluenceFetcher
-from mcp_atlassian.jira import JiraConfig, JiraFetcher
-from mcp_atlassian.servers.context import MainAppContext
-from mcp_atlassian.servers.dependencies import (
+from mcp_atlassian_with_bitbucket_and_privacy.confluence import (
+    ConfluenceConfig,
+    ConfluenceFetcher,
+)
+from mcp_atlassian_with_bitbucket_and_privacy.jira import JiraConfig, JiraFetcher
+from mcp_atlassian_with_bitbucket_and_privacy.servers.context import MainAppContext
+from mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies import (
     _confluence_spec,
     _create_and_validate,
     _create_user_config_for_fetcher,
@@ -23,7 +26,10 @@ from mcp_atlassian.servers.dependencies import (
     get_confluence_fetcher,
     get_jira_fetcher,
 )
-from mcp_atlassian.utils.oauth import BYOAccessTokenOAuthConfig, OAuthConfig
+from mcp_atlassian_with_bitbucket_and_privacy.utils.oauth import (
+    BYOAccessTokenOAuthConfig,
+    OAuthConfig,
+)
 from tests.utils.assertions import assert_mock_called_with_partial
 from tests.utils.factories import AuthConfigFactory
 from tests.utils.mocks import MockFastMCP
@@ -565,8 +571,10 @@ def _create_mock_fetcher(fetcher_class, validation_return=None, validation_error
 class TestGetJiraFetcher:
     """Tests for get_jira_fetcher function."""
 
-    @patch("mcp_atlassian.servers.dependencies.get_http_request")
-    @patch("mcp_atlassian.servers.dependencies.JiraFetcher")
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request"
+    )
+    @patch("mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.JiraFetcher")
     async def test_cached_fetcher_returned(
         self, mock_jira_fetcher_class, mock_get_http_request, mock_context, mock_request
     ):
@@ -580,8 +588,10 @@ class TestGetJiraFetcher:
         assert result == cached_fetcher
         mock_jira_fetcher_class.assert_not_called()
 
-    @patch("mcp_atlassian.servers.dependencies.get_http_request")
-    @patch("mcp_atlassian.servers.dependencies.JiraFetcher")
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request"
+    )
+    @patch("mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.JiraFetcher")
     async def test_header_based_jira_fetcher_creation(
         self,
         mock_jira_fetcher_class,
@@ -650,8 +660,10 @@ class TestGetJiraFetcher:
         assert called_config.proxy_wpad_enable is True
         assert called_config.proxy_wpad_url == "http://wpad.example.com/wpad.dat"
 
-    @patch("mcp_atlassian.servers.dependencies.get_http_request")
-    @patch("mcp_atlassian.servers.dependencies.JiraFetcher")
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request"
+    )
+    @patch("mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.JiraFetcher")
     async def test_header_based_jira_fetcher_inherits_proxy_when_wpad_disabled(
         self,
         mock_jira_fetcher_class,
@@ -714,8 +726,10 @@ class TestGetJiraFetcher:
         assert called_config.proxy_wpad_enable is False
         assert called_config.proxy_wpad_url is None
 
-    @patch("mcp_atlassian.servers.dependencies.get_http_request")
-    @patch("mcp_atlassian.servers.dependencies.JiraFetcher")
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request"
+    )
+    @patch("mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.JiraFetcher")
     async def test_header_based_jira_fetcher_without_lifespan_context(
         self,
         mock_jira_fetcher_class,
@@ -777,8 +791,10 @@ class TestGetJiraFetcher:
         assert called_config.proxy_wpad_url == "http://wpad.example.com/wpad.dat"
         assert called_config.no_proxy is None
 
-    @patch("mcp_atlassian.servers.dependencies.get_http_request")
-    @patch("mcp_atlassian.servers.dependencies.JiraFetcher")
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request"
+    )
+    @patch("mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.JiraFetcher")
     async def test_header_based_jira_fetcher_inherits_global_network_config(
         self,
         mock_jira_fetcher_class,
@@ -832,8 +848,10 @@ class TestGetJiraFetcher:
         assert called_config.socks_proxy == "socks5://proxy.example"
         assert called_config.custom_headers is None
 
-    @patch("mcp_atlassian.servers.dependencies.get_http_request")
-    @patch("mcp_atlassian.servers.dependencies.JiraFetcher")
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request"
+    )
+    @patch("mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.JiraFetcher")
     async def test_header_based_jira_fetcher_validation_failure(
         self,
         mock_jira_fetcher_class,
@@ -886,8 +904,10 @@ class TestGetJiraFetcher:
             await get_jira_fetcher(mock_context)
 
     @pytest.mark.parametrize("scenario_key", ["oauth", "pat"])
-    @patch("mcp_atlassian.servers.dependencies.get_http_request")
-    @patch("mcp_atlassian.servers.dependencies.JiraFetcher")
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request"
+    )
+    @patch("mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.JiraFetcher")
     async def test_user_specific_fetcher_creation(
         self,
         mock_jira_fetcher_class,
@@ -932,8 +952,10 @@ class TestGetJiraFetcher:
         elif scenario["auth_type"] == "pat":
             assert called_config.personal_token == scenario["token"]
 
-    @patch("mcp_atlassian.servers.dependencies.get_http_request")
-    @patch("mcp_atlassian.servers.dependencies.JiraFetcher")
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request"
+    )
+    @patch("mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.JiraFetcher")
     async def test_user_specific_jira_passthrough_headers_override_static_headers(
         self,
         mock_jira_fetcher_class,
@@ -975,9 +997,13 @@ class TestGetJiraFetcher:
             "X-Request-ID": "request-123",
         }
 
-    @patch("mcp_atlassian.servers.dependencies.get_access_token")
-    @patch("mcp_atlassian.servers.dependencies.get_http_request")
-    @patch("mcp_atlassian.servers.dependencies.JiraFetcher")
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_access_token"
+    )
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request"
+    )
+    @patch("mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.JiraFetcher")
     async def test_oauth_prefers_fastmcp_access_token(
         self,
         mock_jira_fetcher_class,
@@ -1010,9 +1036,13 @@ class TestGetJiraFetcher:
         assert called_config.oauth_config is not None
         assert called_config.oauth_config.access_token == "upstream-token"
 
-    @patch("mcp_atlassian.servers.dependencies.get_access_token")
-    @patch("mcp_atlassian.servers.dependencies.get_http_request")
-    @patch("mcp_atlassian.servers.dependencies.JiraFetcher")
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_access_token"
+    )
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request"
+    )
+    @patch("mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.JiraFetcher")
     async def test_oauth_falls_back_to_request_state_token(
         self,
         mock_jira_fetcher_class,
@@ -1045,9 +1075,13 @@ class TestGetJiraFetcher:
         assert called_config.oauth_config is not None
         assert called_config.oauth_config.access_token == "state-token"
 
-    @patch("mcp_atlassian.servers.dependencies.get_access_token")
-    @patch("mcp_atlassian.servers.dependencies.get_http_request")
-    @patch("mcp_atlassian.servers.dependencies.JiraFetcher")
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_access_token"
+    )
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request"
+    )
+    @patch("mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.JiraFetcher")
     async def test_pat_flow_does_not_use_fastmcp_access_token(
         self,
         mock_jira_fetcher_class,
@@ -1079,8 +1113,10 @@ class TestGetJiraFetcher:
         assert called_config.personal_token == scenario["token"]
         mock_get_access_token.assert_not_called()
 
-    @patch("mcp_atlassian.servers.dependencies.get_http_request")
-    @patch("mcp_atlassian.servers.dependencies.JiraFetcher")
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request"
+    )
+    @patch("mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.JiraFetcher")
     async def test_global_fallback_scenarios(
         self,
         mock_jira_fetcher_class,
@@ -1129,8 +1165,10 @@ class TestGetJiraFetcher:
             mock_jira_fetcher_class.reset_mock()
             mock_get_http_request.reset_mock()
 
-    @patch("mcp_atlassian.servers.dependencies.get_http_request")
-    @patch("mcp_atlassian.servers.dependencies.JiraFetcher")
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request"
+    )
+    @patch("mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.JiraFetcher")
     async def test_global_jira_passthrough_headers(
         self,
         mock_jira_fetcher_class,
@@ -1177,8 +1215,10 @@ class TestGetJiraFetcher:
             ),
         ],
     )
-    @patch("mcp_atlassian.servers.dependencies.get_http_request")
-    @patch("mcp_atlassian.servers.dependencies.JiraFetcher")
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request"
+    )
+    @patch("mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.JiraFetcher")
     async def test_error_scenarios(
         self,
         mock_jira_fetcher_class,
@@ -1229,8 +1269,12 @@ class TestGetJiraFetcher:
 class TestGetConfluenceFetcher:
     """Tests for get_confluence_fetcher function."""
 
-    @patch("mcp_atlassian.servers.dependencies.get_http_request")
-    @patch("mcp_atlassian.servers.dependencies.ConfluenceFetcher")
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request"
+    )
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.ConfluenceFetcher"
+    )
     async def test_cached_fetcher_returned(
         self,
         mock_confluence_fetcher_class,
@@ -1248,8 +1292,12 @@ class TestGetConfluenceFetcher:
         assert result == cached_fetcher
         mock_confluence_fetcher_class.assert_not_called()
 
-    @patch("mcp_atlassian.servers.dependencies.get_http_request")
-    @patch("mcp_atlassian.servers.dependencies.ConfluenceFetcher")
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request"
+    )
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.ConfluenceFetcher"
+    )
     async def test_header_based_confluence_fetcher_creation(
         self,
         mock_confluence_fetcher_class,
@@ -1322,8 +1370,12 @@ class TestGetConfluenceFetcher:
         assert called_config.proxy_wpad_enable is True
         assert called_config.proxy_wpad_url == "http://wpad.example.com/wpad.dat"
 
-    @patch("mcp_atlassian.servers.dependencies.get_http_request")
-    @patch("mcp_atlassian.servers.dependencies.ConfluenceFetcher")
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request"
+    )
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.ConfluenceFetcher"
+    )
     async def test_header_based_confluence_fetcher_reads_network_env_without_config(
         self,
         mock_confluence_fetcher_class,
@@ -1386,8 +1438,12 @@ class TestGetConfluenceFetcher:
         assert called_config.proxy_wpad_url == "http://wpad.example.com/wpad.dat"
         assert called_config.custom_headers is None
 
-    @patch("mcp_atlassian.servers.dependencies.get_http_request")
-    @patch("mcp_atlassian.servers.dependencies.ConfluenceFetcher")
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request"
+    )
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.ConfluenceFetcher"
+    )
     async def test_header_based_confluence_passthrough_headers_without_global_config(
         self,
         mock_confluence_fetcher_class,
@@ -1430,8 +1486,12 @@ class TestGetConfluenceFetcher:
         called_config = mock_confluence_fetcher_class.call_args[1]["config"]
         assert called_config.custom_headers == {"X-SSO-User": "header-user"}
 
-    @patch("mcp_atlassian.servers.dependencies.get_http_request")
-    @patch("mcp_atlassian.servers.dependencies.ConfluenceFetcher")
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request"
+    )
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.ConfluenceFetcher"
+    )
     async def test_header_based_confluence_fetcher_validation_failure(
         self,
         mock_confluence_fetcher_class,
@@ -1485,8 +1545,12 @@ class TestGetConfluenceFetcher:
             await get_confluence_fetcher(mock_context)
 
     @pytest.mark.parametrize("scenario_key", ["oauth", "pat"])
-    @patch("mcp_atlassian.servers.dependencies.get_http_request")
-    @patch("mcp_atlassian.servers.dependencies.ConfluenceFetcher")
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request"
+    )
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.ConfluenceFetcher"
+    )
     async def test_user_specific_fetcher_creation(
         self,
         mock_confluence_fetcher_class,
@@ -1531,9 +1595,15 @@ class TestGetConfluenceFetcher:
         elif scenario["auth_type"] == "pat":
             assert called_config.personal_token == scenario["token"]
 
-    @patch("mcp_atlassian.servers.dependencies.get_access_token")
-    @patch("mcp_atlassian.servers.dependencies.get_http_request")
-    @patch("mcp_atlassian.servers.dependencies.ConfluenceFetcher")
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_access_token"
+    )
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request"
+    )
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.ConfluenceFetcher"
+    )
     async def test_oauth_prefers_fastmcp_access_token(
         self,
         mock_confluence_fetcher_class,
@@ -1566,9 +1636,15 @@ class TestGetConfluenceFetcher:
         assert called_config.oauth_config is not None
         assert called_config.oauth_config.access_token == "upstream-token"
 
-    @patch("mcp_atlassian.servers.dependencies.get_access_token")
-    @patch("mcp_atlassian.servers.dependencies.get_http_request")
-    @patch("mcp_atlassian.servers.dependencies.ConfluenceFetcher")
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_access_token"
+    )
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request"
+    )
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.ConfluenceFetcher"
+    )
     async def test_oauth_falls_back_to_request_state_token(
         self,
         mock_confluence_fetcher_class,
@@ -1601,8 +1677,12 @@ class TestGetConfluenceFetcher:
         assert called_config.oauth_config is not None
         assert called_config.oauth_config.access_token == "state-token"
 
-    @patch("mcp_atlassian.servers.dependencies.get_http_request")
-    @patch("mcp_atlassian.servers.dependencies.ConfluenceFetcher")
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request"
+    )
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.ConfluenceFetcher"
+    )
     async def test_global_fallback_scenarios(
         self,
         mock_confluence_fetcher_class,
@@ -1658,8 +1738,12 @@ class TestGetConfluenceFetcher:
             ("preserve_existing", "existing@example.com"),
         ],
     )
-    @patch("mcp_atlassian.servers.dependencies.get_http_request")
-    @patch("mcp_atlassian.servers.dependencies.ConfluenceFetcher")
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request"
+    )
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.ConfluenceFetcher"
+    )
     async def test_email_derivation_behavior(
         self,
         mock_confluence_fetcher_class,
@@ -1717,8 +1801,12 @@ class TestGetConfluenceFetcher:
             ),
         ],
     )
-    @patch("mcp_atlassian.servers.dependencies.get_http_request")
-    @patch("mcp_atlassian.servers.dependencies.ConfluenceFetcher")
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request"
+    )
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.ConfluenceFetcher"
+    )
     async def test_error_scenarios(
         self,
         mock_confluence_fetcher_class,
@@ -1794,8 +1882,12 @@ class TestValidationCache:
         request.state = MockState()
         return request
 
-    @patch("mcp_atlassian.servers.dependencies.get_http_request")
-    @patch("mcp_atlassian.servers.dependencies.ConfluenceFetcher")
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request"
+    )
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.ConfluenceFetcher"
+    )
     async def test_second_request_same_credential_skips_validation_call(
         self, mock_confluence_fetcher_class, mock_get_http_request, mock_context
     ):
@@ -1828,8 +1920,12 @@ class TestValidationCache:
         fetcher2.get_current_user_info.assert_not_called()
         assert request2.state.user_atlassian_email == "user@example.com"
 
-    @patch("mcp_atlassian.servers.dependencies.get_http_request")
-    @patch("mcp_atlassian.servers.dependencies.ConfluenceFetcher")
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request"
+    )
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.ConfluenceFetcher"
+    )
     async def test_different_credentials_both_validated(
         self, mock_confluence_fetcher_class, mock_get_http_request, mock_context
     ):
@@ -1850,8 +1946,12 @@ class TestValidationCache:
         fetcher2.get_current_user_info.assert_called_once()
 
     @pytest.mark.parametrize("passthrough_header", ["X-SSO-User", "Cookie"])
-    @patch("mcp_atlassian.servers.dependencies.get_http_request")
-    @patch("mcp_atlassian.servers.dependencies.ConfluenceFetcher")
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request"
+    )
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.ConfluenceFetcher"
+    )
     async def test_different_passthrough_users_are_validated_separately(
         self,
         mock_confluence_fetcher_class,
@@ -1894,8 +1994,12 @@ class TestValidationCache:
         assert request1.state.user_atlassian_email == "user-a@example.com"
         assert request2.state.user_atlassian_email == "user-b@example.com"
 
-    @patch("mcp_atlassian.servers.dependencies.get_http_request")
-    @patch("mcp_atlassian.servers.dependencies.ConfluenceFetcher")
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request"
+    )
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.ConfluenceFetcher"
+    )
     async def test_same_credential_different_url_both_validated(
         self, mock_confluence_fetcher_class, mock_get_http_request, mock_context
     ):
@@ -1928,7 +2032,9 @@ class TestValidationCache:
         fetcher1.get_current_user_info.assert_called_once()
         fetcher2.get_current_user_info.assert_called_once()
 
-    @patch("mcp_atlassian.servers.dependencies.ConfluenceFetcher")
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.ConfluenceFetcher"
+    )
     def test_different_credentials_validate_concurrently(
         self, mock_confluence_fetcher_class, config_factory
     ):
@@ -1985,7 +2091,9 @@ class TestValidationCache:
         fetcher1.get_current_user_info.assert_called_once()
         fetcher2.get_current_user_info.assert_called_once()
 
-    @patch("mcp_atlassian.servers.dependencies.ConfluenceFetcher")
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.ConfluenceFetcher"
+    )
     def test_same_credential_validation_is_single_flight(
         self, mock_confluence_fetcher_class, config_factory
     ):
@@ -2045,7 +2153,9 @@ class TestValidationCache:
             == 1
         )
 
-    @patch("mcp_atlassian.servers.dependencies.ConfluenceFetcher")
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.ConfluenceFetcher"
+    )
     def test_same_oauth_token_and_url_different_cloud_ids_validate_separately(
         self, mock_confluence_fetcher_class
     ):
@@ -2082,7 +2192,9 @@ class TestValidationCache:
         fetcher1.get_current_user_info.assert_called_once()
         fetcher2.get_current_user_info.assert_called_once()
 
-    @patch("mcp_atlassian.servers.dependencies.ConfluenceFetcher")
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.ConfluenceFetcher"
+    )
     def test_cloud_oauth_scope_ignores_configured_url(
         self, mock_confluence_fetcher_class
     ):
@@ -2118,8 +2230,12 @@ class TestValidationCache:
         fetcher1.get_current_user_info.assert_called_once()
         fetcher2.get_current_user_info.assert_not_called()
 
-    @patch("mcp_atlassian.servers.dependencies.get_http_request")
-    @patch("mcp_atlassian.servers.dependencies.ConfluenceFetcher")
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request"
+    )
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.ConfluenceFetcher"
+    )
     async def test_cache_disabled_always_validates(
         self, mock_confluence_fetcher_class, mock_get_http_request, mock_context
     ):
@@ -2132,7 +2248,10 @@ class TestValidationCache:
         fetcher2 = _create_mock_fetcher(ConfluenceFetcher)
         mock_confluence_fetcher_class.side_effect = [fetcher1, fetcher2]
 
-        with patch("mcp_atlassian.servers.dependencies._validation_cache", None):
+        with patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies._validation_cache",
+            None,
+        ):
             mock_get_http_request.return_value = request1
             await get_confluence_fetcher(mock_context)
             mock_get_http_request.return_value = request2
@@ -2141,8 +2260,12 @@ class TestValidationCache:
         fetcher1.get_current_user_info.assert_called_once()
         fetcher2.get_current_user_info.assert_called_once()
 
-    @patch("mcp_atlassian.servers.dependencies.get_http_request")
-    @patch("mcp_atlassian.servers.dependencies.ConfluenceFetcher")
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request"
+    )
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.ConfluenceFetcher"
+    )
     async def test_failed_validation_not_cached(
         self, mock_confluence_fetcher_class, mock_get_http_request, mock_context
     ):
@@ -2228,8 +2351,10 @@ class TestBasicAuthMultiUser:
                 credentials=credentials,
             )
 
-    @patch("mcp_atlassian.servers.dependencies.get_http_request")
-    @patch("mcp_atlassian.servers.dependencies.JiraFetcher")
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request"
+    )
+    @patch("mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.JiraFetcher")
     async def test_jira_basic_auth_fetcher_creation(
         self,
         mock_jira_fetcher_class,
@@ -2269,8 +2394,12 @@ class TestBasicAuthMultiUser:
         assert called_config.username == "user@example.com"
         assert called_config.api_token == "user-api-token"
 
-    @patch("mcp_atlassian.servers.dependencies.get_http_request")
-    @patch("mcp_atlassian.servers.dependencies.ConfluenceFetcher")
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request"
+    )
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.ConfluenceFetcher"
+    )
     async def test_confluence_basic_auth_fetcher_creation(
         self,
         mock_confluence_fetcher_class,
@@ -2307,7 +2436,9 @@ class TestBasicAuthMultiUser:
         assert called_config.username == "user@example.com"
         assert called_config.api_token == "user-api-token"
 
-    @patch("mcp_atlassian.servers.dependencies.get_http_request")
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request"
+    )
     async def test_basic_auth_empty_email_raises(
         self,
         mock_get_http_request,
@@ -2435,29 +2566,39 @@ class TestSsrfProtection:
 
     def test_validate_rejects_private_ip(self) -> None:
         """Private IP URLs are rejected by SSRF validation."""
-        from mcp_atlassian.utils.urls import validate_url_for_ssrf
+        from mcp_atlassian_with_bitbucket_and_privacy.utils.urls import (
+            validate_url_for_ssrf,
+        )
 
         result = validate_url_for_ssrf("http://127.0.0.1:8080")
         assert result is not None
 
     def test_validate_rejects_metadata(self) -> None:
         """Cloud metadata endpoint is rejected."""
-        from mcp_atlassian.utils.urls import validate_url_for_ssrf
+        from mcp_atlassian_with_bitbucket_and_privacy.utils.urls import (
+            validate_url_for_ssrf,
+        )
 
         result = validate_url_for_ssrf("http://169.254.169.254")
         assert result is not None
 
     def test_validate_rejects_file_scheme(self) -> None:
         """file:// scheme is rejected."""
-        from mcp_atlassian.utils.urls import validate_url_for_ssrf
+        from mcp_atlassian_with_bitbucket_and_privacy.utils.urls import (
+            validate_url_for_ssrf,
+        )
 
         result = validate_url_for_ssrf("file:///etc/passwd")
         assert result is not None
 
     def test_redirect_hook_blocks_internal(self) -> None:
         """Redirect to internal IP is blocked by SSRF hook."""
-        from mcp_atlassian.servers.dependencies import _make_ssrf_safe_hook
-        from mcp_atlassian.utils.urls import validate_url_for_ssrf
+        from mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies import (
+            _make_ssrf_safe_hook,
+        )
+        from mcp_atlassian_with_bitbucket_and_privacy.utils.urls import (
+            validate_url_for_ssrf,
+        )
 
         hook = _make_ssrf_safe_hook(validate_url_for_ssrf)
 
@@ -2471,8 +2612,12 @@ class TestSsrfProtection:
 
     def test_redirect_hook_allows_safe(self) -> None:
         """Redirect to safe URL passes through."""
-        from mcp_atlassian.servers.dependencies import _make_ssrf_safe_hook
-        from mcp_atlassian.utils.urls import validate_url_for_ssrf
+        from mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies import (
+            _make_ssrf_safe_hook,
+        )
+        from mcp_atlassian_with_bitbucket_and_privacy.utils.urls import (
+            validate_url_for_ssrf,
+        )
 
         hook = _make_ssrf_safe_hook(validate_url_for_ssrf)
 
@@ -2483,15 +2628,21 @@ class TestSsrfProtection:
         }
 
         # Mock DNS for the redirect target
-        with patch("mcp_atlassian.utils.urls.socket.getaddrinfo") as mock_dns:
+        with patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.utils.urls.socket.getaddrinfo"
+        ) as mock_dns:
             mock_dns.return_value = [(2, 1, 6, "", ("104.192.141.1", 0))]
             result = hook(mock_response)
             assert result == mock_response
 
     def test_redirect_hook_ignores_non_redirect(self) -> None:
         """Non-redirect response passes through without checks."""
-        from mcp_atlassian.servers.dependencies import _make_ssrf_safe_hook
-        from mcp_atlassian.utils.urls import validate_url_for_ssrf
+        from mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies import (
+            _make_ssrf_safe_hook,
+        )
+        from mcp_atlassian_with_bitbucket_and_privacy.utils.urls import (
+            validate_url_for_ssrf,
+        )
 
         hook = _make_ssrf_safe_hook(validate_url_for_ssrf)
 
@@ -2514,8 +2665,10 @@ class TestSsrfHookCoverageRegression:
     """
 
     @pytest.mark.security_regression
-    @patch("mcp_atlassian.servers.dependencies.get_http_request")
-    @patch("mcp_atlassian.servers.dependencies.JiraFetcher")
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request"
+    )
+    @patch("mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.JiraFetcher")
     async def test_basic_auth_jira_session_has_ssrf_hook(
         self,
         mock_jira_fetcher_class,
@@ -2549,9 +2702,13 @@ class TestSsrfHookCoverageRegression:
         )
 
     @pytest.mark.security_regression
-    @patch("mcp_atlassian.servers.dependencies.get_access_token")
-    @patch("mcp_atlassian.servers.dependencies.get_http_request")
-    @patch("mcp_atlassian.servers.dependencies.JiraFetcher")
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_access_token"
+    )
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request"
+    )
+    @patch("mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.JiraFetcher")
     async def test_oauth_jira_session_has_ssrf_hook(
         self,
         mock_jira_fetcher_class,
@@ -2583,8 +2740,12 @@ class TestSsrfHookCoverageRegression:
         )
 
     @pytest.mark.security_regression
-    @patch("mcp_atlassian.servers.dependencies.get_http_request")
-    @patch("mcp_atlassian.servers.dependencies.ConfluenceFetcher")
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request"
+    )
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.ConfluenceFetcher"
+    )
     async def test_basic_auth_confluence_session_has_ssrf_hook(
         self,
         mock_confluence_fetcher_class,
@@ -2618,9 +2779,15 @@ class TestSsrfHookCoverageRegression:
         )
 
     @pytest.mark.security_regression
-    @patch("mcp_atlassian.servers.dependencies.get_access_token")
-    @patch("mcp_atlassian.servers.dependencies.get_http_request")
-    @patch("mcp_atlassian.servers.dependencies.ConfluenceFetcher")
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_access_token"
+    )
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request"
+    )
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.ConfluenceFetcher"
+    )
     async def test_oauth_confluence_session_has_ssrf_hook(
         self,
         mock_confluence_fetcher_class,
@@ -2671,8 +2838,10 @@ class TestUnauthenticatedGlobalFallbackRegression:
     """
 
     @pytest.mark.security_regression
-    @patch("mcp_atlassian.servers.dependencies.get_http_request")
-    @patch("mcp_atlassian.servers.dependencies.JiraFetcher")
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request"
+    )
+    @patch("mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.JiraFetcher")
     async def test_unauthenticated_http_request_refuses_global_jira_fetcher(
         self,
         mock_jira_fetcher_class,
@@ -2692,8 +2861,12 @@ class TestUnauthenticatedGlobalFallbackRegression:
             await get_jira_fetcher(mock_context)
 
     @pytest.mark.security_regression
-    @patch("mcp_atlassian.servers.dependencies.get_http_request")
-    @patch("mcp_atlassian.servers.dependencies.ConfluenceFetcher")
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request"
+    )
+    @patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.ConfluenceFetcher"
+    )
     async def test_unauthenticated_http_request_refuses_global_confluence_fetcher(
         self,
         mock_confluence_fetcher_class,

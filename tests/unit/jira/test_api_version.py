@@ -6,7 +6,7 @@ Document Format (ADF) objects. Regression coverage for issue #338.
 
 from typing import Any
 
-from mcp_atlassian.jira import JiraFetcher
+from mcp_atlassian_with_bitbucket_and_privacy.jira import JiraFetcher
 
 
 class TestJiraRestApiV3:

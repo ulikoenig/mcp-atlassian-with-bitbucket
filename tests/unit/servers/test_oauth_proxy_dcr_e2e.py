@@ -12,8 +12,12 @@ import pytest
 from pydantic import AnyHttpUrl
 from starlette.applications import Starlette
 
-from mcp_atlassian.servers.oauth_proxy import HardenedOAuthProxy
-from mcp_atlassian.utils.token_verifier import AtlassianOpaqueTokenVerifier
+from mcp_atlassian_with_bitbucket_and_privacy.servers.oauth_proxy import (
+    HardenedOAuthProxy,
+)
+from mcp_atlassian_with_bitbucket_and_privacy.utils.token_verifier import (
+    AtlassianOpaqueTokenVerifier,
+)
 from tests.utils.oauth_dcr_harness import (
     FakeUpstreamIssuer,
     LocalTLSOAuthIssuer,

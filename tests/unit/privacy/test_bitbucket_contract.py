@@ -6,7 +6,7 @@ from typing import Any
 import pytest
 from fastmcp import FastMCP
 
-from mcp_atlassian.privacy import (
+from mcp_atlassian_with_bitbucket_and_privacy.privacy import (
     TOOL_RESPONSE_POLICIES,
     IdentityPolicy,
     IdentityPrivacyConfig,

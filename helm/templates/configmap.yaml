@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "mcp-atlassian.fullname" . }}
+  name: {{ include "mcp-atlassian-with-bitbucket-and-privacy.fullname" . }}
   labels:
-    {{- include "mcp-atlassian.labels" . | nindent 4 }}
+    {{- include "mcp-atlassian-with-bitbucket-and-privacy.labels" . | nindent 4 }}
 data:
   {{- if .Values.confluence.enabled }}
   confluence-url: {{ .Values.confluence.url | quote }}

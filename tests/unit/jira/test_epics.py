@@ -4,9 +4,9 @@ from unittest.mock import MagicMock, call
 
 import pytest
 
-from mcp_atlassian.jira import JiraFetcher
-from mcp_atlassian.jira.epics import EpicsMixin
-from mcp_atlassian.models.jira import JiraIssue
+from mcp_atlassian_with_bitbucket_and_privacy.jira import JiraFetcher
+from mcp_atlassian_with_bitbucket_and_privacy.jira.epics import EpicsMixin
+from mcp_atlassian_with_bitbucket_and_privacy.models.jira import JiraIssue
 
 
 class TestEpicsMixin:
@@ -704,7 +704,9 @@ class TestEpicsMixin:
         self, epics_mixin: EpicsMixin
     ):
         """Accept a localized Epic when project metadata identifies its type ID."""
-        from mcp_atlassian.models.jira import JiraSearchResult
+        from mcp_atlassian_with_bitbucket_and_privacy.models.jira import (
+            JiraSearchResult,
+        )
 
         epics_mixin.jira.get_issue.return_value = {
             "key": "EPIC-123",
@@ -763,7 +765,9 @@ class TestEpicsMixin:
         parent / Epic Link strategies. This uses the REAL model (not a mock
         with ``__bool__``) to prove the empty result falls through.
         """
-        from mcp_atlassian.models.jira import JiraSearchResult
+        from mcp_atlassian_with_bitbucket_and_privacy.models.jira import (
+            JiraSearchResult,
+        )
 
         epics_mixin.jira.get_issue.return_value = {
             "key": "EPIC-123",

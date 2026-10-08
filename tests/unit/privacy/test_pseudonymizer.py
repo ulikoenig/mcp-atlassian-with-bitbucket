@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from mcp_atlassian.privacy import (
+from mcp_atlassian_with_bitbucket_and_privacy.privacy import (
     CanonicalIdentity,
     CanonicalIdentityResolver,
     CorrelationScope,

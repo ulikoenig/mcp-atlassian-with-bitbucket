@@ -2,8 +2,10 @@ import re
 
 import pytest
 
-from mcp_atlassian.preprocessing.confluence import ConfluencePreprocessor
-from mcp_atlassian.preprocessing.jira import JiraPreprocessor
+from mcp_atlassian_with_bitbucket_and_privacy.preprocessing.confluence import (
+    ConfluencePreprocessor,
+)
+from mcp_atlassian_with_bitbucket_and_privacy.preprocessing.jira import JiraPreprocessor
 from tests.fixtures.confluence_mocks import MOCK_COMMENTS_RESPONSE, MOCK_PAGE_RESPONSE
 from tests.fixtures.jira_mocks import MOCK_JIRA_ISSUE_RESPONSE
 from tests.utils.mocks import MockConfluenceClient
@@ -534,7 +536,9 @@ def test_process_confluence_profile_macro_malformed(preprocessor_with_confluence
 
 def test_process_confluence_profile_macro_fallback():
     """Test fallback when confluence_client is None."""
-    from mcp_atlassian.preprocessing.confluence import ConfluencePreprocessor
+    from mcp_atlassian_with_bitbucket_and_privacy.preprocessing.confluence import (
+        ConfluencePreprocessor,
+    )
 
     html = (
         '<ac:structured-macro ac:name="profile">'
@@ -553,7 +557,9 @@ def test_process_confluence_profile_macro_fallback():
 
 def test_process_user_profile_macro_multiple():
     """Test processing multiple User Profile Macros with account-id, userkey, and username."""
-    from mcp_atlassian.preprocessing.confluence import ConfluencePreprocessor
+    from mcp_atlassian_with_bitbucket_and_privacy.preprocessing.confluence import (
+        ConfluencePreprocessor,
+    )
 
     html = (
         "<p>This page mentions a user via profile macro: "
@@ -613,7 +619,9 @@ def test_process_user_profile_macro_multiple():
 
 def test_markdown_to_confluence_no_automatic_anchors():
     """Test that heading_anchors=False prevents automatic anchor generation (regression for issue #488)."""
-    from mcp_atlassian.preprocessing.confluence import ConfluencePreprocessor
+    from mcp_atlassian_with_bitbucket_and_privacy.preprocessing.confluence import (
+        ConfluencePreprocessor,
+    )
 
     markdown_with_headings = """
 # Main Title
@@ -642,7 +650,9 @@ Final content.
 
 def test_markdown_to_confluence_style_preservation():
     """Test that styled content is preserved during conversion."""
-    from mcp_atlassian.preprocessing.confluence import ConfluencePreprocessor
+    from mcp_atlassian_with_bitbucket_and_privacy.preprocessing.confluence import (
+        ConfluencePreprocessor,
+    )
 
     markdown_with_styles = """
 # Title with **bold** text
@@ -677,7 +687,9 @@ def hello():
 
 def test_markdown_to_confluence_optional_anchor_generation():
     """Test that enable_heading_anchors parameter controls anchor generation."""
-    from mcp_atlassian.preprocessing.confluence import ConfluencePreprocessor
+    from mcp_atlassian_with_bitbucket_and_privacy.preprocessing.confluence import (
+        ConfluencePreprocessor,
+    )
 
     markdown_with_headings = """
 # Main Title
@@ -713,7 +725,9 @@ class TestFixAttachmentImages:
     """Unit tests for ConfluencePreprocessor._fix_attachment_images."""
 
     def setup_method(self):
-        from mcp_atlassian.preprocessing.confluence import ConfluencePreprocessor
+        from mcp_atlassian_with_bitbucket_and_privacy.preprocessing.confluence import (
+            ConfluencePreprocessor,
+        )
 
         self.fix = ConfluencePreprocessor._fix_attachment_images
 
@@ -794,7 +808,9 @@ class TestFixAttachmentImages:
 
 def test_markdown_to_confluence_storage_attachment_image():
     """Regression: bare-filename images must produce ac:image attachment macros."""
-    from mcp_atlassian.preprocessing.confluence import ConfluencePreprocessor
+    from mcp_atlassian_with_bitbucket_and_privacy.preprocessing.confluence import (
+        ConfluencePreprocessor,
+    )
 
     preprocessor = ConfluencePreprocessor(base_url="https://example.atlassian.net")
     result = preprocessor.markdown_to_confluence_storage("![Revenue chart](chart.png)")
@@ -809,7 +825,9 @@ def test_markdown_to_confluence_storage_attachment_image():
 
 def test_markdown_to_confluence_storage_external_image_unchanged():
     """External image URLs must not be rewritten to attachment macros."""
-    from mcp_atlassian.preprocessing.confluence import ConfluencePreprocessor
+    from mcp_atlassian_with_bitbucket_and_privacy.preprocessing.confluence import (
+        ConfluencePreprocessor,
+    )
 
     preprocessor = ConfluencePreprocessor(base_url="https://example.atlassian.net")
     result = preprocessor.markdown_to_confluence_storage(

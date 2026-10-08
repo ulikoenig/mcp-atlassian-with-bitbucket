@@ -11,7 +11,7 @@ import pytest
 from fastmcp import FastMCP
 from fastmcp.exceptions import ToolError
 
-from mcp_atlassian.privacy import (
+from mcp_atlassian_with_bitbucket_and_privacy.privacy import (
     CurrentIdentityResolver,
     IdentityPrivacyConfig,
     IdentityResponseTransformer,
@@ -23,8 +23,10 @@ from mcp_atlassian.privacy import (
     install_identity_privacy,
     record_current_identity,
 )
-from mcp_atlassian.privacy.current_user import CurrentIdentity
-from mcp_atlassian.utils.decorators import handle_tool_errors
+from mcp_atlassian_with_bitbucket_and_privacy.privacy.current_user import (
+    CurrentIdentity,
+)
+from mcp_atlassian_with_bitbucket_and_privacy.utils.decorators import handle_tool_errors
 
 
 class ReplacingAdapter:
@@ -406,7 +408,7 @@ async def test_concurrent_calls_do_not_share_current_identity() -> None:
 
 
 def test_main_server_default_does_not_install_privacy_middleware() -> None:
-    from mcp_atlassian.servers.main import main_mcp
+    from mcp_atlassian_with_bitbucket_and_privacy.servers.main import main_mcp
 
     assert not any(
         isinstance(middleware, PrivacyFilterMiddleware)

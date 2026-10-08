@@ -4,7 +4,10 @@ import logging
 
 import pytest
 
-from src.mcp_atlassian.servers.helpers import parse_include, resolve_transition
+from src.mcp_atlassian_with_bitbucket_and_privacy.servers.helpers import (
+    parse_include,
+    resolve_transition,
+)
 
 
 def test_parse_include_returns_valid_sections() -> None:

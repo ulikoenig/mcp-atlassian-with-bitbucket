@@ -3,9 +3,11 @@
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
-from mcp_atlassian.jira.issues import _privacy_issue_metadata_kwargs
-from mcp_atlassian.jira.watchers import WatchersMixin
-from mcp_atlassian.privacy import (
+from mcp_atlassian_with_bitbucket_and_privacy.jira.issues import (
+    _privacy_issue_metadata_kwargs,
+)
+from mcp_atlassian_with_bitbucket_and_privacy.jira.watchers import WatchersMixin
+from mcp_atlassian_with_bitbucket_and_privacy.privacy import (
     begin_identity_privacy_runtime,
     reset_identity_privacy_runtime,
 )

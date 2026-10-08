@@ -81,7 +81,9 @@ async def test_hidden_tool_is_absent_from_public_listing(
 ) -> None:
     """Policy-hidden tools remain undiscoverable (GHSA-3r68, issue #1541)."""
     _configure_jira(monkeypatch, tmp_path, policy_env)
-    main_module = importlib.import_module("mcp_atlassian.servers.main")
+    main_module = importlib.import_module(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.main"
+    )
 
     async with Client(main_module.main_mcp) as client:
         tools = await client.list_tools()
@@ -103,10 +105,12 @@ async def test_hidden_tool_cannot_be_called_through_public_client(
     """Hidden tools remain unknown and unexecuted (GHSA-3r68, issue #1541)."""
     _configure_jira(monkeypatch, tmp_path, policy_env)
 
-    main_module = importlib.import_module("mcp_atlassian.servers.main")
+    main_module = importlib.import_module(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.main"
+    )
 
     with patch(
-        "mcp_atlassian.servers.jira.get_jira_fetcher",
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.jira.get_jira_fetcher",
         new_callable=AsyncMock,
         side_effect=AssertionError("hidden write reached the Jira fetcher"),
     ) as get_jira_fetcher:
@@ -144,7 +148,9 @@ async def test_enabled_read_tool_uses_public_call_path(
             "TOOLSETS": "jira_issues",
         },
     )
-    main_module = importlib.import_module("mcp_atlassian.servers.main")
+    main_module = importlib.import_module(
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.main"
+    )
     issue = MagicMock()
     issue.to_simplified_dict.return_value = {
         "id": "10001",
@@ -155,7 +161,7 @@ async def test_enabled_read_tool_uses_public_call_path(
     jira_fetcher.get_issue.return_value = issue
 
     with patch(
-        "mcp_atlassian.servers.jira.get_jira_fetcher",
+        "mcp_atlassian_with_bitbucket_and_privacy.servers.jira.get_jira_fetcher",
         new_callable=AsyncMock,
         return_value=jira_fetcher,
     ) as get_jira_fetcher:

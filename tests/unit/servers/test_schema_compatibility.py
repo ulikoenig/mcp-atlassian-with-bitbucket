@@ -14,7 +14,10 @@ import json
 import pytest
 from mcp.types import Tool as MCPTool
 
-from mcp_atlassian.servers.main import _sanitize_schema_for_compatibility, main_mcp
+from mcp_atlassian_with_bitbucket_and_privacy.servers.main import (
+    _sanitize_schema_for_compatibility,
+    main_mcp,
+)
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -312,35 +315,45 @@ class TestNarrowedParameterRegression:
 
     def test_parse_additional_fields_accepts_dict(self) -> None:
         """Backward compat: ``_parse_additional_fields`` still handles dict."""
-        from mcp_atlassian.servers.jira import _parse_additional_fields
+        from mcp_atlassian_with_bitbucket_and_privacy.servers.jira import (
+            _parse_additional_fields,
+        )
 
         result = _parse_additional_fields({"priority": {"name": "High"}})
         assert result == {"priority": {"name": "High"}}
 
     def test_parse_additional_fields_accepts_string(self) -> None:
         """New path: ``_parse_additional_fields`` handles JSON string."""
-        from mcp_atlassian.servers.jira import _parse_additional_fields
+        from mcp_atlassian_with_bitbucket_and_privacy.servers.jira import (
+            _parse_additional_fields,
+        )
 
         result = _parse_additional_fields('{"labels": ["ai", "test"]}')
         assert result == {"labels": ["ai", "test"]}
 
     def test_parse_additional_fields_accepts_none(self) -> None:
         """``None`` returns empty dict."""
-        from mcp_atlassian.servers.jira import _parse_additional_fields
+        from mcp_atlassian_with_bitbucket_and_privacy.servers.jira import (
+            _parse_additional_fields,
+        )
 
         result = _parse_additional_fields(None)
         assert result == {}
 
     def test_parse_additional_fields_rejects_invalid_json(self) -> None:
         """Invalid JSON string raises ``ValueError``."""
-        from mcp_atlassian.servers.jira import _parse_additional_fields
+        from mcp_atlassian_with_bitbucket_and_privacy.servers.jira import (
+            _parse_additional_fields,
+        )
 
         with pytest.raises(ValueError, match="not valid JSON"):
             _parse_additional_fields("{invalid")
 
     def test_parse_additional_fields_rejects_non_dict_json(self) -> None:
         """JSON array raises ``ValueError``."""
-        from mcp_atlassian.servers.jira import _parse_additional_fields
+        from mcp_atlassian_with_bitbucket_and_privacy.servers.jira import (
+            _parse_additional_fields,
+        )
 
         with pytest.raises(ValueError, match="not a JSON object"):
             _parse_additional_fields('["a", "b"]')
@@ -395,7 +408,7 @@ class TestSetPageRestrictionsArraySchema:
     lack an ``items`` definition in the JSON schema (issue #1455).
 
     These tests guard the fix in
-    ``src.mcp_atlassian.servers.confluence.set_page_restrictions`` which
+    ``src.mcp_atlassian_with_bitbucket_and_privacy.servers.confluence.set_page_restrictions`` which
     adds ``json_schema_extra={"items": {"type": "string"}}`` to each of the
     four list parameters (read_users, read_groups, edit_users, edit_groups).
     """

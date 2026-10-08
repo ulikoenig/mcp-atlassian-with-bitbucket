@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from mcp_atlassian.confluence import ConfluenceFetcher
+from mcp_atlassian_with_bitbucket_and_privacy.confluence import ConfluenceFetcher
 
 from .conftest import DCInstanceInfo, DCResourceTracker
 

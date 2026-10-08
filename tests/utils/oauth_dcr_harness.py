@@ -55,7 +55,11 @@ def _write_loopback_certificate(directory: Path) -> tuple[Path, Path, Path]:
     leaf_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     now = datetime.now(timezone.utc)
     ca_subject = x509.Name(
-        [x509.NameAttribute(NameOID.COMMON_NAME, "mcp-atlassian test CA")]
+        [
+            x509.NameAttribute(
+                NameOID.COMMON_NAME, "mcp-atlassian-with-bitbucket-and-privacy test CA"
+            )
+        ]
     )
     ca_subject_key_identifier = x509.SubjectKeyIdentifier.from_public_key(
         ca_key.public_key()
@@ -87,7 +91,12 @@ def _write_loopback_certificate(directory: Path) -> tuple[Path, Path, Path]:
         .sign(ca_key, hashes.SHA256())
     )
     leaf_subject = x509.Name(
-        [x509.NameAttribute(NameOID.COMMON_NAME, "mcp-atlassian-test.local")]
+        [
+            x509.NameAttribute(
+                NameOID.COMMON_NAME,
+                "mcp-atlassian-with-bitbucket-and-privacy-test.local",
+            )
+        ]
     )
     certificate = (
         x509.CertificateBuilder()
@@ -383,7 +392,7 @@ class OAuthDCRClientHarness:
         response = await self._client.post(
             "/register",
             json={
-                "client_name": "mcp-atlassian OAuth DCR harness",
+                "client_name": "mcp-atlassian-with-bitbucket-and-privacy OAuth DCR harness",
                 "redirect_uris": [redirect_uri],
                 "grant_types": ["authorization_code", "refresh_token"],
                 "response_types": ["code"],

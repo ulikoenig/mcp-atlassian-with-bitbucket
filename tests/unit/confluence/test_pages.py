@@ -6,9 +6,11 @@ import pytest
 from atlassian.errors import ApiError
 from requests.exceptions import ConnectionError, HTTPError
 
-from mcp_atlassian.confluence.pages import PagesMixin
-from mcp_atlassian.confluence.utils import extract_emoji_from_property
-from mcp_atlassian.models.confluence import ConfluencePage
+from mcp_atlassian_with_bitbucket_and_privacy.confluence.pages import PagesMixin
+from mcp_atlassian_with_bitbucket_and_privacy.confluence.utils import (
+    extract_emoji_from_property,
+)
+from mcp_atlassian_with_bitbucket_and_privacy.models.confluence import ConfluencePage
 
 
 class TestPagesMixin:
@@ -19,7 +21,7 @@ class TestPagesMixin:
         """Create a PagesMixin instance for testing."""
         # PagesMixin inherits from ConfluenceClient, so we need to create it properly
         with patch(
-            "mcp_atlassian.confluence.pages.ConfluenceClient.__init__"
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.pages.ConfluenceClient.__init__"
         ) as mock_init:
             mock_init.return_value = None
             mixin = PagesMixin()
@@ -406,7 +408,7 @@ class TestPagesMixin:
         parent_id = "987654321"
 
         with patch(
-            "mcp_atlassian.confluence.pages.ConfluenceV2Adapter"
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.pages.ConfluenceV2Adapter"
         ) as mock_v2_adapter_class:
             mock_v2_adapter = MagicMock()
             mock_v2_adapter_class.return_value = mock_v2_adapter
@@ -1011,7 +1013,7 @@ class TestPagesMixin:
         }
 
         with patch(
-            "mcp_atlassian.confluence.pages.ConfluenceV2Adapter",
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.pages.ConfluenceV2Adapter",
             return_value=mock_v2_adapter,
         ) as adapter_cls:
             results = pages_mixin.get_page_children(page_id=parent_id, limit=10)
@@ -1722,7 +1724,9 @@ class TestPagesMixin:
 
         from requests.exceptions import HTTPError
 
-        from mcp_atlassian.exceptions import MCPAtlassianAuthenticationError
+        from mcp_atlassian_with_bitbucket_and_privacy.exceptions import (
+            MCPAtlassianAuthenticationError,
+        )
 
         # Create a mock HTTP error response with 401
         mock_response = MagicMock()
@@ -1809,7 +1813,7 @@ class TestPagesOAuthMixin:
         """Create a PagesMixin instance for OAuth testing."""
         # PagesMixin inherits from ConfluenceClient, so we need to create it properly
         with patch(
-            "mcp_atlassian.confluence.pages.ConfluenceClient.__init__"
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.pages.ConfluenceClient.__init__"
         ) as mock_init:
             mock_init.return_value = None
             mixin = PagesMixin()
@@ -1829,7 +1833,7 @@ class TestPagesOAuthMixin:
 
         # Mock the v2 adapter
         with patch(
-            "mcp_atlassian.confluence.pages.ConfluenceV2Adapter"
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.pages.ConfluenceV2Adapter"
         ) as mock_v2_adapter_class:
             mock_v2_adapter = MagicMock()
             mock_v2_adapter_class.return_value = mock_v2_adapter
@@ -1879,7 +1883,7 @@ class TestPagesOAuthMixin:
 
         # Mock the v2 adapter
         with patch(
-            "mcp_atlassian.confluence.pages.ConfluenceV2Adapter"
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.pages.ConfluenceV2Adapter"
         ) as mock_v2_adapter_class:
             mock_v2_adapter = MagicMock()
             mock_v2_adapter_class.return_value = mock_v2_adapter
@@ -1938,7 +1942,7 @@ class TestPagesOAuthMixin:
 
         # Mock the v2 adapter
         with patch(
-            "mcp_atlassian.confluence.pages.ConfluenceV2Adapter"
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.pages.ConfluenceV2Adapter"
         ) as mock_v2_adapter_class:
             mock_v2_adapter = MagicMock()
             mock_v2_adapter_class.return_value = mock_v2_adapter
@@ -1991,7 +1995,7 @@ class TestPagesOAuthMixin:
 
         # Mock the v2 adapter
         with patch(
-            "mcp_atlassian.confluence.pages.ConfluenceV2Adapter"
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.pages.ConfluenceV2Adapter"
         ) as mock_v2_adapter_class:
             mock_v2_adapter = MagicMock()
             mock_v2_adapter_class.return_value = mock_v2_adapter
@@ -2052,7 +2056,7 @@ class TestPagesOAuthMixin:
 
         # Mock the v2 adapter
         with patch(
-            "mcp_atlassian.confluence.pages.ConfluenceV2Adapter"
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.pages.ConfluenceV2Adapter"
         ) as mock_v2_adapter_class:
             mock_v2_adapter = MagicMock()
             mock_v2_adapter_class.return_value = mock_v2_adapter
@@ -2078,7 +2082,7 @@ class TestPagesOAuthMixin:
 
         # Mock the v2 adapter
         with patch(
-            "mcp_atlassian.confluence.pages.ConfluenceV2Adapter"
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.pages.ConfluenceV2Adapter"
         ) as mock_v2_adapter_class:
             mock_v2_adapter = MagicMock()
             mock_v2_adapter_class.return_value = mock_v2_adapter
@@ -2134,7 +2138,7 @@ class TestPagesOAuthMixin:
         version = 3
 
         with patch(
-            "mcp_atlassian.confluence.pages.ConfluenceV2Adapter"
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.pages.ConfluenceV2Adapter"
         ) as mock_v2_adapter_class:
             mock_v2_adapter = MagicMock()
             mock_v2_adapter_class.return_value = mock_v2_adapter
@@ -2171,7 +2175,7 @@ class TestPagesOAuthMixin:
         version = 1
 
         with patch(
-            "mcp_atlassian.confluence.pages.ConfluenceV2Adapter"
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.pages.ConfluenceV2Adapter"
         ) as mock_v2_adapter_class:
             mock_v2_adapter = MagicMock()
             mock_v2_adapter_class.return_value = mock_v2_adapter
@@ -2208,7 +2212,7 @@ class TestPagesOAuthMixin:
         version = 1
 
         with patch(
-            "mcp_atlassian.confluence.pages.ConfluenceV2Adapter"
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.pages.ConfluenceV2Adapter"
         ) as mock_v2_adapter_class:
             mock_v2_adapter = MagicMock()
             mock_v2_adapter_class.return_value = mock_v2_adapter
@@ -2242,7 +2246,7 @@ class TestPagesOAuthMixin:
         version = 2
 
         with patch(
-            "mcp_atlassian.confluence.pages.ConfluenceV2Adapter"
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.pages.ConfluenceV2Adapter"
         ) as mock_v2_adapter_class:
             mock_v2_adapter = MagicMock()
             mock_v2_adapter_class.return_value = mock_v2_adapter
@@ -2280,7 +2284,7 @@ class TestPageEmoji:
     def pages_mixin(self, confluence_client):
         """Create a PagesMixin instance for testing."""
         with patch(
-            "mcp_atlassian.confluence.pages.ConfluenceClient.__init__"
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.pages.ConfluenceClient.__init__"
         ) as mock_init:
             mock_init.return_value = None
             mixin = PagesMixin()
@@ -2590,7 +2594,7 @@ class TestPageEmojiOAuth:
     def oauth_pages_mixin(self, oauth_confluence_client):
         """Create a PagesMixin instance for OAuth testing."""
         with patch(
-            "mcp_atlassian.confluence.pages.ConfluenceClient.__init__"
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.pages.ConfluenceClient.__init__"
         ) as mock_init:
             mock_init.return_value = None
             mixin = PagesMixin()
@@ -2604,7 +2608,7 @@ class TestPageEmojiOAuth:
         page_id = "oauth_emoji_123"
 
         with patch(
-            "mcp_atlassian.confluence.pages.ConfluenceV2Adapter"
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.pages.ConfluenceV2Adapter"
         ) as mock_v2_adapter_class:
             mock_v2_adapter = MagicMock()
             mock_v2_adapter_class.return_value = mock_v2_adapter
@@ -2620,7 +2624,7 @@ class TestPageEmojiOAuth:
         page_id = "oauth_get_123"
 
         with patch(
-            "mcp_atlassian.confluence.pages.ConfluenceV2Adapter"
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.pages.ConfluenceV2Adapter"
         ) as mock_v2_adapter_class:
             mock_v2_adapter = MagicMock()
             mock_v2_adapter_class.return_value = mock_v2_adapter
@@ -2651,7 +2655,7 @@ class TestPageEmojiOAuth:
         page_id = "oauth_set_emoji_123"
 
         with patch(
-            "mcp_atlassian.confluence.pages.ConfluenceV2Adapter"
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.pages.ConfluenceV2Adapter"
         ) as mock_v2_adapter_class:
             mock_v2_adapter = MagicMock()
             mock_v2_adapter_class.return_value = mock_v2_adapter
@@ -2667,7 +2671,7 @@ class TestPageEmojiOAuth:
         page_id = "oauth_remove_emoji_123"
 
         with patch(
-            "mcp_atlassian.confluence.pages.ConfluenceV2Adapter"
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.pages.ConfluenceV2Adapter"
         ) as mock_v2_adapter_class:
             mock_v2_adapter = MagicMock()
             mock_v2_adapter_class.return_value = mock_v2_adapter
@@ -2686,7 +2690,7 @@ class TestMovePage:
     def pages_mixin(self, confluence_client):
         """Create a PagesMixin instance for testing."""
         with patch(
-            "mcp_atlassian.confluence.pages.ConfluenceClient.__init__"
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.pages.ConfluenceClient.__init__"
         ) as mock_init:
             mock_init.return_value = None
             mixin = PagesMixin()
@@ -2895,7 +2899,7 @@ class TestGetPageVersionDiff:
     def pages_mixin(self, confluence_client):
         """Create a PagesMixin instance for testing."""
         with patch(
-            "mcp_atlassian.confluence.pages.ConfluenceClient.__init__"
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.pages.ConfluenceClient.__init__"
         ) as mock_init:
             mock_init.return_value = None
             mixin = PagesMixin()
@@ -2998,7 +3002,7 @@ class TestPageWidth:
     def pages_mixin(self, confluence_client):
         """Create a PagesMixin instance for testing."""
         with patch(
-            "mcp_atlassian.confluence.pages.ConfluenceClient.__init__"
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.pages.ConfluenceClient.__init__"
         ) as mock_init:
             mock_init.return_value = None
             mixin = PagesMixin()
@@ -3209,7 +3213,7 @@ class TestCopyPage:
     def pages_mixin(self, confluence_client):
         """Create a PagesMixin instance for testing."""
         with patch(
-            "mcp_atlassian.confluence.pages.ConfluenceClient.__init__"
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.pages.ConfluenceClient.__init__"
         ) as mock_init:
             mock_init.return_value = None
             mixin = PagesMixin()
@@ -3320,7 +3324,7 @@ class TestPageHierarchy:
     def pages_mixin(self, confluence_client):
         """Create a PagesMixin instance for testing."""
         with patch(
-            "mcp_atlassian.confluence.pages.ConfluenceClient.__init__"
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.pages.ConfluenceClient.__init__"
         ) as mock_init:
             mock_init.return_value = None
             mixin = PagesMixin()
@@ -3737,7 +3741,7 @@ class TestUpdatePageSection:
     def pages_mixin(self, confluence_client):
         """Create a PagesMixin instance for testing."""
         with patch(
-            "mcp_atlassian.confluence.pages.ConfluenceClient.__init__"
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.pages.ConfluenceClient.__init__"
         ) as mock_init:
             mock_init.return_value = None
             mixin = PagesMixin()

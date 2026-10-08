@@ -8,19 +8,19 @@ JiraPriority, and JiraChangelog models.
 import json
 from datetime import datetime, timezone
 
-from mcp_atlassian.models.constants import (
+from mcp_atlassian_with_bitbucket_and_privacy.models.constants import (
     EMPTY_STRING,
     JIRA_DEFAULT_ID,
     UNKNOWN,
 )
-from mcp_atlassian.models.jira import (
+from mcp_atlassian_with_bitbucket_and_privacy.models.jira import (
     JiraIssueType,
     JiraPriority,
     JiraStatus,
     JiraStatusCategory,
     JiraUser,
 )
-from mcp_atlassian.models.jira.common import JiraChangelog
+from mcp_atlassian_with_bitbucket_and_privacy.models.jira.common import JiraChangelog
 
 
 class TestJiraUser:

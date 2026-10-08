@@ -5,9 +5,9 @@ from unittest.mock import MagicMock
 import pytest
 from requests.exceptions import HTTPError
 
-import mcp_atlassian.jira.customer_requests as customer_requests_module
-from mcp_atlassian.jira import JiraFetcher
-from mcp_atlassian.models.jira import (
+import mcp_atlassian_with_bitbucket_and_privacy.jira.customer_requests as customer_requests_module
+from mcp_atlassian_with_bitbucket_and_privacy.jira import JiraFetcher
+from mcp_atlassian_with_bitbucket_and_privacy.models.jira import (
     JiraCustomerRequest,
     JiraRequestTypeFieldsResult,
     JiraRequestTypesResult,

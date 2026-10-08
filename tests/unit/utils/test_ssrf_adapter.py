@@ -14,7 +14,7 @@ import pytest
 import requests
 from requests.adapters import HTTPAdapter
 
-from mcp_atlassian.utils.ssrf_adapter import (
+from mcp_atlassian_with_bitbucket_and_privacy.utils.ssrf_adapter import (
     SsrfPinningAdapter,
     _pinned_create_connection,
     mount_ssrf_pinning,
@@ -38,7 +38,10 @@ def test_rebind_internal_address_refused_with_single_resolution():
         calls["n"] += 1
         return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("169.254.169.254", 443))]
 
-    with patch("mcp_atlassian.utils.ssrf_adapter.socket.getaddrinfo", side_effect=gai):
+    with patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.utils.ssrf_adapter.socket.getaddrinfo",
+        side_effect=gai,
+    ):
         with pytest.raises(OSError, match="non-global"):
             _pinned_create_connection(("rebind.attacker.test", 443))
 
@@ -56,7 +59,7 @@ def test_pinning_adapter_blocks_internal_through_real_stack(ip):
     session.mount("http://", SsrfPinningAdapter())
 
     with patch(
-        "mcp_atlassian.utils.ssrf_adapter.socket.getaddrinfo",
+        "mcp_atlassian_with_bitbucket_and_privacy.utils.ssrf_adapter.socket.getaddrinfo",
         side_effect=_gai_returning(ip),
     ):
         with pytest.raises(requests.exceptions.ConnectionError, match="SSRF blocked"):
@@ -94,7 +97,7 @@ def test_operator_configured_target_keeps_proxy(monkeypatch):
 @pytest.mark.security_regression
 def test_cloud_oauth_gateway_keeps_proxy_through_no_proxy_adapter(monkeypatch):
     """The fixed Cloud OAuth transport remains proxyable after NO_PROXY handling."""
-    from mcp_atlassian.utils.ssl import NoProxyAdapter
+    from mcp_atlassian_with_bitbucket_and_privacy.utils.ssl import NoProxyAdapter
 
     for key in ("JIRA_URL", "CONFLUENCE_URL", "MCP_ALLOWED_URL_DOMAINS"):
         monkeypatch.delenv(key, raising=False)
@@ -153,11 +156,11 @@ def test_operator_configured_host_may_resolve_private(env, monkeypatch):
 
     with (
         patch(
-            "mcp_atlassian.utils.ssrf_adapter.socket.getaddrinfo",
+            "mcp_atlassian_with_bitbucket_and_privacy.utils.ssrf_adapter.socket.getaddrinfo",
             side_effect=_gai_returning("10.0.0.5"),
         ),
         patch(
-            "mcp_atlassian.utils.ssrf_adapter.socket.socket",
+            "mcp_atlassian_with_bitbucket_and_privacy.utils.ssrf_adapter.socket.socket",
             return_value=_FakeConnectSock(connected),
         ),
     ):
@@ -173,7 +176,7 @@ def test_untrusted_host_still_refused_when_other_hosts_are_trusted(monkeypatch):
     monkeypatch.setenv("JIRA_URL", "http://jira.internal:8080")
 
     with patch(
-        "mcp_atlassian.utils.ssrf_adapter.socket.getaddrinfo",
+        "mcp_atlassian_with_bitbucket_and_privacy.utils.ssrf_adapter.socket.getaddrinfo",
         side_effect=_gai_returning("169.254.169.254"),
     ):
         with pytest.raises(OSError, match="non-global"):
@@ -186,7 +189,7 @@ def test_ssl_ignore_adapter_keeps_the_pinning_guard(monkeypatch):
     pinning adapter (requests picks the longest prefix), so it must carry the
     pinned connection classes itself — otherwise ssl_verify=false silently
     disables the SSRF rebinding guard."""
-    from mcp_atlassian.utils.ssl import SSLIgnoreAdapter
+    from mcp_atlassian_with_bitbucket_and_privacy.utils.ssl import SSLIgnoreAdapter
 
     monkeypatch.delenv("JIRA_URL", raising=False)
     session = requests.Session()
@@ -194,7 +197,7 @@ def test_ssl_ignore_adapter_keeps_the_pinning_guard(monkeypatch):
     session.mount("http://rebind.attacker.test", SSLIgnoreAdapter())
 
     with patch(
-        "mcp_atlassian.utils.ssrf_adapter.socket.getaddrinfo",
+        "mcp_atlassian_with_bitbucket_and_privacy.utils.ssrf_adapter.socket.getaddrinfo",
         side_effect=_gai_returning("169.254.169.254"),
     ):
         with pytest.raises(requests.exceptions.ConnectionError, match="SSRF blocked"):
@@ -224,11 +227,11 @@ def test_global_address_connects_to_the_validated_ip():
 
     with (
         patch(
-            "mcp_atlassian.utils.ssrf_adapter.socket.getaddrinfo",
+            "mcp_atlassian_with_bitbucket_and_privacy.utils.ssrf_adapter.socket.getaddrinfo",
             side_effect=_gai_returning("93.184.216.34"),
         ),
         patch(
-            "mcp_atlassian.utils.ssrf_adapter.socket.socket",
+            "mcp_atlassian_with_bitbucket_and_privacy.utils.ssrf_adapter.socket.socket",
             return_value=_FakeSock(),
         ),
     ):

@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, Mock
 import pytest
 from requests.exceptions import HTTPError
 
-from mcp_atlassian.jira.development import DevelopmentMixin
+from mcp_atlassian_with_bitbucket_and_privacy.jira.development import DevelopmentMixin
 
 
 class TestDevelopmentMixin:

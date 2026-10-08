@@ -2,7 +2,7 @@
 
 import pytest
 
-from mcp_atlassian.preprocessing.jira import JiraPreprocessor
+from mcp_atlassian_with_bitbucket_and_privacy.preprocessing.jira import JiraPreprocessor
 
 
 @pytest.fixture

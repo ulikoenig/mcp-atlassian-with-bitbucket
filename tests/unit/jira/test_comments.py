@@ -5,7 +5,7 @@ from unittest.mock import Mock
 import pytest
 from requests.exceptions import HTTPError
 
-from mcp_atlassian.jira.comments import CommentsMixin
+from mcp_atlassian_with_bitbucket_and_privacy.jira.comments import CommentsMixin
 
 
 class TestCommentsMixin:

@@ -1,4 +1,4 @@
-# MCP Atlassian
+# MCP Atlassian with Bitbucket and Privacy
 
 > **Audience**: LLM-driven engineering agents
 
@@ -8,7 +8,7 @@
 
 | Path | Purpose |
 | --- | --- |
-| `src/mcp_atlassian/` | Library source (Python ≥ 3.10) |
+| `src/mcp_atlassian_with_bitbucket_and_privacy/` | Library source (Python ≥ 3.10) |
 | `  ├─ jira/` | Jira client + mixins (issues, search, SLA, metrics, …) |
 | `  ├─ confluence/` | Confluence client + mixins (pages, search, analytics, …) |
 | `  ├─ models/` | Pydantic v2 data models (`ApiModel` base) |
@@ -40,7 +40,7 @@ pre-commit run --all-files           # Ruff + mypy
 uv run pytest -xvs                   # full test suite
 uv run pytest tests/unit/ -xvs       # unit tests only
 uv run pytest tests/integration/     # integration tests
-uv run pytest --cov=src/mcp_atlassian --cov-report=term-missing  # coverage
+uv run pytest --cov=src/mcp_atlassian_with_bitbucket_and_privacy --cov-report=term-missing  # coverage
 ```
 
 *Tests must pass* and *lint/typing must be clean* before committing.
@@ -85,9 +85,9 @@ uv run pytest --cov=src/mcp_atlassian --cov-report=term-missing  # coverage
 
 ```bash
 # Running the server
-uv run mcp-atlassian                 # Start server
-uv run mcp-atlassian --oauth-setup   # OAuth wizard
-uv run mcp-atlassian -v              # Verbose mode
+uv run mcp-atlassian-with-bitbucket-and-privacy                 # Start server
+uv run mcp-atlassian-with-bitbucket-and-privacy --oauth-setup   # OAuth wizard
+uv run mcp-atlassian-with-bitbucket-and-privacy -v              # Verbose mode
 
 # Git workflow
 git checkout -b feature/description   # New feature

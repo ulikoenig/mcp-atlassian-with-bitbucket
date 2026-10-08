@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Probe an mcp-atlassian subprocess using only the public MCP SDK."""
+"""Probe an mcp-atlassian-with-bitbucket-and-privacy subprocess using only the public MCP SDK."""
 
 from __future__ import annotations
 
@@ -269,7 +269,9 @@ async def probe(args: argparse.Namespace) -> dict[str, Any]:
 def _parser() -> argparse.ArgumentParser:
     """Build the wire-probe argument parser."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--server-command", default="mcp-atlassian")
+    parser.add_argument(
+        "--server-command", default="mcp-atlassian-with-bitbucket-and-privacy"
+    )
     parser.add_argument("--server-arg", action="append", default=[])
     parser.add_argument("--cwd", type=Path)
     parser.add_argument("--timeout", type=float, default=60.0)

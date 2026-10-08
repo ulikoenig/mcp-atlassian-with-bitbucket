@@ -1,7 +1,7 @@
-# MCP Atlassian + Bitbucket
+# MCP Atlassian with Bitbucket and Privacy
 
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
-![License](https://img.shields.io/github/license/ulikoenig/mcp-atlassian-with-bitbucket)
+![License](https://img.shields.io/github/license/ulikoenig/mcp-atlassian-with-bitbucket-and-privacy)
 
 Model Context Protocol (MCP) server for Atlassian products — **Jira**, **Confluence**, and **Bitbucket**. Supports both Cloud and Server/Data Center deployments.
 
@@ -24,9 +24,9 @@ Just add to your Claude Desktop, Cursor, VS Code, or Claude Code MCP configurati
 ```json
 {
   "mcpServers": {
-    "mcp-atlassian-with-bitbucket": {
+    "mcp-atlassian-with-bitbucket-and-privacy": {
       "command": "uvx",
-      "args": ["mcp-atlassian-with-bitbucket"],
+      "args": ["mcp-atlassian-with-bitbucket-and-privacy"],
       "env": {
         "JIRA_URL": "https://your-company.atlassian.net",
         "JIRA_USERNAME": "your.email@company.com",
@@ -64,9 +64,9 @@ Then add to your MCP configuration:
 ```json
 {
   "mcpServers": {
-    "mcp-atlassian-with-bitbucket": {
+    "mcp-atlassian-with-bitbucket-and-privacy": {
       "command": "uv",
-      "args": ["run", "--directory", "/path/to/mcp-atlassian-with-bitbucket", "mcp-atlassian"],
+      "args": ["run", "--directory", "/path/to/mcp-atlassian-with-bitbucket", "mcp-atlassian-with-bitbucket-and-privacy"],
       "env": {
         "JIRA_URL": "https://your-company.atlassian.net",
         "JIRA_USERNAME": "your.email@company.com",
@@ -91,14 +91,14 @@ Then add to your MCP configuration:
 Use the same `uvx` server with your Atlassian credentials:
 
 ```bash
-autohand mcp add mcp-atlassian env \
+autohand mcp add mcp-atlassian-with-bitbucket-and-privacy env \
   JIRA_URL=https://your-company.atlassian.net \
   JIRA_USERNAME=your.email@company.com \
   JIRA_API_TOKEN=your_api_token \
   CONFLUENCE_URL=https://your-company.atlassian.net/wiki \
   CONFLUENCE_USERNAME=your.email@company.com \
   CONFLUENCE_API_TOKEN=your_api_token \
-  uvx mcp-atlassian
+  uvx mcp-atlassian-with-bitbucket-and-privacy
 ```
 
 Add `--scope project` after `add` to keep the configuration in the current
@@ -531,9 +531,9 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
 ```json
 {
   "mcpServers": {
-    "mcp-atlassian-with-bitbucket": {
+    "mcp-atlassian-with-bitbucket-and-privacy": {
       "command": "uvx",
-      "args": ["mcp-atlassian-with-bitbucket"],
+      "args": ["mcp-atlassian-with-bitbucket-and-privacy"],
       "env": {
         "BITBUCKET_URL": "https://bitbucket.org",
         "BITBUCKET_USERNAME": "your_username",
@@ -552,9 +552,9 @@ The recommended approach is to add the server directly in `~/.claude/settings.js
 ```json
 {
   "mcpServers": {
-    "mcp-atlassian-with-bitbucket": {
+    "mcp-atlassian-with-bitbucket-and-privacy": {
       "command": "uvx",
-      "args": ["mcp-atlassian-with-bitbucket"],
+      "args": ["mcp-atlassian-with-bitbucket-and-privacy"],
       "env": {
         "JIRA_URL": "https://your-company.atlassian.net",
         "JIRA_USERNAME": "your.email@company.com",
@@ -577,9 +577,9 @@ The recommended approach is to add the server directly in `~/.claude/settings.js
 ```json
 {
   "mcpServers": {
-    "mcp-atlassian-with-bitbucket": {
+    "mcp-atlassian-with-bitbucket-and-privacy": {
       "command": "uv",
-      "args": ["run", "--directory", "/path/to/mcp-atlassian-with-bitbucket", "mcp-atlassian"],
+      "args": ["run", "--directory", "/path/to/mcp-atlassian-with-bitbucket-and-privacy", "mcp-atlassian-with-bitbucket-and-privacy"],
       "env": {
         "BITBUCKET_URL": "https://bitbucket.org",
         "BITBUCKET_USERNAME": "your.email@company.com",
@@ -600,9 +600,9 @@ Add to `.cursor/mcp.json` (uses the `mcpServers` key, same format as Claude Desk
 ```json
 {
   "mcpServers": {
-    "mcp-atlassian-with-bitbucket": {
+    "mcp-atlassian-with-bitbucket-and-privacy": {
       "command": "uvx",
-      "args": ["mcp-atlassian-with-bitbucket"],
+      "args": ["mcp-atlassian-with-bitbucket-and-privacy"],
       "env": {
         "BITBUCKET_URL": "https://bitbucket.org",
         "BITBUCKET_USERNAME": "your_username",
@@ -621,9 +621,9 @@ Add to `.vscode/mcp.json` (uses the `servers` key, not `mcpServers`):
 ```json
 {
   "servers": {
-    "mcp-atlassian-with-bitbucket": {
+    "mcp-atlassian-with-bitbucket-and-privacy": {
       "command": "uvx",
-      "args": ["mcp-atlassian-with-bitbucket"],
+      "args": ["mcp-atlassian-with-bitbucket-and-privacy"],
       "env": {
         "BITBUCKET_URL": "https://bitbucket.org",
         "BITBUCKET_USERNAME": "your_username",
@@ -638,7 +638,7 @@ Add to `.vscode/mcp.json` (uses the `servers` key, not `mcpServers`):
 ## Architecture
 
 ```
-src/mcp_atlassian/
+src/mcp_atlassian_with_bitbucket_and_privacy/
 ├── bitbucket/
 │   ├── config.py          # BitbucketConfig with Cloud/Server detection
 │   └── client.py          # Unified client with dual Cloud/Server API support
@@ -672,7 +672,7 @@ src/mcp_atlassian/
 | Pipeline tools error on Server | Pipelines are Cloud-only; use `TOOLSETS` to disable |
 | `429 Too Many Requests` | Built-in retry handles this; increase `BITBUCKET_TIMEOUT` if persistent |
 | SSL errors (Server/DC) | Set `BITBUCKET_SSL_VERIFY=false` for self-signed certs |
-| Server name shows old name in `/mcp` | The name shown is the JSON key in your config, not the package name. Rename the key (e.g., `"mcp-atlassian"` → `"mcp-atlassian-with-bitbucket"`) and restart |
+| Server name shows old name in `/mcp` | The name shown is the JSON key in your config, not the package name. Rename the key (e.g., `"mcp-atlassian-with-bitbucket-and-privacy"` → `"mcp-atlassian-with-bitbucket-and-privacy"`) and restart |
 | Bitbucket tools not appearing | Ensure `BITBUCKET_URL` and credentials are set. The server auto-detects available services based on which env vars are present |
 
 ## LLM Context Optimization

@@ -32,7 +32,7 @@ def test_stdio_homebrew_probe_exits_after_stdin_close() -> None:
     )
 
     result = subprocess.run(
-        ["uv", "run", "--frozen", "mcp-atlassian"],
+        ["uv", "run", "--frozen", "mcp-atlassian-with-bitbucket-and-privacy"],
         input=_build_probe_payload(),
         capture_output=True,
         text=True,

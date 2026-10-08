@@ -10,11 +10,13 @@ from unittest.mock import MagicMock, patch
 import pytest
 from starlette.datastructures import Headers
 
-from mcp_atlassian.confluence.client import ConfluenceClient
-from mcp_atlassian.confluence.config import ConfluenceConfig
-from mcp_atlassian.jira.client import JiraClient
-from mcp_atlassian.jira.config import JiraConfig
-from mcp_atlassian.utils.environment import get_available_services
+from mcp_atlassian_with_bitbucket_and_privacy.confluence.client import ConfluenceClient
+from mcp_atlassian_with_bitbucket_and_privacy.confluence.config import ConfluenceConfig
+from mcp_atlassian_with_bitbucket_and_privacy.jira.client import JiraClient
+from mcp_atlassian_with_bitbucket_and_privacy.jira.config import JiraConfig
+from mcp_atlassian_with_bitbucket_and_privacy.utils.environment import (
+    get_available_services,
+)
 
 pytestmark = pytest.mark.anyio
 
@@ -163,8 +165,12 @@ class TestJiraClientExternalAuth:
     def test_init_external_auth_no_authorization_header(self):
         """JiraClient with external auth does not set an Authorization header."""
         with (
-            patch("mcp_atlassian.jira.client.Jira") as mock_jira_cls,
-            patch("mcp_atlassian.jira.client.configure_ssl_verification"),
+            patch(
+                "mcp_atlassian_with_bitbucket_and_privacy.jira.client.Jira"
+            ) as mock_jira_cls,
+            patch(
+                "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_ssl_verification"
+            ),
         ):
             mock_session = MagicMock()
             mock_session.headers = {}
@@ -189,8 +195,12 @@ class TestJiraClientExternalAuth:
     def test_init_external_auth_skips_validation(self):
         """JiraClient with external auth skips _validate_authentication."""
         with (
-            patch("mcp_atlassian.jira.client.Jira") as mock_jira_cls,
-            patch("mcp_atlassian.jira.client.configure_ssl_verification"),
+            patch(
+                "mcp_atlassian_with_bitbucket_and_privacy.jira.client.Jira"
+            ) as mock_jira_cls,
+            patch(
+                "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_ssl_verification"
+            ),
             patch("logging.Logger.isEnabledFor", return_value=True),
         ):
             mock_session = MagicMock()
@@ -217,8 +227,12 @@ class TestConfluenceClientExternalAuth:
     def test_init_external_auth_no_authorization_header(self):
         """ConfluenceClient with external auth does not set an Authorization header."""
         with (
-            patch("mcp_atlassian.confluence.client.Confluence") as mock_conf_cls,
-            patch("mcp_atlassian.confluence.client.configure_ssl_verification"),
+            patch(
+                "mcp_atlassian_with_bitbucket_and_privacy.confluence.client.Confluence"
+            ) as mock_conf_cls,
+            patch(
+                "mcp_atlassian_with_bitbucket_and_privacy.confluence.client.configure_ssl_verification"
+            ),
         ):
             mock_session = MagicMock()
             mock_session.headers = {}
@@ -241,8 +255,12 @@ class TestConfluenceClientExternalAuth:
     def test_init_external_auth_skips_validation(self):
         """ConfluenceClient with external auth skips _validate_authentication."""
         with (
-            patch("mcp_atlassian.confluence.client.Confluence") as mock_conf_cls,
-            patch("mcp_atlassian.confluence.client.configure_ssl_verification"),
+            patch(
+                "mcp_atlassian_with_bitbucket_and_privacy.confluence.client.Confluence"
+            ) as mock_conf_cls,
+            patch(
+                "mcp_atlassian_with_bitbucket_and_privacy.confluence.client.configure_ssl_verification"
+            ),
             patch("logging.Logger.isEnabledFor", return_value=True),
         ):
             mock_session = MagicMock()
@@ -338,7 +356,9 @@ class TestGetFetcherExternalAuth:
 
     def _make_context(self, jira_config: JiraConfig) -> MagicMock:
         """Build a minimal mock FastMCP context with a MainAppContext."""
-        from mcp_atlassian.servers.context import MainAppContext
+        from mcp_atlassian_with_bitbucket_and_privacy.servers.context import (
+            MainAppContext,
+        )
 
         app_ctx = MainAppContext(
             full_jira_config=jira_config,
@@ -353,7 +373,9 @@ class TestGetFetcherExternalAuth:
 
     async def test_url_from_header_used_when_config_url_empty(self):
         """Per-request Jira URL header is applied when config.url is empty."""
-        from mcp_atlassian.servers.dependencies import get_jira_fetcher
+        from mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies import (
+            get_jira_fetcher,
+        )
 
         base_config = JiraConfig(url="", auth_type="external")
         ctx = self._make_context(base_config)
@@ -368,14 +390,16 @@ class TestGetFetcherExternalAuth:
                 clear=False,
             ),
             patch(
-                "mcp_atlassian.servers.dependencies.get_http_request",
+                "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request",
                 return_value=request,
             ),
             patch(
-                "mcp_atlassian.servers.dependencies.validate_url_for_ssrf",
+                "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.validate_url_for_ssrf",
                 return_value=None,  # no SSRF issue
             ),
-            patch("mcp_atlassian.servers.dependencies.JiraFetcher") as mock_fetcher_cls,
+            patch(
+                "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.JiraFetcher"
+            ) as mock_fetcher_cls,
         ):
             mock_fetcher_cls.return_value = MagicMock()
             await get_jira_fetcher(ctx)
@@ -386,7 +410,9 @@ class TestGetFetcherExternalAuth:
 
     async def test_url_from_header_requires_domain_allowlist(self):
         """Dynamic external-auth URLs require an operator domain allowlist."""
-        from mcp_atlassian.servers.dependencies import get_jira_fetcher
+        from mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies import (
+            get_jira_fetcher,
+        )
 
         base_config = JiraConfig(url="", auth_type="external")
         ctx = self._make_context(base_config)
@@ -397,7 +423,7 @@ class TestGetFetcherExternalAuth:
         with (
             patch.dict(os.environ, {}, clear=True),
             patch(
-                "mcp_atlassian.servers.dependencies.get_http_request",
+                "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request",
                 return_value=request,
             ),
         ):
@@ -406,7 +432,9 @@ class TestGetFetcherExternalAuth:
 
     async def test_url_from_env_used_when_config_url_set(self):
         """When config URL is already set, no header override occurs."""
-        from mcp_atlassian.servers.dependencies import get_jira_fetcher
+        from mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies import (
+            get_jira_fetcher,
+        )
 
         base_config = JiraConfig(url="https://jira.company.com", auth_type="external")
         ctx = self._make_context(base_config)
@@ -417,14 +445,16 @@ class TestGetFetcherExternalAuth:
 
         with (
             patch(
-                "mcp_atlassian.servers.dependencies.get_http_request",
+                "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request",
                 return_value=request,
             ),
             patch(
-                "mcp_atlassian.servers.dependencies.validate_url_for_ssrf",
+                "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.validate_url_for_ssrf",
                 return_value=None,
             ),
-            patch("mcp_atlassian.servers.dependencies.JiraFetcher") as mock_fetcher_cls,
+            patch(
+                "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.JiraFetcher"
+            ) as mock_fetcher_cls,
         ):
             mock_fetcher_cls.return_value = MagicMock()
             await get_jira_fetcher(ctx)
@@ -434,7 +464,9 @@ class TestGetFetcherExternalAuth:
 
     async def test_missing_url_header_raises_value_error(self):
         """ValueError raised when external auth has no URL from env or header."""
-        from mcp_atlassian.servers.dependencies import get_jira_fetcher
+        from mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies import (
+            get_jira_fetcher,
+        )
 
         base_config = JiraConfig(url="", auth_type="external")
         ctx = self._make_context(base_config)
@@ -442,7 +474,7 @@ class TestGetFetcherExternalAuth:
 
         with (
             patch(
-                "mcp_atlassian.servers.dependencies.get_http_request",
+                "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request",
                 return_value=request,
             ),
         ):
@@ -451,7 +483,9 @@ class TestGetFetcherExternalAuth:
 
     async def test_passthrough_header_forwarded_to_fetcher(self):
         """Passthrough headers are merged into the config for external auth."""
-        from mcp_atlassian.servers.dependencies import get_jira_fetcher
+        from mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies import (
+            get_jira_fetcher,
+        )
 
         base_config = JiraConfig(
             url="https://jira.example.com",
@@ -463,14 +497,16 @@ class TestGetFetcherExternalAuth:
 
         with (
             patch(
-                "mcp_atlassian.servers.dependencies.get_http_request",
+                "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request",
                 return_value=request,
             ),
             patch(
-                "mcp_atlassian.servers.dependencies.validate_url_for_ssrf",
+                "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.validate_url_for_ssrf",
                 return_value=None,
             ),
-            patch("mcp_atlassian.servers.dependencies.JiraFetcher") as mock_fetcher_cls,
+            patch(
+                "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.JiraFetcher"
+            ) as mock_fetcher_cls,
         ):
             mock_fetcher_cls.return_value = MagicMock()
             await get_jira_fetcher(ctx)
@@ -481,7 +517,9 @@ class TestGetFetcherExternalAuth:
 
     async def test_ssrf_blocked_url_raises_value_error(self):
         """A private/SSRF URL supplied via header is rejected."""
-        from mcp_atlassian.servers.dependencies import get_jira_fetcher
+        from mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies import (
+            get_jira_fetcher,
+        )
 
         base_config = JiraConfig(url="", auth_type="external")
         ctx = self._make_context(base_config)
@@ -496,7 +534,7 @@ class TestGetFetcherExternalAuth:
                 clear=False,
             ),
             patch(
-                "mcp_atlassian.servers.dependencies.get_http_request",
+                "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request",
                 return_value=request,
             ),
         ):

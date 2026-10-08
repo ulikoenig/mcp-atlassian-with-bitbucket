@@ -62,4 +62,4 @@ ENV PYTHONUNBUFFERED=1
 # Authorization: Bearer <your_oauth_token>
 # X-Atlassian-Cloud-Id: <your_cloud_id>
 
-ENTRYPOINT ["mcp-atlassian"]
+ENTRYPOINT ["mcp-atlassian-with-bitbucket-and-privacy"]

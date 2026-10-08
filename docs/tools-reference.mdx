@@ -1,9 +1,9 @@
 ---
 title: "Tools Reference"
-description: "Overview of all 98 MCP tools for Jira and Confluence — organized by category with quick links"
+description: "Overview of MCP tools for Jira, Confluence, and Bitbucket — organized by category with quick links"
 ---
 
-MCP Atlassian provides **98 tools** for interacting with Jira and Confluence. Tools are organized by category below.
+MCP Atlassian with Bitbucket and Privacy provides tools for interacting with Jira, Confluence, and Bitbucket. Tools are organized by category below.
 
 ## Jira Tools
 
@@ -111,11 +111,11 @@ TOOLSETS=default,jira_agile,jira_attachments
 # Enable deprecated tools only while migrating to their replacements:
 TOOLSETS=legacy
 
-# Enable all toolsets (98 tools)
+# Enable all toolsets
 TOOLSETS=all
 
 # Command line
-uvx mcp-atlassian --toolsets "default,jira_agile"
+uvx mcp-atlassian-with-bitbucket-and-privacy --toolsets "default,jira_agile"
 ```
 
 ### Enable Specific Tools
@@ -127,7 +127,7 @@ Use `ENABLED_TOOLS` environment variable or `--enabled-tools` flag:
 ENABLED_TOOLS="confluence_search,jira_get_issue,jira_search"
 
 # Command line
-uvx mcp-atlassian --enabled-tools "confluence_search,jira_get_issue,jira_search"
+uvx mcp-atlassian-with-bitbucket-and-privacy --enabled-tools "confluence_search,jira_get_issue,jira_search"
 ```
 
 ### Read-Only Mode

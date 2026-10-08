@@ -6,8 +6,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from mcp_atlassian.jira.client import JiraClient
-from mcp_atlassian.servers.dependencies import (
+from mcp_atlassian_with_bitbucket_and_privacy.jira.client import JiraClient
+from mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies import (
     _confluence_on_validated,
     _jira_on_validated,
 )

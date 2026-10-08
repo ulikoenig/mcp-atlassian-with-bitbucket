@@ -16,12 +16,12 @@ from starlette.responses import PlainTextResponse
 from starlette.routing import Route
 from starlette.testclient import TestClient
 
-from mcp_atlassian.confluence import ConfluenceFetcher
-from mcp_atlassian.confluence.config import ConfluenceConfig
-from mcp_atlassian.jira import JiraFetcher
-from mcp_atlassian.jira.config import JiraConfig
-from mcp_atlassian.servers.context import MainAppContext
-from mcp_atlassian.servers.main import (
+from mcp_atlassian_with_bitbucket_and_privacy.confluence import ConfluenceFetcher
+from mcp_atlassian_with_bitbucket_and_privacy.confluence.config import ConfluenceConfig
+from mcp_atlassian_with_bitbucket_and_privacy.jira import JiraFetcher
+from mcp_atlassian_with_bitbucket_and_privacy.jira.config import JiraConfig
+from mcp_atlassian_with_bitbucket_and_privacy.servers.context import MainAppContext
+from mcp_atlassian_with_bitbucket_and_privacy.servers.main import (
     AtlassianMCP,
     UserTokenMiddleware,
     health_check,
@@ -249,11 +249,11 @@ class TestMCPProtocolIntegration:
             # Mock the configuration loading
             with (
                 patch(
-                    "mcp_atlassian.jira.config.JiraConfig.from_env",
+                    "mcp_atlassian_with_bitbucket_and_privacy.jira.config.JiraConfig.from_env",
                     return_value=mock_jira_config,
                 ),
                 patch(
-                    "mcp_atlassian.confluence.config.ConfluenceConfig.from_env",
+                    "mcp_atlassian_with_bitbucket_and_privacy.confluence.config.ConfluenceConfig.from_env",
                     return_value=mock_confluence_config,
                 ),
             ):
@@ -906,10 +906,10 @@ class TestMCPProtocolIntegration:
         with MockEnvironment.basic_auth_env():
             with (
                 patch(
-                    "mcp_atlassian.jira.config.JiraConfig.from_env"
+                    "mcp_atlassian_with_bitbucket_and_privacy.jira.config.JiraConfig.from_env"
                 ) as mock_jira_config,
                 patch(
-                    "mcp_atlassian.confluence.config.ConfluenceConfig.from_env"
+                    "mcp_atlassian_with_bitbucket_and_privacy.confluence.config.ConfluenceConfig.from_env"
                 ) as mock_conf_config,
             ):
                 # Configure mocks
@@ -941,10 +941,10 @@ class TestMCPProtocolIntegration:
         with patch.dict(os.environ, env_vars, clear=False):
             with (
                 patch(
-                    "mcp_atlassian.jira.config.JiraConfig.from_env"
+                    "mcp_atlassian_with_bitbucket_and_privacy.jira.config.JiraConfig.from_env"
                 ) as mock_jira_config,
                 patch(
-                    "mcp_atlassian.confluence.config.ConfluenceConfig.from_env"
+                    "mcp_atlassian_with_bitbucket_and_privacy.confluence.config.ConfluenceConfig.from_env"
                 ) as mock_conf_config,
             ):
                 # Configure mocks
@@ -967,7 +967,7 @@ class TestMCPProtocolIntegration:
         with MockEnvironment.basic_auth_env():
             with patch.dict(os.environ, {"READ_ONLY_MODE": "true"}):
                 with patch(
-                    "mcp_atlassian.jira.config.JiraConfig.from_env"
+                    "mcp_atlassian_with_bitbucket_and_privacy.jira.config.JiraConfig.from_env"
                 ) as mock_jira_config:
                     # Configure mock
                     jira_config = MagicMock()
@@ -990,7 +990,7 @@ class TestMCPProtocolIntegration:
                 },
             ):
                 with patch(
-                    "mcp_atlassian.jira.config.JiraConfig.from_env"
+                    "mcp_atlassian_with_bitbucket_and_privacy.jira.config.JiraConfig.from_env"
                 ) as mock_jira_config:
                     # Configure mock
                     jira_config = MagicMock()
@@ -1313,7 +1313,9 @@ class TestMCPProtocolIntegration:
         self, atlassian_mcp_server, mock_jira_config, mock_confluence_config
     ):
         """Test default toolsets only include default-tagged tools."""
-        from mcp_atlassian.utils.toolsets import DEFAULT_TOOLSETS
+        from mcp_atlassian_with_bitbucket_and_privacy.utils.toolsets import (
+            DEFAULT_TOOLSETS,
+        )
 
         with MockEnvironment.basic_auth_env():
             app_context = MainAppContext(
@@ -1365,14 +1367,14 @@ class TestMCPProtocolIntegration:
 
     async def test_lifespan_toolsets_unset_uses_all(self):
         """Test lifespan uses all toolsets when TOOLSETS env var is absent."""
-        from mcp_atlassian.utils.toolsets import ALL_TOOLSETS
+        from mcp_atlassian_with_bitbucket_and_privacy.utils.toolsets import ALL_TOOLSETS
 
         with MockEnvironment.basic_auth_env():
             with patch.dict(os.environ, {}, clear=False):
                 # Ensure TOOLSETS is not set
                 os.environ.pop("TOOLSETS", None)
                 with patch(
-                    "mcp_atlassian.jira.config.JiraConfig.from_env"
+                    "mcp_atlassian_with_bitbucket_and_privacy.jira.config.JiraConfig.from_env"
                 ) as mock_jira_config:
                     jira_config = MagicMock()
                     jira_config.is_auth_configured.return_value = True
@@ -1391,7 +1393,7 @@ class TestMCPProtocolIntegration:
                 {"TOOLSETS": "default,jira_agile"},
             ):
                 with patch(
-                    "mcp_atlassian.jira.config.JiraConfig.from_env"
+                    "mcp_atlassian_with_bitbucket_and_privacy.jira.config.JiraConfig.from_env"
                 ) as mock_jira_config:
                     jira_config = MagicMock()
                     jira_config.is_auth_configured.return_value = True
@@ -1407,7 +1409,9 @@ class TestMCPProtocolIntegration:
 
     async def test_tool_execution_with_authentication_error(self, atlassian_mcp_server):
         """Test tool execution when authentication fails."""
-        from mcp_atlassian.exceptions import MCPAtlassianAuthenticationError
+        from mcp_atlassian_with_bitbucket_and_privacy.exceptions import (
+            MCPAtlassianAuthenticationError,
+        )
 
         # Mock a tool that raises authentication error
         async def mock_failing_tool(ctx: Context):

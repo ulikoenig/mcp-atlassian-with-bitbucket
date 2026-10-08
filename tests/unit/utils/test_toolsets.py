@@ -2,7 +2,7 @@
 
 import pytest
 
-from mcp_atlassian.utils.toolsets import (
+from mcp_atlassian_with_bitbucket_and_privacy.utils.toolsets import (
     ALL_TOOLSETS,
     DEFAULT_TOOLSETS,
     TOOLSET_TAG_PREFIX,
@@ -198,7 +198,7 @@ class TestToolsetTagCompleteness:
         """Get all registered Jira tools as a name-indexed dict."""
         import asyncio
 
-        from mcp_atlassian.servers.jira import jira_mcp
+        from mcp_atlassian_with_bitbucket_and_privacy.servers.jira import jira_mcp
 
         async def _load() -> dict:
             return {tool.name: tool for tool in await jira_mcp.list_tools()}
@@ -214,7 +214,9 @@ class TestToolsetTagCompleteness:
         """Get all registered Confluence tools as a name-indexed dict."""
         import asyncio
 
-        from mcp_atlassian.servers.confluence import confluence_mcp
+        from mcp_atlassian_with_bitbucket_and_privacy.servers.confluence import (
+            confluence_mcp,
+        )
 
         async def _load() -> dict:
             return {tool.name: tool for tool in await confluence_mcp.list_tools()}

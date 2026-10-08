@@ -4,9 +4,14 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from mcp_atlassian.jira import JiraFetcher
-from mcp_atlassian.jira.field_options import FieldOptionsMixin
-from mcp_atlassian.models.jira.field_option import FieldContext, FieldOption
+from mcp_atlassian_with_bitbucket_and_privacy.jira import JiraFetcher
+from mcp_atlassian_with_bitbucket_and_privacy.jira.field_options import (
+    FieldOptionsMixin,
+)
+from mcp_atlassian_with_bitbucket_and_privacy.models.jira.field_option import (
+    FieldContext,
+    FieldOption,
+)
 
 # ============================================================================
 # Model Tests

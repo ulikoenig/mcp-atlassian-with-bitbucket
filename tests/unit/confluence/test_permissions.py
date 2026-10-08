@@ -5,7 +5,9 @@ from unittest.mock import MagicMock
 import pytest
 from requests.exceptions import HTTPError
 
-from mcp_atlassian.confluence.permissions import PermissionsMixin
+from mcp_atlassian_with_bitbucket_and_privacy.confluence.permissions import (
+    PermissionsMixin,
+)
 
 
 class TestPermissionsMixin:

@@ -2,7 +2,7 @@
 
 import asyncio
 
-from mcp_atlassian.privacy import (
+from mcp_atlassian_with_bitbucket_and_privacy.privacy import (
     CurrentIdentityResolver,
     ToolService,
     begin_current_identity_scope,

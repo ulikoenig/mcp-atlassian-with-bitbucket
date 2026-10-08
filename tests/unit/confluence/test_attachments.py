@@ -9,9 +9,13 @@ from unittest.mock import AsyncMock, MagicMock, Mock, mock_open, patch
 import pytest
 from mcp.types import EmbeddedResource, TextContent
 
-from mcp_atlassian.confluence.attachments import AttachmentsMixin
-from mcp_atlassian.confluence.config import ConfluenceConfig
-from mcp_atlassian.utils.oauth import BYOAccessTokenOAuthConfig
+from mcp_atlassian_with_bitbucket_and_privacy.confluence.attachments import (
+    AttachmentsMixin,
+)
+from mcp_atlassian_with_bitbucket_and_privacy.confluence.config import ConfluenceConfig
+from mcp_atlassian_with_bitbucket_and_privacy.utils.oauth import (
+    BYOAccessTokenOAuthConfig,
+)
 
 # Test scenarios for AttachmentsMixin
 #
@@ -66,7 +70,7 @@ class TestAttachmentsMixin:
         """Create an AttachmentsMixin instance for testing."""
         # AttachmentsMixin inherits from ConfluenceClient, so we need to create it properly
         with patch(
-            "mcp_atlassian.confluence.attachments.ConfluenceClient.__init__"
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.attachments.ConfluenceClient.__init__"
         ) as mock_init:
             mock_init.return_value = None
             mixin = AttachmentsMixin()
@@ -654,7 +658,9 @@ class TestAttachmentsMixin:
             patch("os.path.exists") as mock_exists,
             patch("os.path.getsize") as mock_getsize,
             patch("os.makedirs") as mock_makedirs,
-            patch("mcp_atlassian.confluence.attachments.validate_safe_path"),
+            patch(
+                "mcp_atlassian_with_bitbucket_and_privacy.confluence.attachments.validate_safe_path"
+            ),
         ):
             mock_exists.return_value = True
             mock_getsize.return_value = 12  # Length of "test content"
@@ -692,7 +698,9 @@ class TestAttachmentsMixin:
             patch("os.makedirs") as mock_makedirs,
             patch("os.path.abspath") as mock_abspath,
             patch("os.path.isabs") as mock_isabs,
-            patch("mcp_atlassian.confluence.attachments.validate_safe_path"),
+            patch(
+                "mcp_atlassian_with_bitbucket_and_privacy.confluence.attachments.validate_safe_path"
+            ),
         ):
             mock_exists.return_value = True
             mock_getsize.return_value = 12
@@ -722,7 +730,9 @@ class TestAttachmentsMixin:
         mock_response.raise_for_status.side_effect = Exception("HTTP Error")
         attachments_mixin.confluence._session.get.return_value = mock_response
 
-        with patch("mcp_atlassian.confluence.attachments.validate_safe_path"):
+        with patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.attachments.validate_safe_path"
+        ):
             result = attachments_mixin.download_attachment(
                 "https://test.url/attachment", "/tmp/test_file.txt"
             )
@@ -742,7 +752,9 @@ class TestAttachmentsMixin:
         with (
             patch("builtins.open", mock_open()) as mock_file,
             patch("os.makedirs") as mock_makedirs,
-            patch("mcp_atlassian.confluence.attachments.validate_safe_path"),
+            patch(
+                "mcp_atlassian_with_bitbucket_and_privacy.confluence.attachments.validate_safe_path"
+            ),
         ):
             mock_file().write.side_effect = OSError("Write error")
 
@@ -766,7 +778,9 @@ class TestAttachmentsMixin:
             patch("builtins.open", mock_open()) as mock_file,
             patch("os.path.exists") as mock_exists,
             patch("os.makedirs") as mock_makedirs,
-            patch("mcp_atlassian.confluence.attachments.validate_safe_path"),
+            patch(
+                "mcp_atlassian_with_bitbucket_and_privacy.confluence.attachments.validate_safe_path"
+            ),
         ):
             mock_exists.return_value = False  # File doesn't exist after write
 
@@ -890,10 +904,12 @@ class TestAttachmentsMixin:
             ) as mock_download,
             patch("pathlib.Path.mkdir") as mock_mkdir,
             patch(
-                "mcp_atlassian.models.confluence.ConfluenceAttachment.from_api_response",
+                "mcp_atlassian_with_bitbucket_and_privacy.models.confluence.ConfluenceAttachment.from_api_response",
                 side_effect=[mock_attachment1, mock_attachment2],
             ),
-            patch("mcp_atlassian.confluence.attachments.validate_safe_path"),
+            patch(
+                "mcp_atlassian_with_bitbucket_and_privacy.confluence.attachments.validate_safe_path"
+            ),
         ):
             result = attachments_mixin.download_content_attachments(
                 "123456", "/tmp/attachments"
@@ -937,12 +953,14 @@ class TestAttachmentsMixin:
             patch.object(attachments_mixin, "download_attachment", return_value=True),
             patch("pathlib.Path.mkdir") as mock_mkdir,
             patch(
-                "mcp_atlassian.models.confluence.ConfluenceAttachment.from_api_response",
+                "mcp_atlassian_with_bitbucket_and_privacy.models.confluence.ConfluenceAttachment.from_api_response",
                 return_value=mock_attachment,
             ),
             patch("os.path.isabs") as mock_isabs,
             patch("os.path.abspath") as mock_abspath,
-            patch("mcp_atlassian.confluence.attachments.validate_safe_path"),
+            patch(
+                "mcp_atlassian_with_bitbucket_and_privacy.confluence.attachments.validate_safe_path"
+            ),
         ):
             mock_isabs.return_value = False
             mock_abspath.return_value = "/absolute/path/attachments"
@@ -968,7 +986,9 @@ class TestAttachmentsMixin:
                 return_value={"success": True, "attachments": []},
             ),
             patch("pathlib.Path.mkdir") as mock_mkdir,
-            patch("mcp_atlassian.confluence.attachments.validate_safe_path"),
+            patch(
+                "mcp_atlassian_with_bitbucket_and_privacy.confluence.attachments.validate_safe_path"
+            ),
         ):
             result = attachments_mixin.download_content_attachments(
                 "123456", "/tmp/attachments"
@@ -992,7 +1012,9 @@ class TestAttachmentsMixin:
                 "get_content_attachments",
                 return_value={"success": False, "error": "API Error"},
             ),
-            patch("mcp_atlassian.confluence.attachments.validate_safe_path"),
+            patch(
+                "mcp_atlassian_with_bitbucket_and_privacy.confluence.attachments.validate_safe_path"
+            ),
         ):
             result = attachments_mixin.download_content_attachments(
                 "123456", "/tmp/attachments"
@@ -1043,10 +1065,12 @@ class TestAttachmentsMixin:
             ) as mock_download,
             patch("pathlib.Path.mkdir") as mock_mkdir,
             patch(
-                "mcp_atlassian.models.confluence.ConfluenceAttachment.from_api_response",
+                "mcp_atlassian_with_bitbucket_and_privacy.models.confluence.ConfluenceAttachment.from_api_response",
                 side_effect=[mock_attachment1, mock_attachment2],
             ),
-            patch("mcp_atlassian.confluence.attachments.validate_safe_path"),
+            patch(
+                "mcp_atlassian_with_bitbucket_and_privacy.confluence.attachments.validate_safe_path"
+            ),
         ):
             result = attachments_mixin.download_content_attachments(
                 "123456", "/tmp/attachments"
@@ -1084,10 +1108,12 @@ class TestAttachmentsMixin:
             ),
             patch("pathlib.Path.mkdir") as mock_mkdir,
             patch(
-                "mcp_atlassian.models.confluence.ConfluenceAttachment.from_api_response",
+                "mcp_atlassian_with_bitbucket_and_privacy.models.confluence.ConfluenceAttachment.from_api_response",
                 return_value=mock_attachment,
             ),
-            patch("mcp_atlassian.confluence.attachments.validate_safe_path"),
+            patch(
+                "mcp_atlassian_with_bitbucket_and_privacy.confluence.attachments.validate_safe_path"
+            ),
         ):
             result = attachments_mixin.download_content_attachments(
                 "123456", "/tmp/attachments"
@@ -1233,7 +1259,7 @@ class TestAttachmentsMixin:
             )
 
             with patch(
-                "mcp_atlassian.confluence.attachments.ConfluenceV2Adapter"
+                "mcp_atlassian_with_bitbucket_and_privacy.confluence.attachments.ConfluenceV2Adapter"
             ) as mock_adapter_class:
                 mock_adapter = Mock()
                 mock_adapter.get_page_attachments = mock_v2_get
@@ -1276,7 +1302,7 @@ class TestAttachmentsMixin:
             )
 
             with patch(
-                "mcp_atlassian.confluence.attachments.ConfluenceV2Adapter"
+                "mcp_atlassian_with_bitbucket_and_privacy.confluence.attachments.ConfluenceV2Adapter"
             ) as mock_adapter_class:
                 mock_adapter = Mock()
                 mock_adapter.get_page_attachments = mock_v2_get
@@ -1311,7 +1337,7 @@ class TestAttachmentsMixin:
             attachments_mixin.config.auth_type = "oauth"
 
             with patch(
-                "mcp_atlassian.confluence.attachments.ConfluenceV2Adapter"
+                "mcp_atlassian_with_bitbucket_and_privacy.confluence.attachments.ConfluenceV2Adapter"
             ) as mock_adapter_class:
                 mock_adapter = Mock()
                 mock_adapter.get_page_attachments.side_effect = ValueError(
@@ -1398,7 +1424,7 @@ class TestAttachmentsMixin:
             attachments_mixin.config.auth_type = "oauth"
 
             with patch(
-                "mcp_atlassian.confluence.attachments.ConfluenceV2Adapter"
+                "mcp_atlassian_with_bitbucket_and_privacy.confluence.attachments.ConfluenceV2Adapter"
             ) as mock_adapter_class:
                 mock_adapter = Mock()
                 mock_adapter.delete_attachment.return_value = None
@@ -1446,7 +1472,7 @@ class TestAttachmentsMixin:
             attachments_mixin.config.auth_type = "oauth"
 
             with patch(
-                "mcp_atlassian.confluence.attachments.ConfluenceV2Adapter"
+                "mcp_atlassian_with_bitbucket_and_privacy.confluence.attachments.ConfluenceV2Adapter"
             ) as mock_adapter_class:
                 mock_adapter = Mock()
                 mock_adapter.delete_attachment.side_effect = ValueError(
@@ -1502,10 +1528,10 @@ class TestDownloadAttachmentServerTool:
         mock_fetcher.fetch_attachment_content.return_value = b"pdf content"
 
         with patch(
-            "mcp_atlassian.servers.confluence.get_confluence_fetcher",
+            "mcp_atlassian_with_bitbucket_and_privacy.servers.confluence.get_confluence_fetcher",
             AsyncMock(return_value=mock_fetcher),
         ):
-            from mcp_atlassian.servers.confluence import (
+            from mcp_atlassian_with_bitbucket_and_privacy.servers.confluence import (
                 download_attachment as server_download_attachment,
             )
 
@@ -1533,10 +1559,10 @@ class TestDownloadAttachmentServerTool:
         mock_fetcher.confluence._session.get.return_value = meta_resp
 
         with patch(
-            "mcp_atlassian.servers.confluence.get_confluence_fetcher",
+            "mcp_atlassian_with_bitbucket_and_privacy.servers.confluence.get_confluence_fetcher",
             AsyncMock(return_value=mock_fetcher),
         ):
-            from mcp_atlassian.servers.confluence import (
+            from mcp_atlassian_with_bitbucket_and_privacy.servers.confluence import (
                 download_attachment as server_download_attachment,
             )
 
@@ -1568,10 +1594,10 @@ class TestDownloadAttachmentServerTool:
         mock_fetcher.confluence._session.get.return_value = meta_resp
 
         with patch(
-            "mcp_atlassian.servers.confluence.get_confluence_fetcher",
+            "mcp_atlassian_with_bitbucket_and_privacy.servers.confluence.get_confluence_fetcher",
             AsyncMock(return_value=mock_fetcher),
         ):
-            from mcp_atlassian.servers.confluence import (
+            from mcp_atlassian_with_bitbucket_and_privacy.servers.confluence import (
                 download_attachment as server_download_attachment,
             )
 
@@ -1592,10 +1618,10 @@ class TestDownloadAttachmentServerTool:
         mock_fetcher.confluence._session.get.side_effect = Exception("Connection error")
 
         with patch(
-            "mcp_atlassian.servers.confluence.get_confluence_fetcher",
+            "mcp_atlassian_with_bitbucket_and_privacy.servers.confluence.get_confluence_fetcher",
             AsyncMock(return_value=mock_fetcher),
         ):
-            from mcp_atlassian.servers.confluence import (
+            from mcp_atlassian_with_bitbucket_and_privacy.servers.confluence import (
                 download_attachment as server_download_attachment,
             )
 
@@ -1631,10 +1657,10 @@ class TestDownloadContentAttachmentsServerTool:
         mock_fetcher.fetch_attachment_content.return_value = b"hello world!"
 
         with patch(
-            "mcp_atlassian.servers.confluence.get_confluence_fetcher",
+            "mcp_atlassian_with_bitbucket_and_privacy.servers.confluence.get_confluence_fetcher",
             AsyncMock(return_value=mock_fetcher),
         ):
-            from mcp_atlassian.servers.confluence import (
+            from mcp_atlassian_with_bitbucket_and_privacy.servers.confluence import (
                 download_content_attachments as server_download_content,
             )
 
@@ -1659,10 +1685,10 @@ class TestDownloadContentAttachmentsServerTool:
         }
 
         with patch(
-            "mcp_atlassian.servers.confluence.get_confluence_fetcher",
+            "mcp_atlassian_with_bitbucket_and_privacy.servers.confluence.get_confluence_fetcher",
             AsyncMock(return_value=mock_fetcher),
         ):
-            from mcp_atlassian.servers.confluence import (
+            from mcp_atlassian_with_bitbucket_and_privacy.servers.confluence import (
                 download_content_attachments as server_download_content,
             )
 
@@ -1685,10 +1711,10 @@ class TestDownloadContentAttachmentsServerTool:
         }
 
         with patch(
-            "mcp_atlassian.servers.confluence.get_confluence_fetcher",
+            "mcp_atlassian_with_bitbucket_and_privacy.servers.confluence.get_confluence_fetcher",
             AsyncMock(return_value=mock_fetcher),
         ):
-            from mcp_atlassian.servers.confluence import (
+            from mcp_atlassian_with_bitbucket_and_privacy.servers.confluence import (
                 download_content_attachments as server_download_content,
             )
 
@@ -1721,10 +1747,10 @@ class TestDownloadContentAttachmentsServerTool:
         }
 
         with patch(
-            "mcp_atlassian.servers.confluence.get_confluence_fetcher",
+            "mcp_atlassian_with_bitbucket_and_privacy.servers.confluence.get_confluence_fetcher",
             AsyncMock(return_value=mock_fetcher),
         ):
-            from mcp_atlassian.servers.confluence import (
+            from mcp_atlassian_with_bitbucket_and_privacy.servers.confluence import (
                 download_content_attachments as server_download_content,
             )
 
@@ -1747,7 +1773,7 @@ class TestConfluenceAttachmentPathTraversal:
     def confluence_mixin(self) -> AttachmentsMixin:
         """Create an AttachmentsMixin for path traversal testing."""
         with patch(
-            "mcp_atlassian.confluence.attachments.ConfluenceClient.__init__"
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.attachments.ConfluenceClient.__init__"
         ) as mock_init:
             mock_init.return_value = None
             mixin = AttachmentsMixin()
@@ -1827,7 +1853,7 @@ class TestResolveAttachmentDownloadUrl:
         self, *, use_v1: bool | None, url: str = "https://example.atlassian.net/wiki"
     ) -> AttachmentsMixin:
         with patch(
-            "mcp_atlassian.confluence.attachments.ConfluenceClient.__init__",
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.attachments.ConfluenceClient.__init__",
             return_value=None,
         ):
             mixin = AttachmentsMixin()

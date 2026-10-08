@@ -4,20 +4,22 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from mcp_atlassian.confluence.config import ConfluenceConfig
-from mcp_atlassian.confluence.restrictions import RestrictionsMixin
-from mcp_atlassian.privacy import (
+from mcp_atlassian_with_bitbucket_and_privacy.confluence.config import ConfluenceConfig
+from mcp_atlassian_with_bitbucket_and_privacy.confluence.restrictions import (
+    RestrictionsMixin,
+)
+from mcp_atlassian_with_bitbucket_and_privacy.privacy import (
     begin_identity_privacy_runtime,
     reset_identity_privacy_runtime,
 )
-from mcp_atlassian.utils.oauth import OAuthConfig
+from mcp_atlassian_with_bitbucket_and_privacy.utils.oauth import OAuthConfig
 
 
 @pytest.fixture
 def restrictions_mixin(confluence_client):
     """Return a RestrictionsMixin with a mocked Confluence client."""
     with patch(
-        "mcp_atlassian.confluence.restrictions.ConfluenceClient.__init__"
+        "mcp_atlassian_with_bitbucket_and_privacy.confluence.restrictions.ConfluenceClient.__init__"
     ) as mock_init:
         mock_init.return_value = None
         mixin = RestrictionsMixin()
@@ -31,7 +33,7 @@ def restrictions_mixin(confluence_client):
 def restrictions_mixin_server_dc(confluence_client):
     """Return a RestrictionsMixin configured as Server/DC."""
     with patch(
-        "mcp_atlassian.confluence.restrictions.ConfluenceClient.__init__"
+        "mcp_atlassian_with_bitbucket_and_privacy.confluence.restrictions.ConfluenceClient.__init__"
     ) as mock_init:
         mock_init.return_value = None
         mixin = RestrictionsMixin()
@@ -47,7 +49,7 @@ def restrictions_mixin_server_dc(confluence_client):
 def restrictions_mixin_cloud_oauth(confluence_client):
     """Return a RestrictionsMixin configured for Confluence Cloud OAuth."""
     with patch(
-        "mcp_atlassian.confluence.restrictions.ConfluenceClient.__init__"
+        "mcp_atlassian_with_bitbucket_and_privacy.confluence.restrictions.ConfluenceClient.__init__"
     ) as mock_init:
         mock_init.return_value = None
         mixin = RestrictionsMixin()

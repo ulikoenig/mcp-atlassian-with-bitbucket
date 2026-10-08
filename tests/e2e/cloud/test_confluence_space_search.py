@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from mcp_atlassian.confluence import ConfluenceFetcher
+from mcp_atlassian_with_bitbucket_and_privacy.confluence import ConfluenceFetcher
 
 pytestmark = pytest.mark.cloud_e2e
 

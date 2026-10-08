@@ -4,8 +4,8 @@ from unittest.mock import patch
 
 import pytest
 
-from mcp_atlassian.bitbucket.client import BitbucketClient
-from mcp_atlassian.bitbucket.config import BitbucketConfig
+from mcp_atlassian_with_bitbucket_and_privacy.bitbucket.client import BitbucketClient
+from mcp_atlassian_with_bitbucket_and_privacy.bitbucket.config import BitbucketConfig
 
 
 @pytest.fixture

@@ -13,13 +13,19 @@ from fastmcp.client import FastMCPTransport
 from fastmcp.exceptions import ToolError
 from starlette.requests import Request
 
-from src.mcp_atlassian.confluence import ConfluenceFetcher
-from src.mcp_atlassian.confluence.config import ConfluenceConfig
-from src.mcp_atlassian.models.confluence.page import ConfluencePage
-from src.mcp_atlassian.servers import confluence as confluence_server
-from src.mcp_atlassian.servers.context import MainAppContext
-from src.mcp_atlassian.servers.main import AtlassianMCP
-from src.mcp_atlassian.utils.oauth import OAuthConfig
+from src.mcp_atlassian_with_bitbucket_and_privacy.confluence import ConfluenceFetcher
+from src.mcp_atlassian_with_bitbucket_and_privacy.confluence.config import (
+    ConfluenceConfig,
+)
+from src.mcp_atlassian_with_bitbucket_and_privacy.models.confluence.page import (
+    ConfluencePage,
+)
+from src.mcp_atlassian_with_bitbucket_and_privacy.servers import (
+    confluence as confluence_server,
+)
+from src.mcp_atlassian_with_bitbucket_and_privacy.servers.context import MainAppContext
+from src.mcp_atlassian_with_bitbucket_and_privacy.servers.main import AtlassianMCP
+from src.mcp_atlassian_with_bitbucket_and_privacy.utils.oauth import OAuthConfig
 
 logger = logging.getLogger(__name__)
 
@@ -230,7 +236,7 @@ def test_confluence_mcp(mock_confluence_fetcher, mock_base_confluence_config):
     """Create a test FastMCP instance with standard configuration."""
 
     # Import and register tool functions (as they are in confluence.py)
-    from src.mcp_atlassian.servers.confluence import (
+    from src.mcp_atlassian_with_bitbucket_and_privacy.servers.confluence import (
         add_comment,
         add_label,
         check_content_permissions,
@@ -313,7 +319,7 @@ def no_fetcher_test_confluence_mcp(mock_base_confluence_config):
     """Create a test FastMCP instance that simulates missing Confluence fetcher."""
 
     # Import and register tool functions (as they are in confluence.py)
-    from src.mcp_atlassian.servers.confluence import (
+    from src.mcp_atlassian_with_bitbucket_and_privacy.servers.confluence import (
         add_comment,
         add_label,
         check_content_permissions,
@@ -406,11 +412,11 @@ async def client(test_confluence_mcp, mock_confluence_fetcher):
     """Create a FastMCP client with mocked Confluence fetcher and request state."""
     with (
         patch(
-            "src.mcp_atlassian.servers.confluence.get_confluence_fetcher",
+            "src.mcp_atlassian_with_bitbucket_and_privacy.servers.confluence.get_confluence_fetcher",
             AsyncMock(return_value=mock_confluence_fetcher),
         ),
         patch(
-            "src.mcp_atlassian.servers.dependencies.get_http_request",
+            "src.mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request",
             MagicMock(spec=Request, state=MagicMock()),
         ),
     ):

@@ -2,7 +2,7 @@
 
 import pytest
 
-from mcp_atlassian.utils.pagination import clamp_limit
+from mcp_atlassian_with_bitbucket_and_privacy.utils.pagination import clamp_limit
 
 
 def test_clamp_limit_passthrough_when_env_unset(monkeypatch: pytest.MonkeyPatch):

@@ -9,7 +9,7 @@ import pytest
 from fastmcp import FastMCP
 from fastmcp.exceptions import ToolError
 
-from mcp_atlassian.privacy import (
+from mcp_atlassian_with_bitbucket_and_privacy.privacy import (
     AliasResolutionError,
     AliasRoundtripRegistry,
     IdentityPolicy,
@@ -27,14 +27,22 @@ from mcp_atlassian.privacy import (
     reset_alias_roundtrip_registry_scope,
     resolve_identity_alias,
 )
-from mcp_atlassian.privacy.bitbucket_adapter import BitbucketIdentityAdapter
-from mcp_atlassian.privacy.middleware import _record_request_alias_caller
-from mcp_atlassian.privacy.registry import (
+from mcp_atlassian_with_bitbucket_and_privacy.privacy.bitbucket_adapter import (
+    BitbucketIdentityAdapter,
+)
+from mcp_atlassian_with_bitbucket_and_privacy.privacy.middleware import (
+    _record_request_alias_caller,
+)
+from mcp_atlassian_with_bitbucket_and_privacy.privacy.registry import (
     ResponseCategory,
     ToolResponsePolicy,
 )
-from mcp_atlassian.servers.bitbucket import _resolve_bitbucket_reviewers
-from mcp_atlassian.servers.jira import _resolve_jira_identity_input
+from mcp_atlassian_with_bitbucket_and_privacy.servers.bitbucket import (
+    _resolve_bitbucket_reviewers,
+)
+from mcp_atlassian_with_bitbucket_and_privacy.servers.jira import (
+    _resolve_jira_identity_input,
+)
 
 
 class MutableClock:
@@ -144,7 +152,7 @@ def test_http_header_credentials_bind_alias_without_exposing_token(
         }
     )
     monkeypatch.setattr(
-        "mcp_atlassian.privacy.middleware.get_http_request",
+        "mcp_atlassian_with_bitbucket_and_privacy.privacy.middleware.get_http_request",
         lambda: SimpleNamespace(state=state),
     )
     registry = AliasRoundtripRegistry(_config())

@@ -368,8 +368,10 @@ def _make_display_name(tool_name: str, annotations: Any) -> str:
 
 async def get_all_tools() -> dict[str, dict[str, Any]]:
     """Extract tools from both FastMCP server instances."""
-    from mcp_atlassian.servers.confluence import confluence_mcp
-    from mcp_atlassian.servers.jira import jira_mcp
+    from mcp_atlassian_with_bitbucket_and_privacy.servers.confluence import (
+        confluence_mcp,
+    )
+    from mcp_atlassian_with_bitbucket_and_privacy.servers.jira import jira_mcp
 
     jira_tools = await jira_mcp.list_tools()
     confluence_tools = await confluence_mcp.list_tools()
@@ -406,8 +408,11 @@ async def get_bitbucket_tool_counts() -> tuple[int, int]:
     rendered as Mintlify pages (docs/tools/ only covers Jira and
     Confluence); this only feeds the cross-file total/core count checks.
     """
-    from mcp_atlassian.servers.bitbucket import bitbucket_mcp
-    from mcp_atlassian.utils.toolsets import DEFAULT_TOOLSETS, get_toolset_tag
+    from mcp_atlassian_with_bitbucket_and_privacy.servers.bitbucket import bitbucket_mcp
+    from mcp_atlassian_with_bitbucket_and_privacy.utils.toolsets import (
+        DEFAULT_TOOLSETS,
+        get_toolset_tag,
+    )
 
     bb_tools = await bitbucket_mcp.list_tools()
     total = len(bb_tools)
@@ -507,7 +512,7 @@ def get_tool_counts(
     bitbucket_totals: tuple[int, int],
 ) -> ToolCounts:
     """Calculate tool and toolset counts from their live registries."""
-    from mcp_atlassian.utils.toolsets import (
+    from mcp_atlassian_with_bitbucket_and_privacy.utils.toolsets import (
         ALL_TOOLSETS,
         CONFLUENCE_TOOLSETS,
         DEFAULT_TOOLSETS,
@@ -538,7 +543,7 @@ def build_toolset_docs(
     tools: dict[str, dict[str, Any]],
 ) -> dict[str, list[ToolsetDoc]]:
     """Group introspected tools by the registered toolset definitions."""
-    from mcp_atlassian.utils.toolsets import (
+    from mcp_atlassian_with_bitbucket_and_privacy.utils.toolsets import (
         ALL_TOOLSETS,
         CONFLUENCE_TOOLSETS,
         DEFAULT_TOOLSETS,

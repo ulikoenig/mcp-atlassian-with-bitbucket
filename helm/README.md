@@ -1,6 +1,6 @@
-# MCP Atlassian Helm Chart
+# MCP Atlassian with Bitbucket and Privacy Helm Chart
 
-This Helm chart deploys the [MCP Atlassian](https://github.com/sooperset/mcp-atlassian) server to Kubernetes, providing a Model Context Protocol (MCP) server for Jira and Confluence integration.
+This Helm chart deploys the [MCP Atlassian with Bitbucket and Privacy](https://github.com/ulikoenig/mcp-atlassian-with-bitbucket) server to Kubernetes for Jira, Confluence, and Bitbucket integrations.
 
 ## Prerequisites
 
@@ -28,19 +28,19 @@ jira:
 YAML
 
 # Install the chart
-helm install mcp-atlassian ./mcp-atlassian -f my-values.yaml
+helm install mcp-atlassian-with-bitbucket-and-privacy ./mcp-atlassian-with-bitbucket-and-privacy -f my-values.yaml
 ```
 
 ### Validate the chart
 
 ```bash
-helm lint mcp-atlassian/
+helm lint mcp-atlassian-with-bitbucket-and-privacy/
 ```
 
 ### Test installation
 
 ```bash
-helm install mcp-atlassian ./mcp-atlassian \
+helm install mcp-atlassian-with-bitbucket-and-privacy ./mcp-atlassian-with-bitbucket-and-privacy \
   --set confluence.url="https://your-company.atlassian.net/wiki" \
   --set confluence.username="user@example.com" \
   --set confluence.apiToken="token" \
@@ -144,7 +144,7 @@ oauthClientStorage:
   factory:
     importPath: "my_pkg.storage:create_store"
     configJsonSecret:
-      name: mcp-atlassian-storage-config
+      name: mcp-atlassian-with-bitbucket-and-privacy-storage-config
       key: config.json
 ```
 
@@ -164,7 +164,7 @@ existing Secret containing the private policy and a Base64-encoded key of at
 least 32 bytes:
 
 ```bash
-kubectl create secret generic mcp-atlassian-identity-privacy \
+kubectl create secret generic mcp-atlassian-with-bitbucket-and-privacy-identity-privacy \
   --from-file=identity-policy.json=identity-policy.json \
   --from-file=identity-keyring.json=identity-keyring.json
 ```
@@ -194,7 +194,7 @@ extraEnv:
 volumes:
   - name: identity-privacy
     secret:
-      secretName: mcp-atlassian-identity-privacy
+      secretName: mcp-atlassian-with-bitbucket-and-privacy-identity-privacy
 
 volumeMounts:
   - name: identity-privacy
@@ -242,18 +242,18 @@ readinessProbe:
 ## Upgrading
 
 ```bash
-helm upgrade mcp-atlassian ./mcp-atlassian -f my-values.yaml
+helm upgrade mcp-atlassian-with-bitbucket-and-privacy ./mcp-atlassian-with-bitbucket-and-privacy -f my-values.yaml
 ```
 
 ## Uninstalling
 
 ```bash
-helm uninstall mcp-atlassian
+helm uninstall mcp-atlassian-with-bitbucket-and-privacy
 ```
 
 ## Support
 
-For issues with the MCP Atlassian server, see https://github.com/sooperset/mcp-atlassian
+For issues with MCP Atlassian with Bitbucket and Privacy, see https://github.com/ulikoenig/mcp-atlassian-with-bitbucket/issues
 
 ## License
 

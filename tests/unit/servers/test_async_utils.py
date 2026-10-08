@@ -10,7 +10,7 @@ from threading import Lock
 import anyio
 import pytest
 
-from src.mcp_atlassian.servers.async_utils import (
+from src.mcp_atlassian_with_bitbucket_and_privacy.servers.async_utils import (
     DEFAULT_JIRA_FETCHER_MAX_WORKERS,
     JIRA_FETCHER_MAX_WORKERS_ENV,
     get_jira_fetcher_max_workers,

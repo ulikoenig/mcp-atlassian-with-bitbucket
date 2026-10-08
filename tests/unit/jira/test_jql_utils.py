@@ -2,7 +2,7 @@
 
 import pytest
 
-from mcp_atlassian.jira.utils import (
+from mcp_atlassian_with_bitbucket_and_privacy.jira.utils import (
     quote_jql_identifier_if_needed,
     sanitize_jql_reserved_words,
 )

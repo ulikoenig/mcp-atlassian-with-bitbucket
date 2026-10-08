@@ -8,8 +8,10 @@ from fastmcp.tools import tool
 from fastmcp.tools.function_tool import ToolMeta
 from requests.exceptions import HTTPError
 
-from mcp_atlassian.exceptions import MCPAtlassianAuthenticationError
-from mcp_atlassian.utils.decorators import (
+from mcp_atlassian_with_bitbucket_and_privacy.exceptions import (
+    MCPAtlassianAuthenticationError,
+)
+from mcp_atlassian_with_bitbucket_and_privacy.utils.decorators import (
     check_write_access,
     deprecated_tool,
     handle_auth_errors,
