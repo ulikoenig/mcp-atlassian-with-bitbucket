@@ -3,7 +3,7 @@
 import json
 import time
 import urllib.parse
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 
 import pytest
 import requests
@@ -14,6 +14,7 @@ from mcp_atlassian_with_bitbucket_and_privacy.utils.oauth import (
     DC_AUTHORIZE_PATH,
     DC_TOKEN_PATH,
     KEYRING_SERVICE_NAME,
+    LEGACY_KEYRING_SERVICE_NAME,
     TOKEN_EXPIRY_MARGIN,
     BYOAccessTokenOAuthConfig,
     OAuthConfig,
@@ -517,8 +518,9 @@ class TestOAuthConfig:
 
         result = OAuthConfig.load_tokens("test-client-id")
 
-        # Should have tried keyring
-        mock_get_password.assert_called_once()
+        mock_get_password.assert_called_once_with(
+            KEYRING_SERVICE_NAME, "oauth-test-client-id"
+        )
 
         # Should have fallen back to file
         mock_load_from_file.assert_called_once_with("test-client-id")
@@ -527,7 +529,26 @@ class TestOAuthConfig:
         assert result["refresh_token"] == "file-refresh-token"
         assert result["access_token"] == "file-access-token"
         assert result["expires_at"] == 9876543210
-        assert result["cloud_id"] == "file-cloud-id"
+
+    @patch("keyring.get_password")
+    @patch.object(OAuthConfig, "_load_tokens_from_file")
+    def test_load_tokens_from_legacy_keyring(
+        self, mock_load_from_file, mock_get_password
+    ):
+        """Tokens saved before the product rename remain available."""
+        token_data = {"refresh_token": "legacy-refresh-token"}
+        mock_get_password.side_effect = [None, json.dumps(token_data)]
+
+        result = OAuthConfig.load_tokens("test-client-id")
+
+        assert result == token_data
+        mock_get_password.assert_has_calls(
+            [
+                call(KEYRING_SERVICE_NAME, "oauth-test-client-id"),
+                call(LEGACY_KEYRING_SERVICE_NAME, "oauth-test-client-id"),
+            ]
+        )
+        mock_load_from_file.assert_not_called()
 
     @patch("keyring.get_password")
     @patch.object(OAuthConfig, "_load_tokens_from_file")
@@ -546,8 +567,12 @@ class TestOAuthConfig:
 
         result = OAuthConfig.load_tokens("test-client-id")
 
-        # Should have tried keyring
-        mock_get_password.assert_called_once()
+        mock_get_password.assert_has_calls(
+            [
+                call(KEYRING_SERVICE_NAME, "oauth-test-client-id"),
+                call(LEGACY_KEYRING_SERVICE_NAME, "oauth-test-client-id"),
+            ]
+        )
 
         # Should have fallen back to file
         mock_load_from_file.assert_called_once_with("test-client-id")
@@ -589,6 +614,21 @@ class TestOAuthConfig:
 
         # Should return empty dict
         assert result == {}
+
+    def test_load_tokens_from_legacy_file(self, tmp_path):
+        """Tokens in the previous fallback directory remain available."""
+        token_data = {"refresh_token": "legacy-refresh-token"}
+        legacy_token_path = tmp_path / ".mcp-atlassian" / "oauth-test-client-id.json"
+        legacy_token_path.parent.mkdir()
+        legacy_token_path.write_text(json.dumps(token_data), encoding="utf-8")
+
+        with patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.utils.oauth.Path.home",
+            return_value=tmp_path,
+        ):
+            result = OAuthConfig._load_tokens_from_file("test-client-id")
+
+        assert result == token_data
 
     @patch("os.getenv")
     def test_from_env_success(self, mock_getenv):

@@ -47,6 +47,7 @@ HTTP_CONNECT_TIMEOUT = 5
 HTTP_READ_TIMEOUT = 20
 HTTP_TIMEOUT = (HTTP_CONNECT_TIMEOUT, HTTP_READ_TIMEOUT)
 KEYRING_SERVICE_NAME = "mcp-atlassian-with-bitbucket-and-privacy-oauth"
+LEGACY_KEYRING_SERVICE_NAME = "mcp-atlassian-oauth"
 
 
 @dataclass
@@ -444,6 +445,13 @@ class OAuthConfig:
             if token_json:
                 logger.debug(f"Loaded OAuth tokens from keyring for {username}")
                 return json.loads(token_json)
+
+            token_json = keyring.get_password(LEGACY_KEYRING_SERVICE_NAME, username)
+            if token_json:
+                logger.debug(
+                    f"Loaded OAuth tokens from legacy keyring service for {username}"
+                )
+                return json.loads(token_json)
         except Exception as e:
             logger.warning(
                 f"Failed to load tokens from keyring: {e}. Trying file fallback."
@@ -462,25 +470,29 @@ class OAuthConfig:
         Returns:
             Dict with the token data or empty dict if no tokens found
         """
-        token_path = (
-            Path.home()
+        home = Path.home()
+        token_paths = (
+            home
             / ".mcp-atlassian-with-bitbucket-and-privacy"
-            / f"oauth-{client_id}.json"
+            / f"oauth-{client_id}.json",
+            home / ".mcp-atlassian" / f"oauth-{client_id}.json",
         )
 
-        if not token_path.exists():
-            return {}
+        for token_path in token_paths:
+            if not token_path.exists():
+                continue
 
-        try:
-            with open(token_path) as f:
-                token_data = json.load(f)
-                logger.debug(
-                    f"Loaded OAuth tokens from file {token_path} (fallback storage)"
-                )
-                return token_data
-        except Exception as e:
-            logger.error(f"Failed to load tokens from file: {e}")
-            return {}
+            try:
+                with open(token_path) as f:
+                    token_data = json.load(f)
+                    logger.debug(
+                        f"Loaded OAuth tokens from file {token_path} (fallback storage)"
+                    )
+                    return token_data
+            except Exception as e:
+                logger.error(f"Failed to load tokens from file {token_path}: {e}")
+
+        return {}
 
     @classmethod
     def from_env(
