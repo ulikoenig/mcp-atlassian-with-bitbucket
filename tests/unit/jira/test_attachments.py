@@ -154,7 +154,9 @@ class TestAttachmentsMixin:
             patch("os.path.abspath") as mock_abspath,
             patch("os.path.isabs") as mock_isabs,
             patch("os.getcwd", return_value="/absolute/path"),
-            patch("mcp_atlassian_with_bitbucket_and_privacy.jira.attachments.validate_safe_path"),
+            patch(
+                "mcp_atlassian_with_bitbucket_and_privacy.jira.attachments.validate_safe_path"
+            ),
         ):
             mock_exists.return_value = True
             mock_getsize.return_value = 12
@@ -337,7 +339,9 @@ class TestAttachmentsMixin:
             patch("os.path.isabs") as mock_isabs,
             patch("os.path.abspath") as mock_abspath,
             patch("os.getcwd", return_value="/absolute/path"),
-            patch("mcp_atlassian_with_bitbucket_and_privacy.jira.attachments.validate_safe_path"),
+            patch(
+                "mcp_atlassian_with_bitbucket_and_privacy.jira.attachments.validate_safe_path"
+            ),
         ):
             mock_isabs.return_value = False
             mock_abspath.return_value = "/absolute/path/attachments"
@@ -510,7 +514,9 @@ class TestAttachmentsMixin:
 
     # Tests for upload_attachment method
 
-    def test_upload_attachment_success(self, attachments_mixin: AttachmentsMixin):
+    def test_upload_attachment_success(
+        self, attachments_mixin: AttachmentsMixin, tmp_path: Path
+    ):
         """Test successful attachment upload."""
         # Mock the Jira API response
         mock_attachment_response = {
@@ -525,7 +531,7 @@ class TestAttachmentsMixin:
             # Pin the workspace so the absolute path resolves inside it — keeps
             # validate_safe_path passing deterministically across Python versions
             # (mocking os.path.abspath does not reach pathlib.Path.resolve on 3.13).
-            patch("os.getcwd", return_value="/absolute/path"),
+            patch("os.getcwd", return_value=str(tmp_path)),
             patch("os.path.exists") as mock_exists,
             patch("os.path.getsize") as mock_getsize,
             patch("os.path.isabs") as mock_isabs,
@@ -536,13 +542,12 @@ class TestAttachmentsMixin:
             mock_exists.return_value = True
             mock_getsize.return_value = 100
             mock_isabs.return_value = True
-            mock_abspath.return_value = "/absolute/path/test_file.txt"
+            mock_abspath.return_value = str(tmp_path / "test_file.txt")
             mock_basename.return_value = "test_file.txt"
 
             # Call the method
-            result = attachments_mixin.upload_attachment(
-                "TEST-123", "/absolute/path/test_file.txt"
-            )
+            file_path = tmp_path / "test_file.txt"
+            result = attachments_mixin.upload_attachment("TEST-123", str(file_path))
 
             # Assertions
             assert result["success"] is True
@@ -551,7 +556,7 @@ class TestAttachmentsMixin:
             assert result["size"] == 100
             assert result["id"] == "12345"
             attachments_mixin.jira.add_attachment.assert_called_once_with(
-                issue_key="TEST-123", filename="/absolute/path/test_file.txt"
+                issue_key="TEST-123", filename=str(file_path.resolve())
             )
 
     def test_upload_attachment_relative_path(

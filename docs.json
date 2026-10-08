@@ -3,7 +3,7 @@
   "theme": "mint",
   "name": "MCP Atlassian with Bitbucket and Privacy",
   "metadata": {
-    "og:description": "MCP server for Jira, Confluence, and Bitbucket with optional identity privacy protection"
+    "og:description": "MCP server for Jira and Confluence: all 98 tools enabled by default, plus Bitbucket integration and optional identity privacy protection"
   },
   "seo": {
     "indexHiddenPages": false

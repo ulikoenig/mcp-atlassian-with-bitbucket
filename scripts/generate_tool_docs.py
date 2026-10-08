@@ -436,7 +436,7 @@ def load_overrides(overrides_dir: Path) -> dict[str, ToolOverride]:
 
     for yaml_file in sorted(overrides_dir.glob("*.yaml")):
         tool_name = yaml_file.stem
-        with open(yaml_file) as f:
+        with open(yaml_file, encoding="utf-8") as f:
             data = yaml.safe_load(f) or {}
         overrides[tool_name] = ToolOverride(
             example=data.get("example"),
