@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, Mock
 
 import pytest
 
-from mcp_atlassian.jira.worklog import WorklogMixin
+from mcp_atlassian_with_bitbucket_and_privacy.jira.worklog import WorklogMixin
 
 
 class TestWorklogMixin:

@@ -1,16 +1,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "mcp-atlassian.fullname" . }}
+  name: {{ include "mcp-atlassian-with-bitbucket-and-privacy.fullname" . }}
   labels:
-    {{- include "mcp-atlassian.labels" . | nindent 4 }}
+    {{- include "mcp-atlassian-with-bitbucket-and-privacy.labels" . | nindent 4 }}
 spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
   {{- end }}
   selector:
     matchLabels:
-      {{- include "mcp-atlassian.selectorLabels" . | nindent 6 }}
+      {{- include "mcp-atlassian-with-bitbucket-and-privacy.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       annotations:
@@ -20,7 +20,7 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
       labels:
-        {{- include "mcp-atlassian.labels" . | nindent 8 }}
+        {{- include "mcp-atlassian-with-bitbucket-and-privacy.labels" . | nindent 8 }}
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -29,7 +29,7 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "mcp-atlassian.serviceAccountName" . }}
+      serviceAccountName: {{ include "mcp-atlassian-with-bitbucket-and-privacy.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
@@ -73,24 +73,24 @@ spec:
         - name: CONFLUENCE_URL
           valueFrom:
             configMapKeyRef:
-              name: {{ include "mcp-atlassian.fullname" . }}
+              name: {{ include "mcp-atlassian-with-bitbucket-and-privacy.fullname" . }}
               key: confluence-url
         {{- if eq .Values.authMode "api-token" }}
         - name: CONFLUENCE_USERNAME
           valueFrom:
             secretKeyRef:
-              name: {{ include "mcp-atlassian.fullname" . }}
+              name: {{ include "mcp-atlassian-with-bitbucket-and-privacy.fullname" . }}
               key: confluence-username
         - name: CONFLUENCE_API_TOKEN
           valueFrom:
             secretKeyRef:
-              name: {{ include "mcp-atlassian.fullname" . }}
+              name: {{ include "mcp-atlassian-with-bitbucket-and-privacy.fullname" . }}
               key: confluence-api-token
         {{- else if eq .Values.authMode "personal-token" }}
         - name: CONFLUENCE_PERSONAL_TOKEN
           valueFrom:
             secretKeyRef:
-              name: {{ include "mcp-atlassian.fullname" . }}
+              name: {{ include "mcp-atlassian-with-bitbucket-and-privacy.fullname" . }}
               key: confluence-personal-token
         {{- end }}
         {{- if .Values.confluence.sslVerify }}
@@ -101,21 +101,21 @@ spec:
         - name: CONFLUENCE_SPACES_FILTER
           valueFrom:
             configMapKeyRef:
-              name: {{ include "mcp-atlassian.fullname" . }}
+              name: {{ include "mcp-atlassian-with-bitbucket-and-privacy.fullname" . }}
               key: confluence-spaces-filter
         {{- end }}
         {{- if .Values.confluence.customHeaders }}
         - name: CONFLUENCE_CUSTOM_HEADERS
           valueFrom:
             secretKeyRef:
-              name: {{ include "mcp-atlassian.fullname" . }}
+              name: {{ include "mcp-atlassian-with-bitbucket-and-privacy.fullname" . }}
               key: confluence-custom-headers
         {{- end }}
         {{- if .Values.confluence.passthroughHeaders }}
         - name: CONFLUENCE_PASSTHROUGH_HEADERS
           valueFrom:
             configMapKeyRef:
-              name: {{ include "mcp-atlassian.fullname" . }}
+              name: {{ include "mcp-atlassian-with-bitbucket-and-privacy.fullname" . }}
               key: confluence-passthrough-headers
         {{- end }}
         {{- end }}
@@ -125,24 +125,24 @@ spec:
         - name: JIRA_URL
           valueFrom:
             configMapKeyRef:
-              name: {{ include "mcp-atlassian.fullname" . }}
+              name: {{ include "mcp-atlassian-with-bitbucket-and-privacy.fullname" . }}
               key: jira-url
         {{- if eq .Values.authMode "api-token" }}
         - name: JIRA_USERNAME
           valueFrom:
             secretKeyRef:
-              name: {{ include "mcp-atlassian.fullname" . }}
+              name: {{ include "mcp-atlassian-with-bitbucket-and-privacy.fullname" . }}
               key: jira-username
         - name: JIRA_API_TOKEN
           valueFrom:
             secretKeyRef:
-              name: {{ include "mcp-atlassian.fullname" . }}
+              name: {{ include "mcp-atlassian-with-bitbucket-and-privacy.fullname" . }}
               key: jira-api-token
         {{- else if eq .Values.authMode "personal-token" }}
         - name: JIRA_PERSONAL_TOKEN
           valueFrom:
             secretKeyRef:
-              name: {{ include "mcp-atlassian.fullname" . }}
+              name: {{ include "mcp-atlassian-with-bitbucket-and-privacy.fullname" . }}
               key: jira-personal-token
         {{- end }}
         {{- if .Values.jira.sslVerify }}
@@ -153,21 +153,21 @@ spec:
         - name: JIRA_PROJECTS_FILTER
           valueFrom:
             configMapKeyRef:
-              name: {{ include "mcp-atlassian.fullname" . }}
+              name: {{ include "mcp-atlassian-with-bitbucket-and-privacy.fullname" . }}
               key: jira-projects-filter
         {{- end }}
         {{- if .Values.jira.customHeaders }}
         - name: JIRA_CUSTOM_HEADERS
           valueFrom:
             secretKeyRef:
-              name: {{ include "mcp-atlassian.fullname" . }}
+              name: {{ include "mcp-atlassian-with-bitbucket-and-privacy.fullname" . }}
               key: jira-custom-headers
         {{- end }}
         {{- if .Values.jira.passthroughHeaders }}
         - name: JIRA_PASSTHROUGH_HEADERS
           valueFrom:
             configMapKeyRef:
-              name: {{ include "mcp-atlassian.fullname" . }}
+              name: {{ include "mcp-atlassian-with-bitbucket-and-privacy.fullname" . }}
               key: jira-passthrough-headers
         {{- end }}
         {{- end }}
@@ -177,34 +177,34 @@ spec:
         - name: ATLASSIAN_OAUTH_CLOUD_ID
           valueFrom:
             secretKeyRef:
-              name: {{ include "mcp-atlassian.fullname" . }}
+              name: {{ include "mcp-atlassian-with-bitbucket-and-privacy.fullname" . }}
               key: oauth-cloud-id
         {{- if eq .Values.authMode "oauth" }}
         - name: ATLASSIAN_OAUTH_CLIENT_ID
           valueFrom:
             secretKeyRef:
-              name: {{ include "mcp-atlassian.fullname" . }}
+              name: {{ include "mcp-atlassian-with-bitbucket-and-privacy.fullname" . }}
               key: oauth-client-id
         - name: ATLASSIAN_OAUTH_CLIENT_SECRET
           valueFrom:
             secretKeyRef:
-              name: {{ include "mcp-atlassian.fullname" . }}
+              name: {{ include "mcp-atlassian-with-bitbucket-and-privacy.fullname" . }}
               key: oauth-client-secret
         - name: ATLASSIAN_OAUTH_REDIRECT_URI
           valueFrom:
             configMapKeyRef:
-              name: {{ include "mcp-atlassian.fullname" . }}
+              name: {{ include "mcp-atlassian-with-bitbucket-and-privacy.fullname" . }}
               key: oauth-redirect-uri
         - name: ATLASSIAN_OAUTH_SCOPE
           valueFrom:
             configMapKeyRef:
-              name: {{ include "mcp-atlassian.fullname" . }}
+              name: {{ include "mcp-atlassian-with-bitbucket-and-privacy.fullname" . }}
               key: oauth-scope
         {{- else if eq .Values.authMode "byot" }}
         - name: ATLASSIAN_OAUTH_ACCESS_TOKEN
           valueFrom:
             secretKeyRef:
-              name: {{ include "mcp-atlassian.fullname" . }}
+              name: {{ include "mcp-atlassian-with-bitbucket-and-privacy.fullname" . }}
               key: oauth-access-token
         {{- end }}
         {{- end }}
@@ -337,7 +337,7 @@ spec:
         volumeMounts:
         {{- if and (eq .Values.authMode "oauth") .Values.persistence.enabled }}
         - name: oauth-tokens
-          mountPath: /home/app/.mcp-atlassian
+          mountPath: /home/app/.mcp-atlassian-with-bitbucket-and-privacy
         {{- end }}
         {{- with .Values.volumeMounts }}
         {{- toYaml . | nindent 8 }}
@@ -346,7 +346,7 @@ spec:
       {{- if and (eq .Values.authMode "oauth") .Values.persistence.enabled }}
       - name: oauth-tokens
         persistentVolumeClaim:
-          claimName: {{ if .Values.persistence.existingClaim }}{{ .Values.persistence.existingClaim }}{{- else }}{{ include "mcp-atlassian.fullname" . }}{{- end }}
+          claimName: {{ if .Values.persistence.existingClaim }}{{ .Values.persistence.existingClaim }}{{- else }}{{ include "mcp-atlassian-with-bitbucket-and-privacy.fullname" . }}{{- end }}
       {{- end }}
       {{- with .Values.volumes }}
       {{- toYaml . | nindent 6 }}

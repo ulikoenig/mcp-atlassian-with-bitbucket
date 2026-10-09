@@ -7,9 +7,13 @@ import pytest
 import requests
 from requests import HTTPError
 
-from mcp_atlassian.confluence.search import SearchMixin
-from mcp_atlassian.confluence.utils import quote_cql_identifier_if_needed
-from mcp_atlassian.exceptions import MCPAtlassianAuthenticationError
+from mcp_atlassian_with_bitbucket_and_privacy.confluence.search import SearchMixin
+from mcp_atlassian_with_bitbucket_and_privacy.confluence.utils import (
+    quote_cql_identifier_if_needed,
+)
+from mcp_atlassian_with_bitbucket_and_privacy.exceptions import (
+    MCPAtlassianAuthenticationError,
+)
 
 
 class TestSearchMixin:
@@ -20,7 +24,7 @@ class TestSearchMixin:
         """Create a SearchMixin instance for testing."""
         # SearchMixin inherits from ConfluenceClient, so we need to create it properly
         with patch(
-            "mcp_atlassian.confluence.search.ConfluenceClient.__init__"
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.search.ConfluenceClient.__init__"
         ) as mock_init:
             mock_init.return_value = None
             mixin = SearchMixin()
@@ -792,7 +796,7 @@ class TestSearchUserServerDC:
     def server_search_mixin(self, confluence_client):
         """Create a SearchMixin configured as Server/DC."""
         with patch(
-            "mcp_atlassian.confluence.search.ConfluenceClient.__init__"
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.search.ConfluenceClient.__init__"
         ) as mock_init:
             mock_init.return_value = None
             mixin = SearchMixin()
@@ -806,7 +810,7 @@ class TestSearchUserServerDC:
     def cloud_search_mixin(self, confluence_client):
         """Create a SearchMixin configured as Cloud."""
         with patch(
-            "mcp_atlassian.confluence.search.ConfluenceClient.__init__"
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.search.ConfluenceClient.__init__"
         ) as mock_init:
             mock_init.return_value = None
             mixin = SearchMixin()

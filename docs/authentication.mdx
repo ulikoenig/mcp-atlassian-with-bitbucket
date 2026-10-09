@@ -1,9 +1,9 @@
 ---
 title: "Authentication"
-description: "Configure authentication for MCP Atlassian — API tokens, PATs, mTLS, and OAuth 2.0"
+description: "Configure authentication for MCP Atlassian with Bitbucket and Privacy — API tokens, PATs, mTLS, and OAuth 2.0"
 ---
 
-MCP Atlassian supports four authentication methods depending on your Atlassian deployment type.
+MCP Atlassian with Bitbucket and Privacy supports four authentication methods depending on your Atlassian deployment type.
 
 ## API Token (Cloud) - Recommended
 
@@ -77,11 +77,11 @@ Set `*_CLIENT_CERT` to either a combined certificate-and-private-key PEM, or set
 
 ```bash
 JIRA_URL=https://jira.your-company.com
-JIRA_CLIENT_CERT=/etc/mcp-atlassian/jira-client-cert.pem
-JIRA_CLIENT_KEY=/etc/mcp-atlassian/jira-client-key.pem
+JIRA_CLIENT_CERT=/etc/mcp-atlassian-with-bitbucket-and-privacy/jira-client-cert.pem
+JIRA_CLIENT_KEY=/etc/mcp-atlassian-with-bitbucket-and-privacy/jira-client-key.pem
 
 CONFLUENCE_URL=https://confluence.your-company.com
-CONFLUENCE_CLIENT_CERT=/etc/mcp-atlassian/confluence-client-combined.pem
+CONFLUENCE_CLIENT_CERT=/etc/mcp-atlassian-with-bitbucket-and-privacy/confluence-client-combined.pem
 ```
 
 In the example, Jira uses separate certificate and key files, while Confluence uses a combined PEM. For a combined PEM, omit `*_CLIENT_KEY`. The matching `JIRA_*` and `CONFLUENCE_*` variables configure each service independently.
@@ -129,13 +129,13 @@ OAuth 2.0 provides enhanced security features but requires more setup. For most 
   <Step title="Run Setup Wizard">
     ```bash
     # Using uvx
-    uvx mcp-atlassian --oauth-setup -v
+    uvx mcp-atlassian-with-bitbucket-and-privacy --oauth-setup -v
 
     # Or using Docker
     docker run --rm -i \
       -p 8080:8080 \
-      -v "${HOME}/.mcp-atlassian:/home/app/.mcp-atlassian" \
-      ghcr.io/sooperset/mcp-atlassian:latest --oauth-setup -v
+      -v "${HOME}/.mcp-atlassian-with-bitbucket-and-privacy:/home/app/.mcp-atlassian-with-bitbucket-and-privacy" \
+      ghcr.io/ulikoenig/mcp-atlassian-with-bitbucket-and-privacy:latest --oauth-setup -v
     ```
   </Step>
   <Step title="Complete Authorization">
@@ -166,7 +166,7 @@ through the standard OAuth discovery/DCR flow (`401` challenge, `/.well-known/*`
 
 ```bash
 ATLASSIAN_OAUTH_PROXY_ENABLE=true
-PUBLIC_BASE_URL=https://mcp.example.com/mcp-atlassian
+PUBLIC_BASE_URL=https://mcp.example.com/mcp-atlassian-with-bitbucket-and-privacy
 ATLASSIAN_OAUTH_ALLOWED_CLIENT_REDIRECT_URIS=http://localhost:*,http://127.0.0.1:*,https://chatgpt.com/connector_platform_oauth_redirect
 ATLASSIAN_OAUTH_ALLOWED_GRANT_TYPES=authorization_code,refresh_token
 ATLASSIAN_OAUTH_REQUIRE_CONSENT=true
@@ -205,11 +205,11 @@ For multi-tenant applications where users provide their own OAuth tokens:
 1. Enable minimal OAuth mode:
    ```bash
    # Using uvx
-   ATLASSIAN_OAUTH_ENABLE=true uvx mcp-atlassian --transport streamable-http --port 9000
+   ATLASSIAN_OAUTH_ENABLE=true uvx mcp-atlassian-with-bitbucket-and-privacy --transport streamable-http --port 9000
 
    # Or using Docker
    docker run -e ATLASSIAN_OAUTH_ENABLE=true -p 9000:9000 \
-     ghcr.io/sooperset/mcp-atlassian:latest \
+     ghcr.io/ulikoenig/mcp-atlassian-with-bitbucket-and-privacy:latest \
      --transport streamable-http --port 9000
    ```
 

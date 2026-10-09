@@ -1,9 +1,10 @@
 [project]
-name = "mcp-atlassian-with-bitbucket"
+name = "mcp-atlassian-with-bitbucket-and-privacy"
 dynamic = ["version"]
 description = "MCP server integrating Jira, Confluence, and Bitbucket (Cloud + Server/DC) with AI language models following Anthropic's MCP specification."
 readme = "README.md"
 requires-python = ">=3.10"
+
 dependencies = [
     "anyio>=4.0.0",
     "atlassian-python-api>=4.0.0,<5.0.0",
@@ -35,20 +36,25 @@ dependencies = [
     "tzdata>=2024.1; platform_system=='Windows'",
 ]
 
+[project.urls]
+Homepage = "https://github.com/ulikoenig/mcp-atlassian-with-bitbucket"
+Repository = "https://github.com/ulikoenig/mcp-atlassian-with-bitbucket"
+Issues = "https://github.com/ulikoenig/mcp-atlassian-with-bitbucket/issues"
+Changelog = "https://github.com/ulikoenig/mcp-atlassian-with-bitbucket/blob/main/CHANGELOG.md"
+
 [project.optional-dependencies]
 wpad = ["pypac>=0.17.2"]
 
 [[project.authors]]
-name = "Jelly Thomas"
-email = "jellythom2107@gmail.com"
+name = "Uli König"
+email = "mcp_atlassian@ulikoenig.de"
 
 [build-system]
 requires = ["hatchling", "uv-dynamic-versioning>=0.7.0"]
 build-backend = "hatchling.build"
 
 [project.scripts]
-mcp-atlassian-with-bitbucket = "mcp_atlassian:main"
-mcp-atlassian = "mcp_atlassian:main"
+mcp-atlassian-with-bitbucket-and-privacy = "mcp_atlassian_with_bitbucket_and_privacy:main"
 
 [dependency-groups]
 dev = [
@@ -115,7 +121,7 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = ["S", "ANN", "B017"]
 "tests/fixtures/*.py" = ["E501"]
-"src/mcp_atlassian/server.py" = ["E501"]
+"src/mcp_atlassian_with_bitbucket_and_privacy/server.py" = ["E501"]
 
 [tool.ruff.format]
 quote-style = "double"
@@ -157,7 +163,7 @@ module = "markdownify.*"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = "src.mcp_atlassian.*"
+module = "src.mcp_atlassian_with_bitbucket_and_privacy.*"
 disallow_untyped_defs = false
 
 [[tool.mypy.overrides]]
@@ -165,7 +171,7 @@ module = "pypac.*"
 ignore_missing_imports = true
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/mcp_atlassian"]
+packages = ["src/mcp_atlassian_with_bitbucket_and_privacy"]
 
 [tool.hatch.version]
 source = "uv-dynamic-versioning"

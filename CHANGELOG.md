@@ -79,7 +79,11 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
-- Renamed package from `mcp-atlassian` to `mcp-atlassian-with-bitbucket`
+- Renamed distribution, CLI, and Python import package to
+  `mcp-atlassian-with-bitbucket-and-privacy`; retained the existing GitHub
+  repository identity
+- Existing OAuth tokens remain readable from the pre-rename keyring service
+  and fallback directory
 - Added `httpx` dependency for Bitbucket API communication
 - Extended `MainAppContext` to include `BitbucketConfig`
 - Updated `ALL_TOOLSETS` count from 21 to 33

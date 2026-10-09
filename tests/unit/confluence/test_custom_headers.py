@@ -3,8 +3,8 @@
 import os
 from unittest.mock import MagicMock, patch
 
-from mcp_atlassian.confluence.client import ConfluenceClient
-from mcp_atlassian.confluence.config import ConfluenceConfig
+from mcp_atlassian_with_bitbucket_and_privacy.confluence.client import ConfluenceClient
+from mcp_atlassian_with_bitbucket_and_privacy.confluence.config import ConfluenceConfig
 
 
 class TestConfluenceConfigCustomHeaders:
@@ -102,15 +102,15 @@ class TestConfluenceClientCustomHeaders:
         mock_confluence._session = mock_session
 
         monkeypatch.setattr(
-            "mcp_atlassian.confluence.client.Confluence",
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.client.Confluence",
             lambda **kwargs: mock_confluence,
         )
         monkeypatch.setattr(
-            "mcp_atlassian.confluence.client.configure_ssl_verification",
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.client.configure_ssl_verification",
             lambda **kwargs: None,
         )
         monkeypatch.setattr(
-            "mcp_atlassian.preprocessing.confluence.ConfluencePreprocessor",
+            "mcp_atlassian_with_bitbucket_and_privacy.preprocessing.confluence.ConfluencePreprocessor",
             lambda **kwargs: MagicMock(),
         )
 
@@ -126,7 +126,9 @@ class TestConfluenceClientCustomHeaders:
 
         # Only the default User-Agent should be present; no custom headers added.
         assert set(mock_session.headers.keys()) == {"User-Agent"}
-        assert mock_session.headers["User-Agent"].startswith("mcp-atlassian/")
+        assert mock_session.headers["User-Agent"].startswith(
+            "mcp-atlassian-with-bitbucket-and-privacy/"
+        )
 
     def test_custom_headers_applied_to_session(self, monkeypatch):
         """Test that custom headers are applied to the Confluence session."""
@@ -137,15 +139,15 @@ class TestConfluenceClientCustomHeaders:
         mock_confluence._session = mock_session
 
         monkeypatch.setattr(
-            "mcp_atlassian.confluence.client.Confluence",
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.client.Confluence",
             lambda **kwargs: mock_confluence,
         )
         monkeypatch.setattr(
-            "mcp_atlassian.confluence.client.configure_ssl_verification",
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.client.configure_ssl_verification",
             lambda **kwargs: None,
         )
         monkeypatch.setattr(
-            "mcp_atlassian.preprocessing.confluence.ConfluencePreprocessor",
+            "mcp_atlassian_with_bitbucket_and_privacy.preprocessing.confluence.ConfluencePreprocessor",
             lambda **kwargs: MagicMock(),
         )
 

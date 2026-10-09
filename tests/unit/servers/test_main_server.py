@@ -9,9 +9,17 @@ import httpx
 import pytest
 from key_value.aio.stores.memory import MemoryStore
 
-from mcp_atlassian.servers.main import AtlassianMCP, UserTokenMiddleware, main_mcp
-from mcp_atlassian.servers.oauth_proxy import HardenedOAuthProxy
-from mcp_atlassian.utils.token_verifier import AtlassianOpaqueTokenVerifier
+from mcp_atlassian_with_bitbucket_and_privacy.servers.main import (
+    AtlassianMCP,
+    UserTokenMiddleware,
+    main_mcp,
+)
+from mcp_atlassian_with_bitbucket_and_privacy.servers.oauth_proxy import (
+    HardenedOAuthProxy,
+)
+from mcp_atlassian_with_bitbucket_and_privacy.utils.token_verifier import (
+    AtlassianOpaqueTokenVerifier,
+)
 
 
 @pytest.mark.anyio
@@ -330,7 +338,10 @@ class TestUserTokenMiddleware:
         """Test that unsupported auth types (e.g., Digest) return 401 Unauthorized."""
         mock_scope["headers"] = [(b"authorization", b"Digest username=test")]
 
-        with caplog.at_level(logging.WARNING, logger="mcp-atlassian.server.main"):
+        with caplog.at_level(
+            logging.WARNING,
+            logger="mcp-atlassian-with-bitbucket-and-privacy.server.main",
+        ):
             await middleware(mock_scope, mock_receive, mock_send)
 
         # Verify 401 response was sent
@@ -359,7 +370,10 @@ class TestUserTokenMiddleware:
         raw_token = "raw-token-without-prefix"
         mock_scope["headers"] = [(b"authorization", raw_token.encode())]
 
-        with caplog.at_level(logging.WARNING, logger="mcp-atlassian.server.main"):
+        with caplog.at_level(
+            logging.WARNING,
+            logger="mcp-atlassian-with-bitbucket-and-privacy.server.main",
+        ):
             await middleware(mock_scope, mock_receive, mock_send)
 
         assert mock_send.call_count == 2
@@ -508,7 +522,9 @@ class TestUserTokenMiddleware:
             (b"mcp-session-id", b"test-session-123"),
         ]
 
-        with caplog.at_level(logging.DEBUG, logger="mcp-atlassian.server.main"):
+        with caplog.at_level(
+            logging.DEBUG, logger="mcp-atlassian-with-bitbucket-and-privacy.server.main"
+        ):
             await middleware(mock_scope, mock_receive, mock_send)
 
         assert "MCP-Session-ID header found: test-session-123" in caplog.text

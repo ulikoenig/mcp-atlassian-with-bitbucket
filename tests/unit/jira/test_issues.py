@@ -7,11 +7,15 @@ import pytest
 from requests.exceptions import ConnectionError as RequestsConnectionError
 from requests.exceptions import HTTPError
 
-from mcp_atlassian.exceptions import MCPAtlassianAuthenticationError
-from mcp_atlassian.jira import JiraFetcher
-from mcp_atlassian.jira.constants import DEFAULT_READ_JIRA_FIELDS
-from mcp_atlassian.jira.issues import IssuesMixin, logger
-from mcp_atlassian.models.jira import JiraIssue
+from mcp_atlassian_with_bitbucket_and_privacy.exceptions import (
+    MCPAtlassianAuthenticationError,
+)
+from mcp_atlassian_with_bitbucket_and_privacy.jira import JiraFetcher
+from mcp_atlassian_with_bitbucket_and_privacy.jira.constants import (
+    DEFAULT_READ_JIRA_FIELDS,
+)
+from mcp_atlassian_with_bitbucket_and_privacy.jira.issues import IssuesMixin, logger
+from mcp_atlassian_with_bitbucket_and_privacy.models.jira import JiraIssue
 from tests.utils.mocks import setup_api3_passthrough_mocks
 
 
@@ -640,7 +644,8 @@ class TestIssuesMixin:
 
         # Mock the prepare_epic_fields method from EpicsMixin
         with patch(
-            "mcp_atlassian.jira.epics.EpicsMixin.prepare_epic_fields", autospec=True
+            "mcp_atlassian_with_bitbucket_and_privacy.jira.epics.EpicsMixin.prepare_epic_fields",
+            autospec=True,
         ) as mock_prepare_epic:
             # Set up the mock to store epic values in kwargs
             # Note: First argument is self because EpicsMixin.prepare_epic_fields is called as a class method
@@ -2568,7 +2573,7 @@ class TestIssuesMixin:
         issues_mixin.jira.get.return_value = {"fields": {"description": source_adf}}
 
         with patch(
-            "mcp_atlassian.jira.issues.merge_adf_with_preserved_media",
+            "mcp_atlassian_with_bitbucket_and_privacy.jira.issues.merge_adf_with_preserved_media",
             return_value=merged_adf,
         ) as merge_media:
             result = issues_mixin._preserve_cloud_description_media(
@@ -3216,7 +3221,7 @@ class TestMoveIssue:
         )
         cloud_mixin.jira.get = MagicMock(return_value={"status": "IN_PROGRESS"})
 
-        with patch("mcp_atlassian.jira.issues.time.sleep"):
+        with patch("mcp_atlassian_with_bitbucket_and_privacy.jira.issues.time.sleep"):
             with pytest.raises(ValueError, match="timed out"):
                 cloud_mixin.move_issue("SRC-1", "DST")
 

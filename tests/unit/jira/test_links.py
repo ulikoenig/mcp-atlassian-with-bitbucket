@@ -3,9 +3,11 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 from requests.exceptions import HTTPError
 
-from mcp_atlassian.exceptions import MCPAtlassianAuthenticationError
-from mcp_atlassian.jira.links import LinksMixin
-from mcp_atlassian.models.jira import JiraIssueLinkType
+from mcp_atlassian_with_bitbucket_and_privacy.exceptions import (
+    MCPAtlassianAuthenticationError,
+)
+from mcp_atlassian_with_bitbucket_and_privacy.jira.links import LinksMixin
+from mcp_atlassian_with_bitbucket_and_privacy.models.jira import JiraIssueLinkType
 
 
 class TestLinksMixin:

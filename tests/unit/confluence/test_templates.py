@@ -5,15 +5,15 @@ from unittest.mock import MagicMock, patch
 import pytest
 from requests.exceptions import HTTPError
 
-from mcp_atlassian.confluence.templates import TemplatesMixin
-from mcp_atlassian.models.confluence import ConfluencePage
+from mcp_atlassian_with_bitbucket_and_privacy.confluence.templates import TemplatesMixin
+from mcp_atlassian_with_bitbucket_and_privacy.models.confluence import ConfluencePage
 
 
 @pytest.fixture
 def templates_mixin(confluence_client):
     """Return a TemplatesMixin with a mocked Confluence client."""
     with patch(
-        "mcp_atlassian.confluence.templates.ConfluenceClient.__init__"
+        "mcp_atlassian_with_bitbucket_and_privacy.confluence.templates.ConfluenceClient.__init__"
     ) as mock_init:
         mock_init.return_value = None
         mixin = TemplatesMixin()
@@ -195,7 +195,7 @@ class TestCreatePageFromTemplate:
         """create_page_from_template uses the shared page creation path."""
         _set_api_response(templates_mixin, _TEMPLATE_SUMMARY)
         with patch(
-            "mcp_atlassian.confluence.templates.PagesMixin.create_page",
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.templates.PagesMixin.create_page",
             return_value=_created_page(),
         ) as create_page:
             result = templates_mixin.create_page_from_template(
@@ -220,7 +220,7 @@ class TestCreatePageFromTemplate:
         """create_page_from_template forwards parent_id to create_page."""
         _set_api_response(templates_mixin, _TEMPLATE_SUMMARY)
         with patch(
-            "mcp_atlassian.confluence.templates.PagesMixin.create_page",
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.templates.PagesMixin.create_page",
             return_value=_created_page("Child Page"),
         ) as create_page:
             templates_mixin.create_page_from_template(
@@ -237,7 +237,7 @@ class TestCreatePageFromTemplate:
         _set_api_response(templates_mixin, _TEMPLATE_SUMMARY)
         page = _created_page()
         with patch(
-            "mcp_atlassian.confluence.templates.PagesMixin.create_page",
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.templates.PagesMixin.create_page",
             return_value=page,
         ):
             result = templates_mixin.create_page_from_template(
@@ -259,7 +259,7 @@ class TestCreatePageFromTemplate:
             },
         )
         with patch(
-            "mcp_atlassian.confluence.templates.PagesMixin.create_page",
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.templates.PagesMixin.create_page",
             return_value=_created_page("Empty Page"),
         ) as create_page:
             templates_mixin.create_page_from_template(

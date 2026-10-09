@@ -5,14 +5,14 @@ from collections import Counter
 
 import pytest
 
-from mcp_atlassian.privacy import (
+from mcp_atlassian_with_bitbucket_and_privacy.privacy import (
     TOOL_RESPONSE_POLICIES,
     ResponseCategory,
     ToolService,
     UnknownToolResponsePolicyError,
     get_tool_response_policy,
 )
-from mcp_atlassian.servers.main import main_mcp
+from mcp_atlassian_with_bitbucket_and_privacy.servers.main import main_mcp
 
 
 def _registered_tool_names() -> set[str]:

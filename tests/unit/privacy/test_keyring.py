@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from mcp_atlassian.privacy import (
+from mcp_atlassian_with_bitbucket_and_privacy.privacy import (
     AliasResolutionError,
     AliasRoundtripRegistry,
     CanonicalIdentity,
@@ -28,14 +28,19 @@ from mcp_atlassian.privacy import (
     reset_alias_roundtrip_registry_scope,
     resolve_identity_alias,
 )
-from mcp_atlassian.privacy.config import (
+from mcp_atlassian_with_bitbucket_and_privacy.privacy.config import (
     CORRELATION_DOMAIN_ENV,
     PRIVACY_MODE_ENV,
     PSEUDONYM_KEY_ENV,
     PSEUDONYM_KEYRING_FILE_ENV,
 )
-from mcp_atlassian.privacy.resolver import CanonicalIdentityResolver
-from mcp_atlassian.privacy.types import CorrelationScope, IdentitySource
+from mcp_atlassian_with_bitbucket_and_privacy.privacy.resolver import (
+    CanonicalIdentityResolver,
+)
+from mcp_atlassian_with_bitbucket_and_privacy.privacy.types import (
+    CorrelationScope,
+    IdentitySource,
+)
 
 _NOW = datetime(2026, 10, 5, 12, tzinfo=timezone.utc)
 

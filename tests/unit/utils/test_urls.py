@@ -7,7 +7,7 @@ from unittest.mock import patch
 import pytest
 import requests
 
-from mcp_atlassian.utils.urls import (
+from mcp_atlassian_with_bitbucket_and_privacy.utils.urls import (
     is_atlassian_cloud_url,
     make_ssrf_redirect_hook,
     resolve_relative_url,
@@ -32,7 +32,8 @@ def test_redirect_hook_resolves_location_before_validation(
     response.headers["Location"] = location
 
     with patch(
-        "mcp_atlassian.utils.urls.validate_url_for_ssrf", return_value=None
+        "mcp_atlassian_with_bitbucket_and_privacy.utils.urls.validate_url_for_ssrf",
+        return_value=None,
     ) as validate:
         assert make_ssrf_redirect_hook()(response) is response
 
@@ -183,13 +184,17 @@ class TestValidateUrlForSsrf:
 
     def test_valid_cloud_url(self) -> None:
         """Atlassian Cloud URL passes validation."""
-        with patch("mcp_atlassian.utils.urls.socket.getaddrinfo") as mock_dns:
+        with patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.utils.urls.socket.getaddrinfo"
+        ) as mock_dns:
             mock_dns.return_value = [(2, 1, 6, "", ("104.192.141.1", 0))]
             assert validate_url_for_ssrf("https://company.atlassian.net") is None
 
     def test_valid_server_url(self) -> None:
         """Server/DC URL passes validation."""
-        with patch("mcp_atlassian.utils.urls.socket.getaddrinfo") as mock_dns:
+        with patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.utils.urls.socket.getaddrinfo"
+        ) as mock_dns:
             mock_dns.return_value = [(2, 1, 6, "", ("8.8.8.8", 0))]
             assert validate_url_for_ssrf("https://jira.example.com") is None
 
@@ -254,7 +259,9 @@ class TestValidateUrlForSsrf:
 
     def test_dns_resolves_private(self) -> None:
         """Hostname resolving to private IP is rejected."""
-        with patch("mcp_atlassian.utils.urls.socket.getaddrinfo") as mock_dns:
+        with patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.utils.urls.socket.getaddrinfo"
+        ) as mock_dns:
             mock_dns.return_value = [(2, 1, 6, "", ("10.0.0.1", 0))]
             result = validate_url_for_ssrf("https://evil.example.com")
             assert result is not None
@@ -262,7 +269,9 @@ class TestValidateUrlForSsrf:
 
     def test_dns_unresolvable(self) -> None:
         """Unresolvable hostname is rejected."""
-        with patch("mcp_atlassian.utils.urls.socket.getaddrinfo") as mock_dns:
+        with patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.utils.urls.socket.getaddrinfo"
+        ) as mock_dns:
             mock_dns.side_effect = socket.gaierror("Name resolution failed")
             result = validate_url_for_ssrf("https://nonexistent.invalid")
             assert result is not None
@@ -274,7 +283,9 @@ class TestValidateUrlForSsrf:
             os.environ,
             {"MCP_ALLOWED_URL_DOMAINS": "corp.com"},
         ):
-            with patch("mcp_atlassian.utils.urls.socket.getaddrinfo") as mock_dns:
+            with patch(
+                "mcp_atlassian_with_bitbucket_and_privacy.utils.urls.socket.getaddrinfo"
+            ) as mock_dns:
                 mock_dns.return_value = [(2, 1, 6, "", ("8.8.8.8", 0))]
                 assert validate_url_for_ssrf("https://corp.com") is None
 
@@ -284,7 +295,9 @@ class TestValidateUrlForSsrf:
             os.environ,
             {"MCP_ALLOWED_URL_DOMAINS": "atlassian.net"},
         ):
-            with patch("mcp_atlassian.utils.urls.socket.getaddrinfo") as mock_dns:
+            with patch(
+                "mcp_atlassian_with_bitbucket_and_privacy.utils.urls.socket.getaddrinfo"
+            ) as mock_dns:
                 mock_dns.return_value = [(2, 1, 6, "", ("104.192.141.1", 0))]
                 assert validate_url_for_ssrf("https://company.atlassian.net") is None
 
@@ -334,7 +347,9 @@ class TestValidateUrlForSsrf:
         """Without allowlist, hostname resolving to private IP is rejected."""
         with patch.dict(os.environ, {}, clear=False):
             os.environ.pop("MCP_ALLOWED_URL_DOMAINS", None)
-            with patch("mcp_atlassian.utils.urls.socket.getaddrinfo") as mock_dns:
+            with patch(
+                "mcp_atlassian_with_bitbucket_and_privacy.utils.urls.socket.getaddrinfo"
+            ) as mock_dns:
                 mock_dns.return_value = [(2, 1, 6, "", ("10.0.0.1", 0))]
                 result = validate_url_for_ssrf("https://some.host")
                 assert result is not None
@@ -346,7 +361,9 @@ class TestValidateUrlForSsrf:
             os.environ,
             {"MCP_ALLOWED_URL_DOMAINS": "corp.example.com"},
         ):
-            with patch("mcp_atlassian.utils.urls.socket.getaddrinfo") as mock_dns:
+            with patch(
+                "mcp_atlassian_with_bitbucket_and_privacy.utils.urls.socket.getaddrinfo"
+            ) as mock_dns:
                 mock_dns.side_effect = socket.gaierror("Name resolution failed")
                 assert validate_url_for_ssrf("https://jira.corp.example.com") is None
 
@@ -375,7 +392,7 @@ class TestSsrfBackslashBypassRegression:
         ids=["localhost-backslash", "loopback-ip-backslash"],
     )
     @patch.dict(os.environ, {"MCP_ALLOWED_URL_DOMAINS": ""})
-    @patch("mcp_atlassian.utils.urls.socket.getaddrinfo")
+    @patch("mcp_atlassian_with_bitbucket_and_privacy.utils.urls.socket.getaddrinfo")
     def test_backslash_authority_confusion_is_blocked(
         self, mock_getaddrinfo, url: str
     ) -> None:

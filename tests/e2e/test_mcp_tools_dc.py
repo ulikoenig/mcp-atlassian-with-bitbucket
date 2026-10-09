@@ -14,8 +14,8 @@ from fastmcp import Client
 from fastmcp.client import FastMCPTransport
 from mcp.types import CallToolResult, TextContent
 
-from mcp_atlassian.confluence import ConfluenceFetcher
-from mcp_atlassian.servers import main_mcp
+from mcp_atlassian_with_bitbucket_and_privacy.confluence import ConfluenceFetcher
+from mcp_atlassian_with_bitbucket_and_privacy.servers import main_mcp
 
 from .conftest import DCInstanceInfo
 

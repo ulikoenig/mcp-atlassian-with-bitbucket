@@ -5,10 +5,10 @@ from unittest.mock import MagicMock, patch
 
 from requests.sessions import Session
 
-from mcp_atlassian.confluence import ConfluenceFetcher
-from mcp_atlassian.confluence.client import ConfluenceClient
-from mcp_atlassian.confluence.config import ConfluenceConfig
-from mcp_atlassian.utils.ssl import NoProxyAdapter
+from mcp_atlassian_with_bitbucket_and_privacy.confluence import ConfluenceFetcher
+from mcp_atlassian_with_bitbucket_and_privacy.confluence.client import ConfluenceClient
+from mcp_atlassian_with_bitbucket_and_privacy.confluence.config import ConfluenceConfig
+from mcp_atlassian_with_bitbucket_and_privacy.utils.ssl import NoProxyAdapter
 
 
 def test_init_with_basic_auth():
@@ -23,12 +23,14 @@ def test_init_with_basic_auth():
 
     # Mock the Confluence class, ConfluencePreprocessor, and configure_ssl_verification
     with (
-        patch("mcp_atlassian.confluence.client.Confluence") as mock_confluence,
         patch(
-            "mcp_atlassian.preprocessing.confluence.ConfluencePreprocessor"
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.client.Confluence"
+        ) as mock_confluence,
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.preprocessing.confluence.ConfluencePreprocessor"
         ) as mock_preprocessor,
         patch(
-            "mcp_atlassian.confluence.client.configure_ssl_verification"
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.client.configure_ssl_verification"
         ) as mock_configure_ssl,
     ):
         # Act
@@ -72,12 +74,14 @@ def test_init_with_token_auth():
 
     # Mock the Confluence class, ConfluencePreprocessor, and configure_ssl_verification
     with (
-        patch("mcp_atlassian.confluence.client.Confluence") as mock_confluence,
         patch(
-            "mcp_atlassian.preprocessing.confluence.ConfluencePreprocessor"
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.client.Confluence"
+        ) as mock_confluence,
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.preprocessing.confluence.ConfluencePreprocessor"
         ) as mock_preprocessor,
         patch(
-            "mcp_atlassian.confluence.client.configure_ssl_verification"
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.client.configure_ssl_verification"
         ) as mock_configure_ssl,
     ):
         # Act
@@ -118,11 +122,17 @@ def test_init_from_env():
     # Arrange
     with (
         patch(
-            "mcp_atlassian.confluence.config.ConfluenceConfig.from_env"
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.config.ConfluenceConfig.from_env"
         ) as mock_from_env,
-        patch("mcp_atlassian.confluence.client.Confluence") as mock_confluence,
-        patch("mcp_atlassian.preprocessing.confluence.ConfluencePreprocessor"),
-        patch("mcp_atlassian.confluence.client.configure_ssl_verification"),
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.client.Confluence"
+        ) as mock_confluence,
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.preprocessing.confluence.ConfluencePreprocessor"
+        ),
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.client.configure_ssl_verification"
+        ),
     ):
         mock_config = MagicMock()
         mock_from_env.return_value = mock_config
@@ -139,12 +149,16 @@ def test_process_html_content():
     """Test the _process_html_content method."""
     # Arrange
     with (
-        patch("mcp_atlassian.confluence.client.ConfluenceConfig.from_env"),
-        patch("mcp_atlassian.confluence.client.Confluence"),
         patch(
-            "mcp_atlassian.preprocessing.confluence.ConfluencePreprocessor"
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.client.ConfluenceConfig.from_env"
+        ),
+        patch("mcp_atlassian_with_bitbucket_and_privacy.confluence.client.Confluence"),
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.preprocessing.confluence.ConfluencePreprocessor"
         ) as mock_preprocessor_class,
-        patch("mcp_atlassian.confluence.client.configure_ssl_verification"),
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.client.configure_ssl_verification"
+        ),
     ):
         mock_preprocessor = mock_preprocessor_class.return_value
         mock_preprocessor.process_html_content.return_value = (
@@ -169,10 +183,18 @@ def test_get_user_details_by_accountid():
     """Test the get_user_details_by_accountid method."""
     # Arrange
     with (
-        patch("mcp_atlassian.confluence.client.ConfluenceConfig.from_env"),
-        patch("mcp_atlassian.confluence.client.Confluence") as mock_confluence_class,
-        patch("mcp_atlassian.preprocessing.confluence.ConfluencePreprocessor"),
-        patch("mcp_atlassian.confluence.client.configure_ssl_verification"),
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.client.ConfluenceConfig.from_env"
+        ),
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.client.Confluence"
+        ) as mock_confluence_class,
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.preprocessing.confluence.ConfluencePreprocessor"
+        ),
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.client.configure_ssl_verification"
+        ),
     ):
         mock_confluence = mock_confluence_class.return_value
         mock_confluence.get_user_details_by_accountid.return_value = {
@@ -220,14 +242,15 @@ def test_init_sets_proxies_and_no_proxy(monkeypatch):
     mock_session.proxies = {}  # Use a real dict for proxies
     mock_confluence._session = mock_session
     monkeypatch.setattr(
-        "mcp_atlassian.confluence.client.Confluence", lambda **kwargs: mock_confluence
+        "mcp_atlassian_with_bitbucket_and_privacy.confluence.client.Confluence",
+        lambda **kwargs: mock_confluence,
     )
     monkeypatch.setattr(
-        "mcp_atlassian.confluence.client.configure_ssl_verification",
+        "mcp_atlassian_with_bitbucket_and_privacy.confluence.client.configure_ssl_verification",
         lambda **kwargs: None,
     )
     monkeypatch.setattr(
-        "mcp_atlassian.preprocessing.confluence.ConfluencePreprocessor",
+        "mcp_atlassian_with_bitbucket_and_privacy.preprocessing.confluence.ConfluencePreprocessor",
         lambda **kwargs: MagicMock(),
     )
 
@@ -256,10 +279,11 @@ def test_init_configures_no_proxy_adapter_from_config(monkeypatch):
     mock_confluence = MagicMock()
     mock_confluence._session = Session()
     monkeypatch.setattr(
-        "mcp_atlassian.confluence.client.Confluence", lambda **kwargs: mock_confluence
+        "mcp_atlassian_with_bitbucket_and_privacy.confluence.client.Confluence",
+        lambda **kwargs: mock_confluence,
     )
     monkeypatch.setattr(
-        "mcp_atlassian.preprocessing.confluence.ConfluencePreprocessor",
+        "mcp_atlassian_with_bitbucket_and_privacy.preprocessing.confluence.ConfluencePreprocessor",
         lambda **kwargs: MagicMock(),
     )
     monkeypatch.delenv("NO_PROXY", raising=False)
@@ -292,14 +316,15 @@ def test_init_no_proxies(monkeypatch):
     mock_session.proxies = {}  # Use a real dict for proxies
     mock_confluence._session = mock_session
     monkeypatch.setattr(
-        "mcp_atlassian.confluence.client.Confluence", lambda **kwargs: mock_confluence
+        "mcp_atlassian_with_bitbucket_and_privacy.confluence.client.Confluence",
+        lambda **kwargs: mock_confluence,
     )
     monkeypatch.setattr(
-        "mcp_atlassian.confluence.client.configure_ssl_verification",
+        "mcp_atlassian_with_bitbucket_and_privacy.confluence.client.configure_ssl_verification",
         lambda **kwargs: None,
     )
     monkeypatch.setattr(
-        "mcp_atlassian.preprocessing.confluence.ConfluencePreprocessor",
+        "mcp_atlassian_with_bitbucket_and_privacy.preprocessing.confluence.ConfluencePreprocessor",
         lambda **kwargs: MagicMock(),
     )
 
@@ -316,9 +341,15 @@ def test_init_no_proxies(monkeypatch):
 def test_confluence_client_passes_timeout_to_constructor():
     """Test that ConfluenceClient passes custom timeout to Confluence constructor."""
     with (
-        patch("mcp_atlassian.confluence.client.Confluence") as mock_confluence,
-        patch("mcp_atlassian.preprocessing.confluence.ConfluencePreprocessor"),
-        patch("mcp_atlassian.confluence.client.configure_ssl_verification"),
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.client.Confluence"
+        ) as mock_confluence,
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.preprocessing.confluence.ConfluencePreprocessor"
+        ),
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.client.configure_ssl_verification"
+        ),
     ):
         config = ConfluenceConfig(
             url="https://test.atlassian.net/wiki",
@@ -342,9 +373,15 @@ def test_confluence_client_passes_timeout_to_constructor():
 def test_confluence_client_pat_disables_trust_env():
     """Test that PAT auth disables trust_env to prevent .netrc override (#860)."""
     with (
-        patch("mcp_atlassian.confluence.client.Confluence") as mock_confluence,
-        patch("mcp_atlassian.preprocessing.confluence.ConfluencePreprocessor"),
-        patch("mcp_atlassian.confluence.client.configure_ssl_verification"),
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.client.Confluence"
+        ) as mock_confluence,
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.preprocessing.confluence.ConfluencePreprocessor"
+        ),
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.client.configure_ssl_verification"
+        ),
     ):
         mock_session = MagicMock()
         mock_session.trust_env = True
@@ -363,7 +400,7 @@ def test_confluence_client_pat_disables_trust_env():
 # Phase 4: AttachmentsMixin Integration Tests
 def test_confluence_fetcher_has_attachments_mixin():
     """Test that ConfluenceFetcher includes AttachmentsMixin in inheritance."""
-    from mcp_atlassian.confluence import AttachmentsMixin
+    from mcp_atlassian_with_bitbucket_and_privacy.confluence import AttachmentsMixin
 
     # Check that AttachmentsMixin is in the MRO
     assert AttachmentsMixin in ConfluenceFetcher.__mro__
@@ -377,10 +414,16 @@ def test_confluence_fetcher_has_attachments_mixin():
 def test_confluence_fetcher_has_attachment_methods():
     """Test that ConfluenceFetcher exposes all attachment methods."""
     with (
-        patch("mcp_atlassian.confluence.client.ConfluenceConfig.from_env"),
-        patch("mcp_atlassian.confluence.client.Confluence"),
-        patch("mcp_atlassian.preprocessing.confluence.ConfluencePreprocessor"),
-        patch("mcp_atlassian.confluence.client.configure_ssl_verification"),
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.client.ConfluenceConfig.from_env"
+        ),
+        patch("mcp_atlassian_with_bitbucket_and_privacy.confluence.client.Confluence"),
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.preprocessing.confluence.ConfluencePreprocessor"
+        ),
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.client.configure_ssl_verification"
+        ),
     ):
         fetcher = ConfluenceFetcher()
 
@@ -404,10 +447,18 @@ def test_confluence_fetcher_has_attachment_methods():
 def test_confluence_fetcher_attachment_method_calls():
     """Test that attachment methods can be called through ConfluenceFetcher."""
     with (
-        patch("mcp_atlassian.confluence.client.ConfluenceConfig.from_env"),
-        patch("mcp_atlassian.confluence.client.Confluence") as mock_confluence_class,
-        patch("mcp_atlassian.preprocessing.confluence.ConfluencePreprocessor"),
-        patch("mcp_atlassian.confluence.client.configure_ssl_verification"),
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.client.ConfluenceConfig.from_env"
+        ),
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.client.Confluence"
+        ) as mock_confluence_class,
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.preprocessing.confluence.ConfluencePreprocessor"
+        ),
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.client.configure_ssl_verification"
+        ),
     ):
         # Setup mocks
         mock_confluence = mock_confluence_class.return_value
@@ -519,10 +570,14 @@ def test_init_cert_auth() -> None:
     )
 
     with (
-        patch("mcp_atlassian.confluence.client.Confluence") as mock_confluence,
-        patch("mcp_atlassian.preprocessing.confluence.ConfluencePreprocessor"),
         patch(
-            "mcp_atlassian.confluence.client.configure_ssl_verification"
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.client.Confluence"
+        ) as mock_confluence,
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.preprocessing.confluence.ConfluencePreprocessor"
+        ),
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.client.configure_ssl_verification"
         ) as mock_configure_ssl,
     ):
         mock_session = MagicMock()
@@ -553,9 +608,15 @@ def test_init_cert_auth() -> None:
 def test_confluence_client_sets_default_user_agent() -> None:
     """An explicit User-Agent is set so WAFs don't block the requests default."""
     with (
-        patch("mcp_atlassian.confluence.client.Confluence") as mock_confluence,
-        patch("mcp_atlassian.preprocessing.confluence.ConfluencePreprocessor"),
-        patch("mcp_atlassian.confluence.client.configure_ssl_verification"),
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.client.Confluence"
+        ) as mock_confluence,
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.preprocessing.confluence.ConfluencePreprocessor"
+        ),
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.client.configure_ssl_verification"
+        ),
     ):
         headers: dict[str, str] = {}
         mock_confluence.return_value._session.headers = headers
@@ -567,15 +628,23 @@ def test_confluence_client_sets_default_user_agent() -> None:
         )
         ConfluenceClient(config=config)
 
-        assert headers["User-Agent"].startswith("mcp-atlassian/")
+        assert headers["User-Agent"].startswith(
+            "mcp-atlassian-with-bitbucket-and-privacy/"
+        )
 
 
 def test_confluence_client_custom_user_agent_overrides_default():
     """Custom headers must still win over the built-in User-Agent default."""
     with (
-        patch("mcp_atlassian.confluence.client.Confluence") as mock_confluence,
-        patch("mcp_atlassian.preprocessing.confluence.ConfluencePreprocessor"),
-        patch("mcp_atlassian.confluence.client.configure_ssl_verification"),
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.client.Confluence"
+        ) as mock_confluence,
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.preprocessing.confluence.ConfluencePreprocessor"
+        ),
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.client.configure_ssl_verification"
+        ),
     ):
         headers: dict[str, str] = {}
         mock_confluence.return_value._session.headers = headers

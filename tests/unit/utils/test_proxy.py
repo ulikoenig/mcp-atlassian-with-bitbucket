@@ -12,18 +12,21 @@ from requests import PreparedRequest, Session
 from requests.adapters import HTTPAdapter
 from requests.exceptions import ProxyError
 
-from mcp_atlassian.confluence.client import ConfluenceClient
-from mcp_atlassian.confluence.config import ConfluenceConfig
-from mcp_atlassian.jira.client import JiraClient
-from mcp_atlassian.jira.config import JiraConfig
-from mcp_atlassian.utils.proxy import (
+from mcp_atlassian_with_bitbucket_and_privacy.confluence.client import ConfluenceClient
+from mcp_atlassian_with_bitbucket_and_privacy.confluence.config import ConfluenceConfig
+from mcp_atlassian_with_bitbucket_and_privacy.jira.client import JiraClient
+from mcp_atlassian_with_bitbucket_and_privacy.jira.config import JiraConfig
+from mcp_atlassian_with_bitbucket_and_privacy.utils.proxy import (
     DEFAULT_PROXY_WPAD_URL,
     _load_pac_file,
     _NoProxyAwarePACSession,
     apply_proxy_configuration,
     get_proxy_settings_from_env,
 )
-from mcp_atlassian.utils.ssl import NoProxyAdapter, configure_proxy_bypass
+from mcp_atlassian_with_bitbucket_and_privacy.utils.ssl import (
+    NoProxyAdapter,
+    configure_proxy_bypass,
+)
 from tests.utils.base import BaseAuthTest
 from tests.utils.mocks import MockEnvironment
 
@@ -35,9 +38,13 @@ def test_jira_client_passes_proxies_to_requests(monkeypatch):
     # Create a proper proxies dictionary that can be updated
     mock_session.proxies = {}
     mock_jira._session = mock_session
-    monkeypatch.setattr("mcp_atlassian.jira.client.Jira", lambda **kwargs: mock_jira)
     monkeypatch.setattr(
-        "mcp_atlassian.jira.client.configure_ssl_verification", lambda **kwargs: None
+        "mcp_atlassian_with_bitbucket_and_privacy.jira.client.Jira",
+        lambda **kwargs: mock_jira,
+    )
+    monkeypatch.setattr(
+        "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_ssl_verification",
+        lambda **kwargs: None,
     )
     config = JiraConfig(
         url="https://test.atlassian.net",
@@ -67,14 +74,15 @@ def test_confluence_client_passes_proxies_to_requests(monkeypatch):
     mock_session.proxies = {}
     mock_confluence._session = mock_session
     monkeypatch.setattr(
-        "mcp_atlassian.confluence.client.Confluence", lambda **kwargs: mock_confluence
+        "mcp_atlassian_with_bitbucket_and_privacy.confluence.client.Confluence",
+        lambda **kwargs: mock_confluence,
     )
     monkeypatch.setattr(
-        "mcp_atlassian.confluence.client.configure_ssl_verification",
+        "mcp_atlassian_with_bitbucket_and_privacy.confluence.client.configure_ssl_verification",
         lambda **kwargs: None,
     )
     monkeypatch.setattr(
-        "mcp_atlassian.preprocessing.confluence.ConfluencePreprocessor",
+        "mcp_atlassian_with_bitbucket_and_privacy.preprocessing.confluence.ConfluencePreprocessor",
         lambda **kwargs: MagicMock(),
     )
     config = ConfluenceConfig(
@@ -102,9 +110,13 @@ def test_jira_client_no_proxy_env(monkeypatch):
     mock_jira = MagicMock()
     mock_session = MagicMock()
     mock_jira._session = mock_session
-    monkeypatch.setattr("mcp_atlassian.jira.client.Jira", lambda **kwargs: mock_jira)
     monkeypatch.setattr(
-        "mcp_atlassian.jira.client.configure_ssl_verification", lambda **kwargs: None
+        "mcp_atlassian_with_bitbucket_and_privacy.jira.client.Jira",
+        lambda **kwargs: mock_jira,
+    )
+    monkeypatch.setattr(
+        "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_ssl_verification",
+        lambda **kwargs: None,
     )
     monkeypatch.setenv("NO_PROXY", "")
     config = JiraConfig(
@@ -169,10 +181,11 @@ class TestProxyConfigurationEnhanced(BaseAuthTest):
         mock_session.proxies = {}
         mock_jira._session = mock_session
         monkeypatch.setattr(
-            "mcp_atlassian.jira.client.Jira", lambda **kwargs: mock_jira
+            "mcp_atlassian_with_bitbucket_and_privacy.jira.client.Jira",
+            lambda **kwargs: mock_jira,
         )
         monkeypatch.setattr(
-            "mcp_atlassian.jira.client.configure_ssl_verification",
+            "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_ssl_verification",
             lambda **kwargs: None,
         )
 
@@ -214,7 +227,9 @@ class TestProxyConfigurationEnhanced(BaseAuthTest):
         # Mock to simulate proxy connection failure
         mock_jira = MagicMock()
         mock_jira.side_effect = ProxyError("Unable to connect to proxy")
-        monkeypatch.setattr("mcp_atlassian.jira.client.Jira", mock_jira)
+        monkeypatch.setattr(
+            "mcp_atlassian_with_bitbucket_and_privacy.jira.client.Jira", mock_jira
+        )
 
         config = JiraConfig(
             url="https://test.atlassian.net",
@@ -258,15 +273,15 @@ class TestProxyConfigurationEnhanced(BaseAuthTest):
         mock_session.proxies = {}
         mock_confluence._session = mock_session
         monkeypatch.setattr(
-            "mcp_atlassian.confluence.client.Confluence",
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.client.Confluence",
             lambda **kwargs: mock_confluence,
         )
         monkeypatch.setattr(
-            "mcp_atlassian.confluence.client.configure_ssl_verification",
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.client.configure_ssl_verification",
             lambda **kwargs: None,
         )
         monkeypatch.setattr(
-            "mcp_atlassian.preprocessing.confluence.ConfluencePreprocessor",
+            "mcp_atlassian_with_bitbucket_and_privacy.preprocessing.confluence.ConfluencePreprocessor",
             lambda **kwargs: MagicMock(),
         )
 
@@ -399,13 +414,14 @@ def test_apply_proxy_configuration_wraps_session_for_wpad():
 
     with (
         patch(
-            "mcp_atlassian.utils.proxy._load_pac_file", return_value=pac
+            "mcp_atlassian_with_bitbucket_and_privacy.utils.proxy._load_pac_file",
+            return_value=pac,
         ) as mock_load_pac,
         patch(
-            "mcp_atlassian.utils.proxy._validate_pac_for_target_url"
+            "mcp_atlassian_with_bitbucket_and_privacy.utils.proxy._validate_pac_for_target_url"
         ) as mock_validate,
         patch(
-            "mcp_atlassian.utils.proxy._NoProxyAwarePACSession",
+            "mcp_atlassian_with_bitbucket_and_privacy.utils.proxy._NoProxyAwarePACSession",
             return_value=pac_session,
         ) as mock_pac_session,
     ):
@@ -528,7 +544,7 @@ def test_apply_proxy_configuration_raises_for_malformed_pac():
     )
 
     with patch(
-        "mcp_atlassian.utils.proxy._load_pac_file",
+        "mcp_atlassian_with_bitbucket_and_privacy.utils.proxy._load_pac_file",
         side_effect=MalformedPacError("broken pac"),
     ):
         with pytest.raises(
@@ -551,7 +567,8 @@ def test_load_pac_file_is_cached():
 
     try:
         with patch(
-            "mcp_atlassian.utils.proxy.get_pac", return_value=pac
+            "mcp_atlassian_with_bitbucket_and_privacy.utils.proxy.get_pac",
+            return_value=pac,
         ) as mock_get_pac:
             first = _load_pac_file(
                 "http://wpad/wpad.dat",
@@ -591,9 +608,13 @@ def test_load_pac_file_is_cached():
 def test_load_pac_file_requires_optional_wpad_dependency(monkeypatch):
     """PAC loading explains how to enable WPAD when the extra is absent."""
     _load_pac_file.cache_clear()
-    monkeypatch.setattr("mcp_atlassian.utils.proxy.get_pac", None)
+    monkeypatch.setattr(
+        "mcp_atlassian_with_bitbucket_and_privacy.utils.proxy.get_pac", None
+    )
 
-    with pytest.raises(ValueError, match=r"mcp-atlassian\[wpad\]"):
+    with pytest.raises(
+        ValueError, match=r"mcp-atlassian-with-bitbucket-and-privacy\[wpad\]"
+    ):
         _load_pac_file(
             "http://wpad/wpad.dat",
             verify=True,

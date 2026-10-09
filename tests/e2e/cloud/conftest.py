@@ -21,11 +21,13 @@ from typing import Any
 import pytest
 import requests
 
-from mcp_atlassian.confluence import ConfluenceFetcher
-from mcp_atlassian.confluence.config import ConfluenceConfig
-from mcp_atlassian.jira import JiraFetcher
-from mcp_atlassian.jira.config import JiraConfig
-from mcp_atlassian.utils.oauth import BYOAccessTokenOAuthConfig
+from mcp_atlassian_with_bitbucket_and_privacy.confluence import ConfluenceFetcher
+from mcp_atlassian_with_bitbucket_and_privacy.confluence.config import ConfluenceConfig
+from mcp_atlassian_with_bitbucket_and_privacy.jira import JiraFetcher
+from mcp_atlassian_with_bitbucket_and_privacy.jira.config import JiraConfig
+from mcp_atlassian_with_bitbucket_and_privacy.utils.oauth import (
+    BYOAccessTokenOAuthConfig,
+)
 
 logger = logging.getLogger(__name__)
 

@@ -6,10 +6,15 @@ from unittest.mock import ANY, MagicMock
 import pytest
 import requests
 
-from mcp_atlassian.jira import JiraFetcher
-from mcp_atlassian.jira.constants import DEFAULT_READ_JIRA_FIELDS
-from mcp_atlassian.jira.search import SearchMixin
-from mcp_atlassian.models.jira import JiraIssue, JiraSearchResult
+from mcp_atlassian_with_bitbucket_and_privacy.jira import JiraFetcher
+from mcp_atlassian_with_bitbucket_and_privacy.jira.constants import (
+    DEFAULT_READ_JIRA_FIELDS,
+)
+from mcp_atlassian_with_bitbucket_and_privacy.jira.search import SearchMixin
+from mcp_atlassian_with_bitbucket_and_privacy.models.jira import (
+    JiraIssue,
+    JiraSearchResult,
+)
 
 
 class TestSearchMixin:

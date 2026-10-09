@@ -5,9 +5,9 @@ from typing import Any
 
 import pytest
 
-from mcp_atlassian.models.jira.issue import JiraIssue
-from mcp_atlassian.models.jira.search import JiraSearchResult
-from mcp_atlassian.privacy import (
+from mcp_atlassian_with_bitbucket_and_privacy.models.jira.issue import JiraIssue
+from mcp_atlassian_with_bitbucket_and_privacy.models.jira.search import JiraSearchResult
+from mcp_atlassian_with_bitbucket_and_privacy.privacy import (
     IdentityPolicy,
     IdentityPrivacyConfig,
     JiraIdentityAdapter,

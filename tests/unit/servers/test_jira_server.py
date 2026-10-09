@@ -15,19 +15,21 @@ from fastmcp.client import FastMCPTransport
 from fastmcp.exceptions import ToolError
 from starlette.requests import Request
 
-from src.mcp_atlassian.jira import JiraFetcher
-from src.mcp_atlassian.jira.config import JiraConfig
-from src.mcp_atlassian.models.jira import (
+from src.mcp_atlassian_with_bitbucket_and_privacy.jira import JiraFetcher
+from src.mcp_atlassian_with_bitbucket_and_privacy.jira.config import JiraConfig
+from src.mcp_atlassian_with_bitbucket_and_privacy.models.jira import (
     JiraCustomerRequest,
     JiraRequestType,
     JiraRequestTypeField,
     JiraRequestTypeFieldsResult,
     JiraRequestTypesResult,
 )
-from src.mcp_atlassian.servers.context import MainAppContext
-from src.mcp_atlassian.servers.main import AtlassianMCP
-from src.mcp_atlassian.utils.media import ATTACHMENT_MAX_BYTES
-from src.mcp_atlassian.utils.oauth import OAuthConfig
+from src.mcp_atlassian_with_bitbucket_and_privacy.servers.context import MainAppContext
+from src.mcp_atlassian_with_bitbucket_and_privacy.servers.main import AtlassianMCP
+from src.mcp_atlassian_with_bitbucket_and_privacy.utils.media import (
+    ATTACHMENT_MAX_BYTES,
+)
+from src.mcp_atlassian_with_bitbucket_and_privacy.utils.oauth import OAuthConfig
 from tests.fixtures.jira_mocks import (
     MOCK_JIRA_COMMENTS_SIMPLIFIED,
     MOCK_JIRA_ISSUE_RESPONSE_SIMPLIFIED,
@@ -307,7 +309,7 @@ def mock_jira_fetcher():
         ]
     }
 
-    from src.mcp_atlassian.models.jira.common import JiraUser
+    from src.mcp_atlassian_with_bitbucket_and_privacy.models.jira.common import JiraUser
 
     mock_user = MagicMock(spec=JiraUser)
     mock_user.to_simplified_dict.return_value = {
@@ -454,7 +456,7 @@ def test_jira_mcp(mock_jira_fetcher, mock_base_jira_config):
     test_mcp = AtlassianMCP(
         "TestJira", instructions="Test Jira MCP Server", lifespan=test_lifespan
     )
-    from src.mcp_atlassian.servers.jira import (
+    from src.mcp_atlassian_with_bitbucket_and_privacy.servers.jira import (
         add_comment,
         add_issues_to_sprint,
         add_worklog,
@@ -598,7 +600,7 @@ def no_fetcher_test_jira_mcp(mock_base_jira_config):
         instructions="No Fetcher Test Jira MCP Server",
         lifespan=no_fetcher_test_lifespan,
     )
-    from src.mcp_atlassian.servers.jira import get_issue
+    from src.mcp_atlassian_with_bitbucket_and_privacy.servers.jira import get_issue
 
     jira_sub_mcp = FastMCP(name="NoFetcherTestJiraSubMCP")
     jira_sub_mcp.add_tool(get_issue)
@@ -623,11 +625,11 @@ async def jira_client(test_jira_mcp, mock_jira_fetcher, mock_request):
     """Create a FastMCP client with mocked Jira fetcher and request state."""
     with (
         patch(
-            "src.mcp_atlassian.servers.jira.get_jira_fetcher",
+            "src.mcp_atlassian_with_bitbucket_and_privacy.servers.jira.get_jira_fetcher",
             AsyncMock(return_value=mock_jira_fetcher),
         ),
         patch(
-            "src.mcp_atlassian.servers.dependencies.get_http_request",
+            "src.mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request",
             return_value=mock_request,
         ),
     ):
@@ -673,7 +675,7 @@ async def test_get_issue(jira_client, mock_jira_fetcher):
 
 @pytest.mark.anyio
 @patch(
-    "src.mcp_atlassian.servers.jira.is_identity_privacy_runtime_active",
+    "src.mcp_atlassian_with_bitbucket_and_privacy.servers.jira.is_identity_privacy_runtime_active",
     return_value=True,
 )
 async def test_get_issue_privacy_runtime_requests_field_metadata(
@@ -694,7 +696,7 @@ async def test_get_issue_privacy_runtime_requests_field_metadata(
 
 @pytest.mark.anyio
 @patch(
-    "src.mcp_atlassian.servers.jira.is_identity_privacy_runtime_active",
+    "src.mcp_atlassian_with_bitbucket_and_privacy.servers.jira.is_identity_privacy_runtime_active",
     return_value=True,
 )
 async def test_search_privacy_runtime_requests_field_metadata(
@@ -1363,11 +1365,11 @@ async def test_no_fetcher_get_issue(no_fetcher_client_fixture, mock_request):
 
     with (
         patch(
-            "src.mcp_atlassian.servers.jira.get_jira_fetcher",
+            "src.mcp_atlassian_with_bitbucket_and_privacy.servers.jira.get_jira_fetcher",
             AsyncMock(side_effect=mock_get_fetcher_error),
         ),
         patch(
-            "src.mcp_atlassian.servers.dependencies.get_http_request",
+            "src.mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request",
             return_value=mock_request,
         ),
     ):
@@ -1400,17 +1402,17 @@ async def test_get_issue_with_user_specific_fetcher_in_state(
     expected_fields_list = ["summary", "status", "issuetype"]
 
     # Import the real get_jira_fetcher to test its interaction with request.state
-    from src.mcp_atlassian.servers.dependencies import (
+    from src.mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies import (
         get_jira_fetcher as get_jira_fetcher_real,
     )
 
     with (
         patch(
-            "src.mcp_atlassian.servers.dependencies.get_http_request",
+            "src.mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request",
             return_value=_mock_request_with_fetcher_in_state,
         ) as mock_get_http,
         patch(
-            "src.mcp_atlassian.servers.jira.get_jira_fetcher",
+            "src.mcp_atlassian_with_bitbucket_and_privacy.servers.jira.get_jira_fetcher",
             side_effect=AsyncMock(wraps=get_jira_fetcher_real),
         ),
     ):
@@ -1817,7 +1819,9 @@ async def test_get_all_projects_tool_authentication_error_handling(
     jira_client, mock_jira_fetcher
 ):
     """Test tool handles authentication errors gracefully."""
-    from mcp_atlassian.exceptions import MCPAtlassianAuthenticationError
+    from mcp_atlassian_with_bitbucket_and_privacy.exceptions import (
+        MCPAtlassianAuthenticationError,
+    )
 
     mock_jira_fetcher.get_all_projects.side_effect = MCPAtlassianAuthenticationError(
         "Authentication failed"
@@ -1950,7 +1954,9 @@ async def test_search_projects_tool_authentication_error_handling(
     jira_client, mock_jira_fetcher
 ):
     """Test tool handles authentication errors gracefully."""
-    from mcp_atlassian.exceptions import MCPAtlassianAuthenticationError
+    from mcp_atlassian_with_bitbucket_and_privacy.exceptions import (
+        MCPAtlassianAuthenticationError,
+    )
 
     mock_jira_fetcher.search_projects.side_effect = MCPAtlassianAuthenticationError(
         "Authentication failed"
@@ -2292,7 +2298,10 @@ def test_issue_key_pattern_validation():
     """Verify the issue key and project key regex patterns accept valid keys."""
     import re
 
-    from src.mcp_atlassian.servers.jira import ISSUE_KEY_PATTERN, PROJECT_KEY_PATTERN
+    from src.mcp_atlassian_with_bitbucket_and_privacy.servers.jira import (
+        ISSUE_KEY_PATTERN,
+        PROJECT_KEY_PATTERN,
+    )
 
     # Valid issue keys
     assert re.match(ISSUE_KEY_PATTERN, "PROJ-123")
@@ -2330,7 +2339,10 @@ def test_issue_key_pattern_validation():
 def test_issue_and_project_key_patterns_accept_long_server_dc_keys():
     import re
 
-    from src.mcp_atlassian.servers.jira import ISSUE_KEY_PATTERN, PROJECT_KEY_PATTERN
+    from src.mcp_atlassian_with_bitbucket_and_privacy.servers.jira import (
+        ISSUE_KEY_PATTERN,
+        PROJECT_KEY_PATTERN,
+    )
 
     assert re.match(ISSUE_KEY_PATTERN, "VERYLONGPROJECTKEY-123")
     assert re.match(PROJECT_KEY_PATTERN, "VERYLONGPROJECTKEY")
@@ -2339,7 +2351,10 @@ def test_issue_and_project_key_patterns_accept_long_server_dc_keys():
 def test_issue_and_project_key_patterns_reject_invalid_keys():
     import re
 
-    from src.mcp_atlassian.servers.jira import ISSUE_KEY_PATTERN, PROJECT_KEY_PATTERN
+    from src.mcp_atlassian_with_bitbucket_and_privacy.servers.jira import (
+        ISSUE_KEY_PATTERN,
+        PROJECT_KEY_PATTERN,
+    )
 
     assert not re.match(ISSUE_KEY_PATTERN, "lowercase-123")
     assert not re.match(ISSUE_KEY_PATTERN, "123-456")
@@ -2353,7 +2368,7 @@ def _reload_jira_server_module():
     """Re-import the Jira server module so import-time env reads run again."""
     import importlib
 
-    import mcp_atlassian.servers.jira as jira_server
+    import mcp_atlassian_with_bitbucket_and_privacy.servers.jira as jira_server
 
     return importlib.reload(jira_server)
 
@@ -2836,7 +2851,7 @@ async def test_transition_issue_resolves_name_to_id(jira_client, mock_jira_fetch
 @pytest.mark.anyio
 async def test_transition_issue_comment_schema_warns_about_cloud_screen():
     """The MCP schema documents Jira Cloud's transition-screen dependency."""
-    import mcp_atlassian.servers.jira as jira_server
+    import mcp_atlassian_with_bitbucket_and_privacy.servers.jira as jira_server
 
     tools = {tool.name: tool for tool in await jira_server.jira_mcp.list_tools()}
 
@@ -2875,7 +2890,7 @@ async def test_read_tool_fields_default_is_hash_seed_independent(tool_name):
 
     script = (
         "import asyncio\n"
-        "import mcp_atlassian.servers.jira as s\n"
+        "import mcp_atlassian_with_bitbucket_and_privacy.servers.jira as s\n"
         "async def main():\n"
         "    t = {x.name: x for x in await s.jira_mcp.list_tools()}\n"
         f"    print(t[{tool_name!r}].parameters['properties']['fields']['default'])\n"
@@ -3046,7 +3061,7 @@ async def test_update_issue_transition_comment_is_added_once_when_refetch_fails(
 
 @pytest.mark.anyio
 @patch(
-    "src.mcp_atlassian.servers.jira.privacy_safe_exception_detail",
+    "src.mcp_atlassian_with_bitbucket_and_privacy.servers.jira.privacy_safe_exception_detail",
     side_effect=lambda error: type(error).__name__,
 )
 async def test_update_issue_privacy_runtime_hides_partial_error_details(
@@ -3498,7 +3513,7 @@ async def test_download_attachments_image_still_uses_embedded_resource(
 @pytest.mark.anyio
 async def test_get_issue_images_basic(jira_client, mock_jira_fetcher):
     """Test with a mix of image and non-image attachments."""
-    from mcp_atlassian.models.jira import JiraAttachment
+    from mcp_atlassian_with_bitbucket_and_privacy.models.jira import JiraAttachment
 
     mock_jira_fetcher.get_issue_attachments.return_value = [
         JiraAttachment(
@@ -3532,7 +3547,7 @@ async def test_get_issue_images_basic(jira_client, mock_jira_fetcher):
 @pytest.mark.anyio
 async def test_get_issue_images_octet_stream_fallback(jira_client, mock_jira_fetcher):
     """Test that application/octet-stream with image extension is detected."""
-    from mcp_atlassian.models.jira import JiraAttachment
+    from mcp_atlassian_with_bitbucket_and_privacy.models.jira import JiraAttachment
 
     mock_jira_fetcher.get_issue_attachments.return_value = [
         JiraAttachment(
@@ -3558,7 +3573,7 @@ async def test_get_issue_images_octet_stream_fallback(jira_client, mock_jira_fet
 @pytest.mark.anyio
 async def test_get_issue_images_no_images(jira_client, mock_jira_fetcher):
     """Test when issue has no image attachments."""
-    from mcp_atlassian.models.jira import JiraAttachment
+    from mcp_atlassian_with_bitbucket_and_privacy.models.jira import JiraAttachment
 
     mock_jira_fetcher.get_issue_attachments.return_value = [
         JiraAttachment(
@@ -3582,7 +3597,7 @@ async def test_get_issue_images_no_images(jira_client, mock_jira_fetcher):
 @pytest.mark.anyio
 async def test_get_issue_images_size_limit(jira_client, mock_jira_fetcher):
     """Test that images exceeding 50 MB are skipped."""
-    from mcp_atlassian.models.jira import JiraAttachment
+    from mcp_atlassian_with_bitbucket_and_privacy.models.jira import JiraAttachment
 
     mock_jira_fetcher.get_issue_attachments.return_value = [
         JiraAttachment(
@@ -3608,7 +3623,7 @@ async def test_get_issue_images_size_limit(jira_client, mock_jira_fetcher):
 @pytest.mark.anyio
 async def test_get_issue_images_fetch_failure(jira_client, mock_jira_fetcher):
     """Test graceful handling when fetch_attachment_content returns None."""
-    from mcp_atlassian.models.jira import JiraAttachment
+    from mcp_atlassian_with_bitbucket_and_privacy.models.jira import JiraAttachment
 
     mock_jira_fetcher.get_issue_attachments.return_value = [
         JiraAttachment(
@@ -3981,7 +3996,9 @@ class TestMatchesContains:
         ],
     )
     def test_matches_contains(self, option, needle, expected):
-        from src.mcp_atlassian.servers.jira import _matches_contains
+        from src.mcp_atlassian_with_bitbucket_and_privacy.servers.jira import (
+            _matches_contains,
+        )
 
         assert _matches_contains(option, needle) is expected
 
@@ -4031,7 +4048,9 @@ class TestApplyOptionFilters:
     def test_apply_option_filters(
         self, options, contains, return_limit, expected_values
     ):
-        from src.mcp_atlassian.servers.jira import _apply_option_filters
+        from src.mcp_atlassian_with_bitbucket_and_privacy.servers.jira import (
+            _apply_option_filters,
+        )
 
         result = _apply_option_filters(options, contains, return_limit)
         assert [opt["value"] for opt in result] == expected_values
@@ -4082,7 +4101,9 @@ class TestToValuesOnlyPayload:
         ],
     )
     def test_to_values_only_payload(self, options, expected):
-        from src.mcp_atlassian.servers.jira import _to_values_only_payload
+        from src.mcp_atlassian_with_bitbucket_and_privacy.servers.jira import (
+            _to_values_only_payload,
+        )
 
         assert _to_values_only_payload(options) == expected
 
@@ -4808,7 +4829,9 @@ class TestJiraToolInputParsers:
 
     def test_parse_get_issue_include_ignores_empty_sections(self):
         """Test blank include sections are ignored."""
-        from src.mcp_atlassian.servers.jira import _parse_get_issue_include
+        from src.mcp_atlassian_with_bitbucket_and_privacy.servers.jira import (
+            _parse_get_issue_include,
+        )
 
         assert _parse_get_issue_include("comments,, worklog") == {
             "comments",
@@ -4829,14 +4852,18 @@ class TestJiraToolInputParsers:
     )
     def test_parse_visibility(self, visibility, expected):
         """Test supported visibility JSON values."""
-        from src.mcp_atlassian.servers.jira import _parse_visibility
+        from src.mcp_atlassian_with_bitbucket_and_privacy.servers.jira import (
+            _parse_visibility,
+        )
 
         assert _parse_visibility(visibility) == expected
 
     @pytest.mark.parametrize("visibility", ["[]", "not-json"])
     def test_parse_visibility_rejects_invalid_values(self, visibility):
         """Test invalid visibility values are rejected."""
-        from src.mcp_atlassian.servers.jira import _parse_visibility
+        from src.mcp_atlassian_with_bitbucket_and_privacy.servers.jira import (
+            _parse_visibility,
+        )
 
         with pytest.raises(ValueError):
             _parse_visibility(visibility)
@@ -4851,14 +4878,18 @@ class TestJiraToolInputParsers:
     )
     def test_parse_additional_fields(self, additional_fields, expected):
         """Test supported additional field input formats."""
-        from src.mcp_atlassian.servers.jira import _parse_additional_fields
+        from src.mcp_atlassian_with_bitbucket_and_privacy.servers.jira import (
+            _parse_additional_fields,
+        )
 
         assert _parse_additional_fields(additional_fields) == expected
 
     @pytest.mark.parametrize("additional_fields", ["[]", "not-json", 42])
     def test_parse_additional_fields_rejects_invalid_values(self, additional_fields):
         """Test invalid additional field payloads are rejected."""
-        from src.mcp_atlassian.servers.jira import _parse_additional_fields
+        from src.mcp_atlassian_with_bitbucket_and_privacy.servers.jira import (
+            _parse_additional_fields,
+        )
 
         with pytest.raises(ValueError):
             _parse_additional_fields(additional_fields)
@@ -4875,14 +4906,18 @@ class TestJiraToolInputParsers:
     )
     def test_parse_request_participants(self, participants, expected):
         """Test supported request participant input formats."""
-        from src.mcp_atlassian.servers.jira import _parse_request_participants
+        from src.mcp_atlassian_with_bitbucket_and_privacy.servers.jira import (
+            _parse_request_participants,
+        )
 
         assert _parse_request_participants(participants) == expected
 
     @pytest.mark.parametrize("participants", ['{"accountId":"abc"}', 42])
     def test_parse_request_participants_rejects_invalid_types(self, participants):
         """Test invalid request participant values are rejected."""
-        from src.mcp_atlassian.servers.jira import _parse_request_participants
+        from src.mcp_atlassian_with_bitbucket_and_privacy.servers.jira import (
+            _parse_request_participants,
+        )
 
         with pytest.raises(ValueError):
             _parse_request_participants(participants)
@@ -4898,14 +4933,18 @@ class TestJiraToolInputParsers:
     )
     def test_parse_attachments(self, attachments, expected):
         """Test supported attachment input formats."""
-        from src.mcp_atlassian.servers.jira import _parse_attachments
+        from src.mcp_atlassian_with_bitbucket_and_privacy.servers.jira import (
+            _parse_attachments,
+        )
 
         assert _parse_attachments(attachments) == expected
 
     @pytest.mark.parametrize("attachments", ["not-json", "{}", '["a.txt"]'])
     def test_parse_attachments_rejects_invalid_values(self, attachments):
         """Test invalid attachment payloads are rejected."""
-        from src.mcp_atlassian.servers.jira import _parse_attachments
+        from src.mcp_atlassian_with_bitbucket_and_privacy.servers.jira import (
+            _parse_attachments,
+        )
 
         with pytest.raises(ValueError):
             _parse_attachments(attachments)

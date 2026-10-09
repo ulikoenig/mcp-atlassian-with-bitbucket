@@ -6,17 +6,24 @@ from unittest.mock import MagicMock, patch
 import pytest
 from requests.sessions import Session
 
-from mcp_atlassian.confluence import ConfluenceConfig
-from mcp_atlassian.jira import JiraConfig
-from mcp_atlassian.servers.context import MainAppContext
-from mcp_atlassian.servers.dependencies import (
+from mcp_atlassian_with_bitbucket_and_privacy.confluence import ConfluenceConfig
+from mcp_atlassian_with_bitbucket_and_privacy.jira import JiraConfig
+from mcp_atlassian_with_bitbucket_and_privacy.servers.context import MainAppContext
+from mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies import (
     _create_user_config_for_fetcher,
     get_confluence_fetcher,
     get_jira_fetcher,
 )
-from mcp_atlassian.servers.main import AtlassianMCP, main_lifespan
-from mcp_atlassian.utils.environment import get_available_services
-from mcp_atlassian.utils.ssl import configure_ssl_verification
+from mcp_atlassian_with_bitbucket_and_privacy.servers.main import (
+    AtlassianMCP,
+    main_lifespan,
+)
+from mcp_atlassian_with_bitbucket_and_privacy.utils.environment import (
+    get_available_services,
+)
+from mcp_atlassian_with_bitbucket_and_privacy.utils.ssl import (
+    configure_ssl_verification,
+)
 from tests.utils.factories import (
     ConfluencePageFactory,
     JiraIssueFactory,
@@ -155,7 +162,7 @@ class TestSharedAuthentication:
             request.state.user_atlassian_email = "test@example.com"
 
             with patch(
-                "mcp_atlassian.servers.dependencies.get_http_request",
+                "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request",
                 return_value=request,
             ):
                 # Create mock context with lifespan data
@@ -172,9 +179,11 @@ class TestSharedAuthentication:
 
                 # Mock the fetcher creation
                 with (
-                    patch("mcp_atlassian.jira.JiraFetcher") as mock_jira_fetcher,
                     patch(
-                        "mcp_atlassian.confluence.ConfluenceFetcher"
+                        "mcp_atlassian_with_bitbucket_and_privacy.jira.JiraFetcher"
+                    ) as mock_jira_fetcher,
+                    patch(
+                        "mcp_atlassian_with_bitbucket_and_privacy.confluence.ConfluenceFetcher"
                     ) as mock_confluence_fetcher,
                 ):
                     # Mock the current user validation
@@ -211,7 +220,7 @@ class TestCrossServiceErrorHandling:
 
             # Mock Jira to fail during initialization
             with patch(
-                "mcp_atlassian.jira.config.JiraConfig.from_env"
+                "mcp_atlassian_with_bitbucket_and_privacy.jira.config.JiraConfig.from_env"
             ) as mock_jira_config:
                 mock_jira_config.side_effect = Exception("Jira config failed")
 
@@ -230,7 +239,7 @@ class TestCrossServiceErrorHandling:
 
             # Mock Confluence to fail during initialization
             with patch(
-                "mcp_atlassian.confluence.config.ConfluenceConfig.from_env"
+                "mcp_atlassian_with_bitbucket_and_privacy.confluence.config.ConfluenceConfig.from_env"
             ) as mock_conf_config:
                 mock_conf_config.side_effect = Exception("Confluence config failed")
 
@@ -390,11 +399,11 @@ class TestConcurrentServiceInitialization:
 
             with (
                 patch(
-                    "mcp_atlassian.jira.config.JiraConfig.from_env",
+                    "mcp_atlassian_with_bitbucket_and_privacy.jira.config.JiraConfig.from_env",
                     side_effect=mock_jira_init,
                 ),
                 patch(
-                    "mcp_atlassian.confluence.config.ConfluenceConfig.from_env",
+                    "mcp_atlassian_with_bitbucket_and_privacy.confluence.config.ConfluenceConfig.from_env",
                     side_effect=mock_confluence_init,
                 ),
             ):
@@ -437,12 +446,14 @@ class TestConcurrentServiceInitialization:
 
                 with (
                     patch(
-                        "mcp_atlassian.servers.dependencies.get_http_request",
+                        "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.get_http_request",
                         return_value=request,
                     ),
-                    patch("mcp_atlassian.jira.JiraFetcher") as mock_jira_fetcher,
                     patch(
-                        "mcp_atlassian.confluence.ConfluenceFetcher"
+                        "mcp_atlassian_with_bitbucket_and_privacy.jira.JiraFetcher"
+                    ) as mock_jira_fetcher,
+                    patch(
+                        "mcp_atlassian_with_bitbucket_and_privacy.confluence.ConfluenceFetcher"
                     ) as mock_confluence_fetcher,
                 ):
                     # Mock fetcher instances

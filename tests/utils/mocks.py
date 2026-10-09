@@ -1,4 +1,4 @@
-"""Reusable mock utilities and fixtures for MCP Atlassian tests."""
+"""Reusable mock utilities and fixtures for MCP Atlassian with Bitbucket and Privacy tests."""
 
 import os
 from contextlib import contextmanager

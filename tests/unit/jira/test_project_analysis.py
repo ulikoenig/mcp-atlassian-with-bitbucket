@@ -3,18 +3,27 @@ from unittest.mock import MagicMock, Mock
 import pytest
 from requests.exceptions import HTTPError
 
-from mcp_atlassian.exceptions import MCPAtlassianAuthenticationError
-from mcp_atlassian.jira.constants import _load_custom_hierarchy_phrases
-from mcp_atlassian.jira.project_analysis import _project_key_from_issue_key
-from mcp_atlassian.models.jira.common import JiraIssueType, JiraStatus
-from mcp_atlassian.models.jira.issue import JiraIssue
-from mcp_atlassian.models.jira.link import (
+from mcp_atlassian_with_bitbucket_and_privacy.exceptions import (
+    MCPAtlassianAuthenticationError,
+)
+from mcp_atlassian_with_bitbucket_and_privacy.jira.constants import (
+    _load_custom_hierarchy_phrases,
+)
+from mcp_atlassian_with_bitbucket_and_privacy.jira.project_analysis import (
+    _project_key_from_issue_key,
+)
+from mcp_atlassian_with_bitbucket_and_privacy.models.jira.common import (
+    JiraIssueType,
+    JiraStatus,
+)
+from mcp_atlassian_with_bitbucket_and_privacy.models.jira.issue import JiraIssue
+from mcp_atlassian_with_bitbucket_and_privacy.models.jira.link import (
     JiraIssueLink,
     JiraIssueLinkType,
     JiraLinkedIssue,
     JiraLinkedIssueFields,
 )
-from mcp_atlassian.models.jira.search import JiraSearchResult
+from mcp_atlassian_with_bitbucket_and_privacy.models.jira.search import JiraSearchResult
 
 
 def _make_link(

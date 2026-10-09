@@ -6,8 +6,11 @@ from typing import Any
 
 import pytest
 
-from src.mcp_atlassian.models.base import ApiModel, TimestampMixin
-from src.mcp_atlassian.models.constants import EMPTY_STRING
+from src.mcp_atlassian_with_bitbucket_and_privacy.models.base import (
+    ApiModel,
+    TimestampMixin,
+)
+from src.mcp_atlassian_with_bitbucket_and_privacy.models.constants import EMPTY_STRING
 
 
 class TestApiModel:
@@ -87,7 +90,10 @@ class TestTimestampMixin:
         timestamp = "9999-12-31T23:59:59.000+0000"
         formatter = TimestampMixin()
 
-        with patch("src.mcp_atlassian.models.base.parse_date", return_value=None):
+        with patch(
+            "src.mcp_atlassian_with_bitbucket_and_privacy.models.base.parse_date",
+            return_value=None,
+        ):
             result = formatter.format_timestamp(timestamp)
 
         assert result == timestamp
@@ -99,7 +105,10 @@ class TestTimestampMixin:
         timestamp = "9999-12-31T23:59:59.000+0000"
         formatter = TimestampMixin()
 
-        with patch("src.mcp_atlassian.models.base.parse_date", return_value=None):
+        with patch(
+            "src.mcp_atlassian_with_bitbucket_and_privacy.models.base.parse_date",
+            return_value=None,
+        ):
             assert formatter.is_valid_timestamp(timestamp) is False
 
     def test_format_timestamp_epoch_overflow_returns_original(self):
@@ -123,7 +132,7 @@ class TestTimestampMixin:
         )
 
         with patch(
-            "src.mcp_atlassian.models.base.parse_date",
+            "src.mcp_atlassian_with_bitbucket_and_privacy.models.base.parse_date",
             return_value=parsed_timestamp,
         ):
             assert TimestampMixin.format_timestamp(timestamp) == timestamp

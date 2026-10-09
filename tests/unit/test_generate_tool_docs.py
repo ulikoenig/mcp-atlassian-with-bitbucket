@@ -360,7 +360,7 @@ def _write_count_documents(root: Path, counts: ToolCounts) -> None:
     )
     (root / "docs" / "tools-reference.mdx").write_text(
         f'---\ndescription: "Overview of all {counts.total_tools} MCP tools"\n---\n'
-        f"MCP Atlassian provides **{counts.total_tools} tools**.\n"
+        f"MCP Atlassian with Bitbucket and Privacy provides **{counts.total_tools} tools**.\n"
         f"**Jira Toolsets ({counts.jira_toolsets}):**\n"
         f"**Confluence Toolsets ({counts.confluence_toolsets}):**\n"
         f"# Enable all toolsets ({counts.total_tools} tools)\n"

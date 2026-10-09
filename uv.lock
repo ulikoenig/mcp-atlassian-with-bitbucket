@@ -1582,7 +1582,7 @@ cli = [
 ]
 
 [[package]]
-name = "mcp-atlassian-with-bitbucket"
+name = "mcp-atlassian-with-bitbucket-and-privacy"
 source = { editable = "." }
 dependencies = [
     { name = "anyio" },

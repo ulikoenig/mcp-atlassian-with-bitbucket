@@ -6,7 +6,9 @@ import pytest
 import requests
 from requests.exceptions import HTTPError
 
-from mcp_atlassian.confluence.v2_adapter import ConfluenceV2Adapter
+from mcp_atlassian_with_bitbucket_and_privacy.confluence.v2_adapter import (
+    ConfluenceV2Adapter,
+)
 
 
 class TestConfluenceV2Adapter:

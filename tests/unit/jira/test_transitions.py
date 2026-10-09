@@ -4,9 +4,9 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from mcp_atlassian.jira import JiraFetcher
-from mcp_atlassian.jira.transitions import TransitionsMixin
-from mcp_atlassian.models.jira import (
+from mcp_atlassian_with_bitbucket_and_privacy.jira import JiraFetcher
+from mcp_atlassian_with_bitbucket_and_privacy.jira.transitions import TransitionsMixin
+from mcp_atlassian_with_bitbucket_and_privacy.models.jira import (
     JiraIssue,
     JiraStatus,
     JiraStatusCategory,

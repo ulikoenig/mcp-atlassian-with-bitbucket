@@ -8,9 +8,9 @@ from unittest.mock import MagicMock, call, patch
 import pytest
 from requests.sessions import Session
 
-from mcp_atlassian.jira.client import JiraClient
-from mcp_atlassian.jira.config import JiraConfig
-from mcp_atlassian.utils.ssl import NoProxyAdapter
+from mcp_atlassian_with_bitbucket_and_privacy.jira.client import JiraClient
+from mcp_atlassian_with_bitbucket_and_privacy.jira.config import JiraConfig
+from mcp_atlassian_with_bitbucket_and_privacy.utils.ssl import NoProxyAdapter
 
 
 class DeepcopyMock(MagicMock):
@@ -25,9 +25,9 @@ class DeepcopyMock(MagicMock):
 def test_init_with_basic_auth():
     """Test initializing the client with basic auth configuration."""
     with (
-        patch("mcp_atlassian.jira.client.Jira") as mock_jira,
+        patch("mcp_atlassian_with_bitbucket_and_privacy.jira.client.Jira") as mock_jira,
         patch(
-            "mcp_atlassian.jira.client.configure_ssl_verification"
+            "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_ssl_verification"
         ) as mock_configure_ssl,
     ):
         config = JiraConfig(
@@ -75,8 +75,10 @@ def test_token_auth_disables_library_retry_with_header() -> None:
     import requests
 
     with (
-        patch("mcp_atlassian.jira.client.Jira") as mock_jira,
-        patch("mcp_atlassian.jira.client.configure_ssl_verification"),
+        patch("mcp_atlassian_with_bitbucket_and_privacy.jira.client.Jira") as mock_jira,
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_ssl_verification"
+        ),
     ):
         mock_jira.return_value._session = requests.Session()
         client = JiraClient(
@@ -101,8 +103,10 @@ def test_base_session_has_ssrf_redirect_hook():
     import requests
 
     with (
-        patch("mcp_atlassian.jira.client.Jira") as mock_jira,
-        patch("mcp_atlassian.jira.client.configure_ssl_verification"),
+        patch("mcp_atlassian_with_bitbucket_and_privacy.jira.client.Jira") as mock_jira,
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_ssl_verification"
+        ),
     ):
         mock_jira.return_value._session = requests.Session()
         client = JiraClient(
@@ -127,7 +131,9 @@ def test_base_session_has_ssrf_redirect_hook():
             hook(internal_redirect)
 
     # And the base session must use the DNS-pinning adapter (rebind protection).
-    from mcp_atlassian.utils.ssrf_adapter import SsrfPinningAdapter
+    from mcp_atlassian_with_bitbucket_and_privacy.utils.ssrf_adapter import (
+        SsrfPinningAdapter,
+    )
 
     assert isinstance(
         client.jira._session.get_adapter("https://example.atlassian.net"),
@@ -145,18 +151,24 @@ def test_http_hardening_survives_ssrf_pinning_mount(monkeypatch):
     """
     import requests
 
-    from mcp_atlassian.utils.http import (
+    from mcp_atlassian_with_bitbucket_and_privacy.utils.http import (
         _reset_concurrency_semaphore_for_tests,
         _reset_rate_limit_bucket_for_tests,
     )
-    from mcp_atlassian.utils.ssrf_adapter import SsrfPinningAdapter
+    from mcp_atlassian_with_bitbucket_and_privacy.utils.ssrf_adapter import (
+        SsrfPinningAdapter,
+    )
 
     monkeypatch.setenv("ATLASSIAN_MAX_CONCURRENT_REQUESTS", "2")
     _reset_concurrency_semaphore_for_tests()
     try:
         with (
-            patch("mcp_atlassian.jira.client.Jira") as mock_jira,
-            patch("mcp_atlassian.jira.client.configure_ssl_verification"),
+            patch(
+                "mcp_atlassian_with_bitbucket_and_privacy.jira.client.Jira"
+            ) as mock_jira,
+            patch(
+                "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_ssl_verification"
+            ),
         ):
             mock_jira.return_value._session = requests.Session()
             client = JiraClient(
@@ -170,7 +182,9 @@ def test_http_hardening_survives_ssrf_pinning_mount(monkeypatch):
 
         adapter = client.jira._session.get_adapter("https://example.atlassian.net")
         assert isinstance(adapter, SsrfPinningAdapter)
-        assert getattr(adapter, "_mcp_atlassian_throttled", False), (
+        assert getattr(
+            adapter, "_mcp_atlassian_with_bitbucket_and_privacy_throttled", False
+        ), (
             "concurrency wrapper must be present on the pinning adapter — "
             "hardening was applied before mount_ssrf_pinning replaced it"
         )
@@ -182,9 +196,9 @@ def test_http_hardening_survives_ssrf_pinning_mount(monkeypatch):
 def test_init_with_token_auth():
     """Test initializing the client with token auth configuration."""
     with (
-        patch("mcp_atlassian.jira.client.Jira") as mock_jira,
+        patch("mcp_atlassian_with_bitbucket_and_privacy.jira.client.Jira") as mock_jira,
         patch(
-            "mcp_atlassian.jira.client.configure_ssl_verification"
+            "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_ssl_verification"
         ) as mock_configure_ssl,
     ):
         config = JiraConfig(
@@ -223,9 +237,13 @@ def test_init_with_token_auth():
 def test_init_from_env():
     """Test initializing the client from environment variables."""
     with (
-        patch("mcp_atlassian.jira.config.JiraConfig.from_env") as mock_from_env,
-        patch("mcp_atlassian.jira.client.Jira") as mock_jira,
-        patch("mcp_atlassian.jira.client.configure_ssl_verification"),
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.jira.config.JiraConfig.from_env"
+        ) as mock_from_env,
+        patch("mcp_atlassian_with_bitbucket_and_privacy.jira.client.Jira") as mock_jira,
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_ssl_verification"
+        ),
     ):
         mock_config = MagicMock()
         mock_config.auth_type = "basic"  # needed for the if condition
@@ -240,8 +258,10 @@ def test_init_from_env():
 def test_clean_text():
     """Test the _clean_text method."""
     with (
-        patch("mcp_atlassian.jira.client.Jira"),
-        patch("mcp_atlassian.jira.client.configure_ssl_verification"),
+        patch("mcp_atlassian_with_bitbucket_and_privacy.jira.client.Jira"),
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_ssl_verification"
+        ),
     ):
         client = JiraClient(
             config=JiraConfig(
@@ -266,12 +286,16 @@ def _test_get_paged(method: Literal["get", "post"]):
     """Test the get_paged method."""
     with (
         patch(
-            "mcp_atlassian.jira.client.Jira.get", new_callable=DeepcopyMock
+            "mcp_atlassian_with_bitbucket_and_privacy.jira.client.Jira.get",
+            new_callable=DeepcopyMock,
         ) as mock_get,
         patch(
-            "mcp_atlassian.jira.client.Jira.post", new_callable=DeepcopyMock
+            "mcp_atlassian_with_bitbucket_and_privacy.jira.client.Jira.post",
+            new_callable=DeepcopyMock,
         ) as mock_post,
-        patch("mcp_atlassian.jira.client.configure_ssl_verification"),
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_ssl_verification"
+        ),
     ):
         config = JiraConfig(
             url="https://test.atlassian.net",
@@ -348,7 +372,9 @@ def test_get_paged_post():
 
 def test_get_paged_without_cloud():
     """Test the get_paged method without cloud."""
-    with patch("mcp_atlassian.jira.client.configure_ssl_verification"):
+    with patch(
+        "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_ssl_verification"
+    ):
         config = JiraConfig(
             url="https://jira.example.com",
             auth_type="pat",
@@ -369,9 +395,13 @@ def test_init_sets_proxies_and_no_proxy(monkeypatch):
     mock_session = MagicMock()
     mock_session.proxies = {}  # Use a real dict for proxies
     mock_jira._session = mock_session
-    monkeypatch.setattr("mcp_atlassian.jira.client.Jira", lambda **kwargs: mock_jira)
     monkeypatch.setattr(
-        "mcp_atlassian.jira.client.configure_ssl_verification", lambda **kwargs: None
+        "mcp_atlassian_with_bitbucket_and_privacy.jira.client.Jira",
+        lambda **kwargs: mock_jira,
+    )
+    monkeypatch.setattr(
+        "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_ssl_verification",
+        lambda **kwargs: None,
     )
 
     # Patch environment
@@ -398,7 +428,10 @@ def test_init_configures_no_proxy_adapter_from_config(monkeypatch):
     """Test that client no_proxy config is visible during SSL setup."""
     mock_jira = MagicMock()
     mock_jira._session = Session()
-    monkeypatch.setattr("mcp_atlassian.jira.client.Jira", lambda **kwargs: mock_jira)
+    monkeypatch.setattr(
+        "mcp_atlassian_with_bitbucket_and_privacy.jira.client.Jira",
+        lambda **kwargs: mock_jira,
+    )
     monkeypatch.delenv("NO_PROXY", raising=False)
     monkeypatch.delenv("no_proxy", raising=False)
 
@@ -428,9 +461,13 @@ def test_init_no_proxies(monkeypatch):
     mock_session = MagicMock()
     mock_session.proxies = {}  # Use a real dict for proxies
     mock_jira._session = mock_session
-    monkeypatch.setattr("mcp_atlassian.jira.client.Jira", lambda **kwargs: mock_jira)
     monkeypatch.setattr(
-        "mcp_atlassian.jira.client.configure_ssl_verification", lambda **kwargs: None
+        "mcp_atlassian_with_bitbucket_and_privacy.jira.client.Jira",
+        lambda **kwargs: mock_jira,
+    )
+    monkeypatch.setattr(
+        "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_ssl_verification",
+        lambda **kwargs: None,
     )
 
     config = JiraConfig(
@@ -446,8 +483,10 @@ def test_init_no_proxies(monkeypatch):
 def test_jira_client_passes_timeout_to_constructor():
     """Test that JiraClient passes custom timeout to Jira constructor."""
     with (
-        patch("mcp_atlassian.jira.client.Jira") as mock_jira,
-        patch("mcp_atlassian.jira.client.configure_ssl_verification"),
+        patch("mcp_atlassian_with_bitbucket_and_privacy.jira.client.Jira") as mock_jira,
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_ssl_verification"
+        ),
     ):
         config = JiraConfig(
             url="https://test.atlassian.net",
@@ -471,8 +510,10 @@ def test_jira_client_passes_timeout_to_constructor():
 def test_jira_client_pat_disables_trust_env():
     """Test that PAT auth disables trust_env to prevent .netrc override (#860)."""
     with (
-        patch("mcp_atlassian.jira.client.Jira") as mock_jira,
-        patch("mcp_atlassian.jira.client.configure_ssl_verification"),
+        patch("mcp_atlassian_with_bitbucket_and_privacy.jira.client.Jira") as mock_jira,
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_ssl_verification"
+        ),
     ):
         mock_session = MagicMock()
         mock_session.trust_env = True  # Default
@@ -490,12 +531,17 @@ def test_jira_client_pat_disables_trust_env():
 
 def test_jira_client_oauth_disables_trust_env():
     """Test that OAuth auth disables trust_env to prevent .netrc override (#860)."""
-    from mcp_atlassian.utils.oauth import OAuthConfig
+    from mcp_atlassian_with_bitbucket_and_privacy.utils.oauth import OAuthConfig
 
     with (
-        patch("mcp_atlassian.jira.client.Jira") as mock_jira,
-        patch("mcp_atlassian.jira.client.configure_ssl_verification"),
-        patch("mcp_atlassian.jira.client.configure_oauth_session", return_value=True),
+        patch("mcp_atlassian_with_bitbucket_and_privacy.jira.client.Jira") as mock_jira,
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_ssl_verification"
+        ),
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_oauth_session",
+            return_value=True,
+        ),
     ):
         mock_session = MagicMock()
         mock_session.trust_env = True
@@ -524,8 +570,10 @@ def test_jira_client_oauth_disables_trust_env():
 def test_jira_client_basic_auth_preserves_trust_env():
     """Test that basic auth preserves trust_env (netrc valid for basic auth)."""
     with (
-        patch("mcp_atlassian.jira.client.Jira") as mock_jira,
-        patch("mcp_atlassian.jira.client.configure_ssl_verification"),
+        patch("mcp_atlassian_with_bitbucket_and_privacy.jira.client.Jira") as mock_jira,
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_ssl_verification"
+        ),
     ):
         mock_session = MagicMock()
         mock_session.trust_env = True
@@ -550,9 +598,9 @@ def test_jira_client_basic_auth_preserves_trust_env():
 def test_init_cert_auth() -> None:
     """Test that cert auth initializes without credentials and disables trust_env."""
     with (
-        patch("mcp_atlassian.jira.client.Jira") as mock_jira,
+        patch("mcp_atlassian_with_bitbucket_and_privacy.jira.client.Jira") as mock_jira,
         patch(
-            "mcp_atlassian.jira.client.configure_ssl_verification"
+            "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_ssl_verification"
         ) as mock_configure_ssl,
     ):
         mock_session = MagicMock()
@@ -589,8 +637,10 @@ def test_init_cert_auth() -> None:
 def test_jira_client_sets_default_user_agent() -> None:
     """An explicit User-Agent is set so WAFs don't block the requests default."""
     with (
-        patch("mcp_atlassian.jira.client.Jira") as mock_jira,
-        patch("mcp_atlassian.jira.client.configure_ssl_verification"),
+        patch("mcp_atlassian_with_bitbucket_and_privacy.jira.client.Jira") as mock_jira,
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_ssl_verification"
+        ),
     ):
         headers: dict[str, str] = {}
         mock_jira.return_value._session.headers = headers
@@ -602,14 +652,18 @@ def test_jira_client_sets_default_user_agent() -> None:
         )
         JiraClient(config=config)
 
-        assert headers["User-Agent"].startswith("mcp-atlassian/")
+        assert headers["User-Agent"].startswith(
+            "mcp-atlassian-with-bitbucket-and-privacy/"
+        )
 
 
 def test_jira_client_custom_user_agent_overrides_default() -> None:
     """Custom headers must still win over the built-in User-Agent default."""
     with (
-        patch("mcp_atlassian.jira.client.Jira") as mock_jira,
-        patch("mcp_atlassian.jira.client.configure_ssl_verification"),
+        patch("mcp_atlassian_with_bitbucket_and_privacy.jira.client.Jira") as mock_jira,
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_ssl_verification"
+        ),
     ):
         headers: dict[str, str] = {}
         mock_jira.return_value._session.headers = headers
@@ -636,8 +690,10 @@ def test_jira_client_custom_user_agent_overrides_default() -> None:
 def test_create_version_uses_rest_v2_endpoint(url: str) -> None:
     """Test that create_version uses the REST v2 endpoint on all Jira platforms."""
     with (
-        patch("mcp_atlassian.jira.client.Jira") as mock_jira,
-        patch("mcp_atlassian.jira.client.configure_ssl_verification"),
+        patch("mcp_atlassian_with_bitbucket_and_privacy.jira.client.Jira") as mock_jira,
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_ssl_verification"
+        ),
     ):
         mock_jira.return_value._session.headers = {}
         mock_jira.return_value.post.return_value = {"id": "100", "name": "v1.0"}
@@ -655,8 +711,10 @@ def test_create_version_uses_rest_v2_endpoint(url: str) -> None:
 def test_update_version_sends_only_provided_fields() -> None:
     """Test that update_version sends only fields explicitly provided."""
     with (
-        patch("mcp_atlassian.jira.client.Jira") as mock_jira,
-        patch("mcp_atlassian.jira.client.configure_ssl_verification"),
+        patch("mcp_atlassian_with_bitbucket_and_privacy.jira.client.Jira") as mock_jira,
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_ssl_verification"
+        ),
     ):
         mock_response = {"id": "10001", "name": "v2.0", "archived": False}
         mock_jira.return_value.put.return_value = mock_response
@@ -679,8 +737,10 @@ def test_update_version_sends_only_provided_fields() -> None:
 def test_update_version_requires_at_least_one_field() -> None:
     """Test that update_version rejects empty update payloads."""
     with (
-        patch("mcp_atlassian.jira.client.Jira") as mock_jira,
-        patch("mcp_atlassian.jira.client.configure_ssl_verification"),
+        patch("mcp_atlassian_with_bitbucket_and_privacy.jira.client.Jira") as mock_jira,
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_ssl_verification"
+        ),
     ):
         config = JiraConfig(
             url="https://test.atlassian.net",
@@ -698,8 +758,10 @@ def test_update_version_requires_at_least_one_field() -> None:
 def test_update_version_rejects_non_dict_response() -> None:
     """Test that update_version rejects unexpected Jira responses."""
     with (
-        patch("mcp_atlassian.jira.client.Jira") as mock_jira,
-        patch("mcp_atlassian.jira.client.configure_ssl_verification"),
+        patch("mcp_atlassian_with_bitbucket_and_privacy.jira.client.Jira") as mock_jira,
+        patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_ssl_verification"
+        ),
     ):
         mock_jira.return_value.put.return_value = ["not", "a", "dict"]
 

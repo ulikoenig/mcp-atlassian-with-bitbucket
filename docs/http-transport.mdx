@@ -1,6 +1,6 @@
 ---
 title: "HTTP Transport"
-description: "Deploy MCP Atlassian as an HTTP service with SSE or streamable-http for multi-user and remote scenarios"
+description: "Deploy MCP Atlassian with Bitbucket and Privacy as an HTTP service with SSE or streamable-http for multi-user and remote scenarios"
 ---
 
 Instead of using `stdio`, you can run the server as a persistent HTTP service. This enables multi-user scenarios and remote deployment.
@@ -18,16 +18,16 @@ For Kubernetes deployments or environments where session state should be ephemer
 
 ```bash
 # Using uvx
-uvx mcp-atlassian --transport streamable-http --stateless --port 9000 -vv
+uvx mcp-atlassian-with-bitbucket-and-privacy --transport streamable-http --stateless --port 9000 -vv
 
 # Or using Docker
 docker run --rm -p 9000:9000 \
   --env-file /path/to/your/.env \
-  ghcr.io/sooperset/mcp-atlassian:latest \
+  ghcr.io/ulikoenig/mcp-atlassian-with-bitbucket-and-privacy:latest \
   --transport streamable-http --stateless --port 9000 -vv
 
 # Or via environment variable
-STATELESS=true uvx mcp-atlassian --transport streamable-http --port 9000
+STATELESS=true uvx mcp-atlassian-with-bitbucket-and-privacy --transport streamable-http --port 9000
 ```
 
 <Note>
@@ -40,12 +40,12 @@ The `--stateless` flag is only supported with `streamable-http` transport. Using
   <Tab title="SSE Transport">
     ```bash
     # Using uvx
-    uvx mcp-atlassian --transport sse --port 9000 -vv
+    uvx mcp-atlassian-with-bitbucket-and-privacy --transport sse --port 9000 -vv
 
     # Or using Docker
     docker run --rm -p 9000:9000 \
       --env-file /path/to/your/.env \
-      ghcr.io/sooperset/mcp-atlassian:latest \
+      ghcr.io/ulikoenig/mcp-atlassian-with-bitbucket-and-privacy:latest \
       --transport sse --port 9000 -vv
     ```
 
@@ -53,7 +53,7 @@ The `--stateless` flag is only supported with `streamable-http` transport. Using
     ```json
     {
       "mcpServers": {
-        "mcp-atlassian-http": {
+        "mcp-atlassian-with-bitbucket-and-privacy-http": {
           "url": "http://localhost:9000/sse"
         }
       }
@@ -63,12 +63,12 @@ The `--stateless` flag is only supported with `streamable-http` transport. Using
   <Tab title="Streamable-HTTP">
     ```bash
     # Using uvx
-    uvx mcp-atlassian --transport streamable-http --port 9000 -vv
+    uvx mcp-atlassian-with-bitbucket-and-privacy --transport streamable-http --port 9000 -vv
 
     # Or using Docker
     docker run --rm -p 9000:9000 \
       --env-file /path/to/your/.env \
-      ghcr.io/sooperset/mcp-atlassian:latest \
+      ghcr.io/ulikoenig/mcp-atlassian-with-bitbucket-and-privacy:latest \
       --transport streamable-http --port 9000 -vv
     ```
 
@@ -76,7 +76,7 @@ The `--stateless` flag is only supported with `streamable-http` transport. Using
     ```json
     {
       "mcpServers": {
-        "mcp-atlassian-service": {
+        "mcp-atlassian-with-bitbucket-and-privacy-service": {
           "url": "http://localhost:9000/mcp"
         }
       }
@@ -96,7 +96,7 @@ Both transport types support per-request authentication where each user provides
     ```json
     {
       "mcpServers": {
-        "mcp-atlassian-service": {
+        "mcp-atlassian-with-bitbucket-and-privacy-service": {
           "url": "http://localhost:9000/mcp",
           "headers": {
             "Authorization": "Bearer <USER_OAUTH_ACCESS_TOKEN>"
@@ -124,7 +124,7 @@ Both transport types support per-request authentication where each user provides
     ```json
     {
       "mcpServers": {
-        "mcp-atlassian-service": {
+        "mcp-atlassian-with-bitbucket-and-privacy-service": {
           "url": "http://localhost:9000/mcp",
           "headers": {
             "Authorization": "Token <USER_PERSONAL_ACCESS_TOKEN>"
@@ -148,24 +148,24 @@ Both transport types support per-request authentication where each user provides
   <Step title="Run OAuth Setup (if using OAuth)">
     ```bash
     # Using uvx
-    uvx mcp-atlassian --oauth-setup -v
+    uvx mcp-atlassian-with-bitbucket-and-privacy --oauth-setup -v
 
     # Or using Docker
     docker run --rm -i \
       -p 8080:8080 \
-      -v "${HOME}/.mcp-atlassian:/home/app/.mcp-atlassian" \
-      ghcr.io/sooperset/mcp-atlassian:latest --oauth-setup -v
+      -v "${HOME}/.mcp-atlassian-with-bitbucket-and-privacy:/home/app/.mcp-atlassian-with-bitbucket-and-privacy" \
+      ghcr.io/ulikoenig/mcp-atlassian-with-bitbucket-and-privacy:latest --oauth-setup -v
     ```
   </Step>
   <Step title="Start HTTP Server">
     ```bash
     # Using uvx (with env vars set)
-    uvx mcp-atlassian --transport streamable-http --port 9000 -vv
+    uvx mcp-atlassian-with-bitbucket-and-privacy --transport streamable-http --port 9000 -vv
 
     # Or using Docker
     docker run --rm -p 9000:9000 \
       --env-file /path/to/your/.env \
-      ghcr.io/sooperset/mcp-atlassian:latest \
+      ghcr.io/ulikoenig/mcp-atlassian-with-bitbucket-and-privacy:latest \
       --transport streamable-http --port 9000 -vv
     ```
   </Step>
@@ -180,7 +180,7 @@ Both transport types support per-request authentication where each user provides
     ATLASSIAN_OAUTH_CLOUD_ID=your_cloud_id_from_setup_wizard
     # Optional: enable MCP OAuth proxy + DCR/discovery endpoints
     ATLASSIAN_OAUTH_PROXY_ENABLE=true
-    PUBLIC_BASE_URL=https://mcp.example.com/mcp-atlassian
+    PUBLIC_BASE_URL=https://mcp.example.com/mcp-atlassian-with-bitbucket-and-privacy
     ```
   </Step>
 </Steps>
@@ -212,11 +212,11 @@ For multi-tenant applications where each user connects to their own Atlassian cl
 1. Enable minimal OAuth mode:
    ```bash
    # Using uvx
-   ATLASSIAN_OAUTH_ENABLE=true uvx mcp-atlassian --transport streamable-http --port 9000
+   ATLASSIAN_OAUTH_ENABLE=true uvx mcp-atlassian-with-bitbucket-and-privacy --transport streamable-http --port 9000
 
    # Or using Docker
    docker run -e ATLASSIAN_OAUTH_ENABLE=true -p 9000:9000 \
-     ghcr.io/sooperset/mcp-atlassian:latest \
+     ghcr.io/ulikoenig/mcp-atlassian-with-bitbucket-and-privacy:latest \
      --transport streamable-http --port 9000
    ```
 

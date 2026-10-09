@@ -7,7 +7,7 @@ from typing import Any
 
 import pytest
 
-from mcp_atlassian.servers.client_storage import (
+from mcp_atlassian_with_bitbucket_and_privacy.servers.client_storage import (
     CLIENT_STORAGE_CONFIG_JSON_ENV,
     CLIENT_STORAGE_FACTORY_ENV,
     CLIENT_STORAGE_MODE_ENV,

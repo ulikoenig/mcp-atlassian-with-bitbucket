@@ -2,7 +2,7 @@
 
 import logging
 
-from mcp_atlassian.utils.env import (
+from mcp_atlassian_with_bitbucket_and_privacy.utils.env import (
     get_regex_env,
     is_env_extended_truthy,
     is_env_ssl_verify,

@@ -3,8 +3,8 @@
 import os
 from unittest.mock import MagicMock, patch
 
-from mcp_atlassian.jira.client import JiraClient
-from mcp_atlassian.jira.config import JiraConfig
+from mcp_atlassian_with_bitbucket_and_privacy.jira.client import JiraClient
+from mcp_atlassian_with_bitbucket_and_privacy.jira.config import JiraConfig
 
 
 class TestJiraConfigCustomHeaders:
@@ -99,10 +99,11 @@ class TestJiraClientCustomHeaders:
         mock_jira._session = mock_session
 
         monkeypatch.setattr(
-            "mcp_atlassian.jira.client.Jira", lambda **kwargs: mock_jira
+            "mcp_atlassian_with_bitbucket_and_privacy.jira.client.Jira",
+            lambda **kwargs: mock_jira,
         )
         monkeypatch.setattr(
-            "mcp_atlassian.jira.client.configure_ssl_verification",
+            "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_ssl_verification",
             lambda **kwargs: None,
         )
 
@@ -118,7 +119,9 @@ class TestJiraClientCustomHeaders:
 
         # Only the default User-Agent should be present; no custom headers added.
         assert set(mock_session.headers.keys()) == {"User-Agent"}
-        assert mock_session.headers["User-Agent"].startswith("mcp-atlassian/")
+        assert mock_session.headers["User-Agent"].startswith(
+            "mcp-atlassian-with-bitbucket-and-privacy/"
+        )
 
     def test_custom_headers_applied_to_session(self, monkeypatch):
         """Test that custom headers are applied to the JIRA session."""
@@ -129,10 +132,11 @@ class TestJiraClientCustomHeaders:
         mock_jira._session = mock_session
 
         monkeypatch.setattr(
-            "mcp_atlassian.jira.client.Jira", lambda **kwargs: mock_jira
+            "mcp_atlassian_with_bitbucket_and_privacy.jira.client.Jira",
+            lambda **kwargs: mock_jira,
         )
         monkeypatch.setattr(
-            "mcp_atlassian.jira.client.configure_ssl_verification",
+            "mcp_atlassian_with_bitbucket_and_privacy.jira.client.configure_ssl_verification",
             lambda **kwargs: None,
         )
 

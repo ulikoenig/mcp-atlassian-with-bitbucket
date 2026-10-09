@@ -3,8 +3,8 @@
 from datetime import datetime, timezone
 from typing import Any
 
-from mcp_atlassian.bitbucket.client import BitbucketClient
-from mcp_atlassian.privacy import (
+from mcp_atlassian_with_bitbucket_and_privacy.bitbucket.client import BitbucketClient
+from mcp_atlassian_with_bitbucket_and_privacy.privacy import (
     BitbucketIdentityAdapter,
     CurrentIdentity,
     IdentityPolicy,

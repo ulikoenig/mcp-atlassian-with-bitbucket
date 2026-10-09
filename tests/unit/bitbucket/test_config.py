@@ -4,7 +4,10 @@ import os
 
 import pytest
 
-from mcp_atlassian.bitbucket.config import BitbucketConfig, _is_bitbucket_cloud_url
+from mcp_atlassian_with_bitbucket_and_privacy.bitbucket.config import (
+    BitbucketConfig,
+    _is_bitbucket_cloud_url,
+)
 from tests.utils.mocks import MockEnvironment
 
 

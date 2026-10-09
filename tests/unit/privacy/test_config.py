@@ -6,13 +6,13 @@ from pathlib import Path
 
 import pytest
 
-from mcp_atlassian.privacy import (
+from mcp_atlassian_with_bitbucket_and_privacy.privacy import (
     CorrelationScope,
     IdentityPrivacyConfig,
     PrivacyMode,
     UnstructuredContentPolicy,
 )
-from mcp_atlassian.privacy.config import (
+from mcp_atlassian_with_bitbucket_and_privacy.privacy.config import (
     ALIAS_ROUNDTRIP_ENV,
     CORRELATION_DOMAIN_ENV,
     CORRELATION_SCOPE_ENV,

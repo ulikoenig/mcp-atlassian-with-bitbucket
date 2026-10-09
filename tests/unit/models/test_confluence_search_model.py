@@ -2,7 +2,7 @@
 Tests for the ConfluenceSearchResult Pydantic model.
 """
 
-from mcp_atlassian.models import (
+from mcp_atlassian_with_bitbucket_and_privacy.models import (
     ConfluencePage,
     ConfluenceSearchResult,
 )

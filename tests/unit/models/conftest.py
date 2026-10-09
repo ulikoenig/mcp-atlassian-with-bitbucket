@@ -13,7 +13,9 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
-from mcp_atlassian.utils import parse_date as parse_date_utility
+from mcp_atlassian_with_bitbucket_and_privacy.utils import (
+    parse_date as parse_date_utility,
+)
 from tests.fixtures.confluence_mocks import (
     MOCK_COMMENTS_RESPONSE,
     MOCK_CQL_SEARCH_RESPONSE,
@@ -81,9 +83,13 @@ def pacific_timezone(monkeypatch: pytest.MonkeyPatch) -> None:
             fold=parsed.fold,
         )
 
-    monkeypatch.setattr("mcp_atlassian.models.base.parse_date", parse_date_in_pacific)
     monkeypatch.setattr(
-        "src.mcp_atlassian.models.base.parse_date", parse_date_in_pacific
+        "mcp_atlassian_with_bitbucket_and_privacy.models.base.parse_date",
+        parse_date_in_pacific,
+    )
+    monkeypatch.setattr(
+        "src.mcp_atlassian_with_bitbucket_and_privacy.models.base.parse_date",
+        parse_date_in_pacific,
     )
 
 

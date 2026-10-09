@@ -6,8 +6,8 @@ import uuid
 
 import pytest
 
-from mcp_atlassian.confluence import ConfluenceFetcher
-from mcp_atlassian.confluence.config import ConfluenceConfig
+from mcp_atlassian_with_bitbucket_and_privacy.confluence import ConfluenceFetcher
+from mcp_atlassian_with_bitbucket_and_privacy.confluence.config import ConfluenceConfig
 
 from .conftest import AuthVariant, DCInstanceInfo, DCResourceTracker
 

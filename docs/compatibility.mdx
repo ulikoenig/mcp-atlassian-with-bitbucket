@@ -3,7 +3,7 @@ title: "AI Platform Compatibility"
 description: "Platform compatibility matrix — Claude Desktop, Cursor, Cline, and Cloud vs Server/DC feature comparison"
 ---
 
-MCP Atlassian works with any MCP-compatible client. This page documents platform-specific notes and known issues.
+MCP Atlassian with Bitbucket and Privacy works with any MCP-compatible client. This page documents platform-specific notes and known issues.
 
 ## Compatibility Matrix
 
@@ -28,7 +28,7 @@ without depending on FastMCP internals:
 uv run python scripts/mcp_wire_probe.py \
   --server-command uv \
   --server-arg=run \
-  --server-arg=mcp-atlassian
+  --server-arg=mcp-atlassian-with-bitbucket-and-privacy
 ```
 
 The default probe does not invoke any Atlassian tool. It emits machine-readable
@@ -43,7 +43,7 @@ Version-specific test lanes can make protocol negotiation an explicit gate:
 uv run python scripts/mcp_wire_probe.py \
   --server-command uv \
   --server-arg=run \
-  --server-arg=mcp-atlassian \
+  --server-arg=mcp-atlassian-with-bitbucket-and-privacy \
   --expect-protocol-version=2025-11-25 \
   --expect-tool-absent=jira_create_issue
 ```
@@ -79,7 +79,7 @@ Then add the live-profile flag to the preceding command:
 uv run python scripts/mcp_wire_probe.py \
   --server-command uv \
   --server-arg=run \
-  --server-arg=mcp-atlassian \
+  --server-arg=mcp-atlassian-with-bitbucket-and-privacy \
   --staging-dc-pat
 ```
 
@@ -99,7 +99,7 @@ by itself establish compatibility with a future FastMCP major version.
 
 ## Schema Compatibility
 
-MCP Atlassian includes automatic schema sanitization to ensure compatibility with strict AI platforms:
+MCP Atlassian with Bitbucket and Privacy includes automatic schema sanitization to ensure compatibility with strict AI platforms:
 
 - **`anyOf` flattening**: Pydantic v2 generates `anyOf` patterns for optional parameters (`T | None`). These are automatically collapsed to simple `{"type": T}` before schemas are sent to clients, since Vertex AI and Google ADK reject `anyOf` alongside `default` or `description` fields.
 - **No zero-argument tools**: All tools have at least one parameter, which is required by some OpenAI-compatible gateways.
@@ -121,9 +121,9 @@ GitHub Copilot's coding agent supports MCP servers via stdio transport. Key conf
     ```json
     {
       "mcpServers": {
-        "mcp-atlassian": {
+        "mcp-atlassian-with-bitbucket-and-privacy": {
           "command": "uvx",
-          "args": ["mcp-atlassian"],
+          "args": ["mcp-atlassian-with-bitbucket-and-privacy"],
           "env": {
             "JIRA_URL": "https://your-instance.atlassian.net",
             "JIRA_USERNAME": "your-email@example.com",
@@ -136,7 +136,7 @@ GitHub Copilot's coding agent supports MCP servers via stdio transport. Key conf
   </Step>
 
   <Step title="Verify tool discovery">
-    If Copilot reports "Retrieved 0 tools", ensure you are using `mcp-atlassian >= 0.16.0` (which includes FastMCP updates for better protocol compliance). Current releases run on FastMCP v3 (`>=3.2.4,<4.0.0`) while exposing the standard MCP protocol over stdio and HTTP, so MCP clients do not need FastMCP installed. If an older client still cannot discover tools, update the client to a current MCP-compatible release.
+    If Copilot reports "Retrieved 0 tools", ensure you are using `mcp-atlassian-with-bitbucket-and-privacy >= 0.16.0` (which includes FastMCP updates for better protocol compliance). Current releases run on FastMCP v3 (`>=3.2.4,<4.0.0`) while exposing the standard MCP protocol over stdio and HTTP, so MCP clients do not need FastMCP installed. If an older client still cannot discover tools, update the client to a current MCP-compatible release.
   </Step>
 
   <Step title="Docker alternative">
@@ -145,14 +145,14 @@ GitHub Copilot's coding agent supports MCP servers via stdio transport. Key conf
     ```json
     {
       "mcpServers": {
-        "mcp-atlassian": {
+        "mcp-atlassian-with-bitbucket-and-privacy": {
           "command": "docker",
           "args": [
             "run", "-i", "--rm",
             "-e", "JIRA_URL=https://your-instance.atlassian.net",
             "-e", "JIRA_USERNAME=your-email@example.com",
             "-e", "JIRA_API_TOKEN=your-api-token",
-            "ghcr.io/sooperset/mcp-atlassian:latest"
+            "ghcr.io/ulikoenig/mcp-atlassian-with-bitbucket-and-privacy:latest"
           ]
         }
       }
@@ -168,12 +168,12 @@ Vertex AI enforces strict JSON Schema validation. The automatic `anyOf` flatteni
 If you encounter schema errors, ensure you are running the latest version:
 
 ```bash
-uvx mcp-atlassian@latest
+uvx mcp-atlassian-with-bitbucket-and-privacy@latest
 ```
 
 ### ChatGPT
 
-ChatGPT's MCP integration has reported vague "violates guidelines" errors. This may be related to schema validation but no specific diagnostics are available. If you encounter this, please [open an issue](https://github.com/sooperset/mcp-atlassian/issues) with the exact error message.
+ChatGPT's MCP integration has reported vague "violates guidelines" errors. This may be related to schema validation but no specific diagnostics are available. If you encounter this, please [open an issue](https://github.com/ulikoenig/mcp-atlassian-with-bitbucket/issues) with the exact error message.
 
 ## HTTP Transport
 
@@ -181,7 +181,7 @@ For platforms that require HTTP transport (e.g., remote deployments, gateways), 
 
 ## Cloud vs Server/Data Center
 
-MCP Atlassian supports both Atlassian Cloud and Server/Data Center deployments, but some features differ between platforms.
+MCP Atlassian with Bitbucket and Privacy supports both Atlassian Cloud and Server/Data Center deployments, but some features differ between platforms.
 
 ### Authentication Methods
 
@@ -214,7 +214,7 @@ MCP Atlassian supports both Atlassian Cloud and Server/Data Center deployments, 
 | Rich text rendering | ADF JSON | Wiki markup |
 
 <Tip>
-MCP Atlassian handles format conversion automatically — you always write in Markdown regardless of platform. The tools convert to the appropriate format (ADF for Cloud, wiki markup for Server/DC).
+MCP Atlassian with Bitbucket and Privacy handles format conversion automatically — you always write in Markdown regardless of platform. The tools convert to the appropriate format (ADF for Cloud, wiki markup for Server/DC).
 </Tip>
 
 ### API Differences

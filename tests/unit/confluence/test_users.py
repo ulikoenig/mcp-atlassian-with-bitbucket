@@ -6,8 +6,10 @@ from unittest.mock import MagicMock, patch
 import pytest
 from requests.exceptions import HTTPError
 
-from mcp_atlassian.confluence.users import UsersMixin
-from mcp_atlassian.exceptions import MCPAtlassianAuthenticationError
+from mcp_atlassian_with_bitbucket_and_privacy.confluence.users import UsersMixin
+from mcp_atlassian_with_bitbucket_and_privacy.exceptions import (
+    MCPAtlassianAuthenticationError,
+)
 
 
 class TestUsersMixin:
@@ -18,7 +20,7 @@ class TestUsersMixin:
         """Create a UsersMixin instance for testing."""
         # UsersMixin inherits from ConfluenceClient, so we need to create it properly
         with patch(
-            "mcp_atlassian.confluence.users.ConfluenceClient.__init__"
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.users.ConfluenceClient.__init__"
         ) as mock_init:
             mock_init.return_value = None
             mixin = UsersMixin()
@@ -504,7 +506,9 @@ class TestUsersMixin:
     def test_users_mixin_inheritance(self, users_mixin):
         """Test that UsersMixin properly inherits from ConfluenceClient."""
         # Verify that UsersMixin is indeed a ConfluenceClient
-        from mcp_atlassian.confluence.client import ConfluenceClient
+        from mcp_atlassian_with_bitbucket_and_privacy.confluence.client import (
+            ConfluenceClient,
+        )
 
         assert isinstance(users_mixin, ConfluenceClient)
 

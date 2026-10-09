@@ -3,16 +3,20 @@
 from datetime import datetime, timezone
 from typing import Any
 
-from mcp_atlassian.models.confluence.comment import ConfluenceComment
-from mcp_atlassian.models.confluence.common import (
+from mcp_atlassian_with_bitbucket_and_privacy.models.confluence.comment import (
+    ConfluenceComment,
+)
+from mcp_atlassian_with_bitbucket_and_privacy.models.confluence.common import (
     ConfluenceAttachment,
     ConfluenceUser,
 )
-from mcp_atlassian.models.confluence.page import ConfluencePage
-from mcp_atlassian.models.confluence.user_search import (
+from mcp_atlassian_with_bitbucket_and_privacy.models.confluence.page import (
+    ConfluencePage,
+)
+from mcp_atlassian_with_bitbucket_and_privacy.models.confluence.user_search import (
     ConfluenceUserSearchResult,
 )
-from mcp_atlassian.privacy import (
+from mcp_atlassian_with_bitbucket_and_privacy.privacy import (
     ConfluenceIdentityAdapter,
     CurrentIdentity,
     IdentityPolicy,

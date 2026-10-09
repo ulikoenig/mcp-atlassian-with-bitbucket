@@ -1,6 +1,6 @@
 ---
 title: "Configuration"
-description: "Configure MCP Atlassian for Claude Desktop, Cursor, Windsurf, and VS Code with environment variables"
+description: "Configure MCP Atlassian with Bitbucket and Privacy for Claude Desktop, Cursor, Windsurf, and VS Code with environment variables"
 ---
 
 This guide covers IDE integration, environment variables, and advanced configuration options.
@@ -21,9 +21,9 @@ This guide covers IDE integration, environment variables, and advanced configura
 ```json
 {
   "mcpServers": {
-    "mcp-atlassian": {
+    "mcp-atlassian-with-bitbucket-and-privacy": {
       "command": "uvx",
-      "args": ["mcp-atlassian"],
+      "args": ["mcp-atlassian-with-bitbucket-and-privacy"],
       "env": {
         "JIRA_URL": "https://your-company.atlassian.net",
         "JIRA_USERNAME": "your.email@company.com",
@@ -39,12 +39,12 @@ This guide covers IDE integration, environment variables, and advanced configura
 ```json
 {
   "mcpServers": {
-    "mcp-atlassian": {
+    "mcp-atlassian-with-bitbucket-and-privacy": {
       "command": "docker",
       "args": [
         "run", "--rm", "-i",
-        "--env-file", "/path/to/your/mcp-atlassian.env",
-        "ghcr.io/sooperset/mcp-atlassian:latest"
+        "--env-file", "/path/to/your/mcp-atlassian-with-bitbucket-and-privacy.env",
+        "ghcr.io/ulikoenig/mcp-atlassian-with-bitbucket-and-privacy:latest"
       ]
     }
   }
@@ -56,9 +56,9 @@ This guide covers IDE integration, environment variables, and advanced configura
 ```json
 {
   "mcpServers": {
-    "mcp-atlassian": {
+    "mcp-atlassian-with-bitbucket-and-privacy": {
       "command": "uvx",
-      "args": ["mcp-atlassian"],
+      "args": ["mcp-atlassian-with-bitbucket-and-privacy"],
       "env": {
         "JIRA_URL": "https://jira.your-company.com",
         "JIRA_PERSONAL_TOKEN": "your_pat",
@@ -77,22 +77,22 @@ For mTLS, replace the personal token variables with client certificate variables
 ```json
 {
   "mcpServers": {
-    "mcp-atlassian": {
+    "mcp-atlassian-with-bitbucket-and-privacy": {
       "command": "uvx",
-      "args": ["mcp-atlassian"],
+      "args": ["mcp-atlassian-with-bitbucket-and-privacy"],
       "env": {
         "JIRA_URL": "https://jira.your-company.com",
-        "JIRA_CLIENT_CERT": "/etc/mcp-atlassian/jira-client-cert.pem",
-        "JIRA_CLIENT_KEY": "/etc/mcp-atlassian/jira-client-key.pem",
+        "JIRA_CLIENT_CERT": "/etc/mcp-atlassian-with-bitbucket-and-privacy/jira-client-cert.pem",
+        "JIRA_CLIENT_KEY": "/etc/mcp-atlassian-with-bitbucket-and-privacy/jira-client-key.pem",
         "CONFLUENCE_URL": "https://confluence.your-company.com/wiki",
-        "CONFLUENCE_CLIENT_CERT": "/etc/mcp-atlassian/confluence-client-combined.pem"
+        "CONFLUENCE_CLIENT_CERT": "/etc/mcp-atlassian-with-bitbucket-and-privacy/confluence-client-combined.pem"
       }
     }
   }
 }
 ```
 
-`JIRA_CLIENT_CERT` and `CONFLUENCE_CLIENT_CERT` can point to combined PEM files. If the private key is separate, set `JIRA_CLIENT_KEY` or `CONFLUENCE_CLIENT_KEY` as appropriate. Encrypted private keys aren't supported by the requests library, so decrypt them before starting MCP Atlassian instead of setting `JIRA_CLIENT_KEY_PASSWORD` or `CONFLUENCE_CLIENT_KEY_PASSWORD`.
+`JIRA_CLIENT_CERT` and `CONFLUENCE_CLIENT_CERT` can point to combined PEM files. If the private key is separate, set `JIRA_CLIENT_KEY` or `CONFLUENCE_CLIENT_KEY` as appropriate. Encrypted private keys aren't supported by the requests library, so decrypt them before starting MCP Atlassian with Bitbucket and Privacy instead of setting `JIRA_CLIENT_KEY_PASSWORD` or `CONFLUENCE_CLIENT_KEY_PASSWORD`.
 
 ### Single Service Configuration
 
@@ -101,9 +101,9 @@ For mTLS, replace the personal token variables with client certificate variables
     ```json
     {
       "mcpServers": {
-        "mcp-atlassian": {
+        "mcp-atlassian-with-bitbucket-and-privacy": {
           "command": "uvx",
-          "args": ["mcp-atlassian"],
+          "args": ["mcp-atlassian-with-bitbucket-and-privacy"],
           "env": {
             "CONFLUENCE_URL": "https://your-company.atlassian.net/wiki",
             "CONFLUENCE_USERNAME": "your.email@company.com",
@@ -118,9 +118,9 @@ For mTLS, replace the personal token variables with client certificate variables
     ```json
     {
       "mcpServers": {
-        "mcp-atlassian": {
+        "mcp-atlassian-with-bitbucket-and-privacy": {
           "command": "uvx",
-          "args": ["mcp-atlassian"],
+          "args": ["mcp-atlassian-with-bitbucket-and-privacy"],
           "env": {
             "JIRA_URL": "https://your-company.atlassian.net",
             "JIRA_USERNAME": "your.email@company.com",
@@ -217,7 +217,7 @@ JIRA_PROJECT_KEY_PATTERN=^[A-Z0-9][A-Z0-9_]*$
 | `ATLASSIAN_OAUTH_REQUIRE_CONSENT` | Require local consent page before upstream redirect (`true`/`false`) |
 | `IGNORE_HEADER_AUTH` | Bypass proxy-injected auth headers. For GCP Cloud Run, AWS ALB deployments where load balancers inject Authorization headers (`true`/`false`) |
 
-See [.env.example](https://github.com/sooperset/mcp-atlassian/blob/main/.env.example) for all available options.
+See [.env.example](https://github.com/ulikoenig/mcp-atlassian-with-bitbucket/blob/main/.env.example) for all available options.
 
 ### HTTP Hardening
 
@@ -238,7 +238,7 @@ instances from runaway request loops. They are disabled by default.
 
 ## Proxy Configuration
 
-MCP Atlassian supports routing API requests through HTTP/HTTPS/SOCKS proxies,
+MCP Atlassian with Bitbucket and Privacy supports routing API requests through HTTP/HTTPS/SOCKS proxies,
 with optional PAC/WPAD auto-configuration.
 
 | Variable | Description |
@@ -257,7 +257,7 @@ with optional PAC/WPAD auto-configuration.
 Service-specific variables override global ones. PAC/WPAD is opt-in and is
 only evaluated when no explicit proxy is configured for that service.
 PAC/WPAD support is provided by the optional `wpad` extra. Install it with
-`pip install "mcp-atlassian[wpad]"` or `uv add "mcp-atlassian[wpad]"` before
+`pip install "mcp-atlassian-with-bitbucket-and-privacy[wpad]"` or `uv add "mcp-atlassian-with-bitbucket-and-privacy[wpad]"` before
 enabling the feature. The published Docker image includes this extra.
 
 ## Custom HTTP Headers
@@ -311,7 +311,7 @@ READ_ONLY_MODE=true
 
 Command-line alternative:
 ```bash
-uvx mcp-atlassian --enabled-tools "confluence_search,jira_get_issue"
+uvx mcp-atlassian-with-bitbucket-and-privacy --enabled-tools "confluence_search,jira_get_issue"
 ```
 
 ### Toolset Filtering
@@ -338,7 +338,7 @@ TOOLSETS=all
 
 Command-line alternative:
 ```bash
-uvx mcp-atlassian --toolsets "default,jira_agile"
+uvx mcp-atlassian-with-bitbucket-and-privacy --toolsets "default,jira_agile"
 ```
 
 **Core toolsets** (included with `TOOLSETS=default`):

@@ -5,9 +5,9 @@ from unittest.mock import MagicMock, call, patch
 import pytest
 import requests
 
-from mcp_atlassian.confluence.comments import CommentsMixin
-from mcp_atlassian.confluence.config import ConfluenceConfig
-from mcp_atlassian.models.confluence import ConfluenceComment
+from mcp_atlassian_with_bitbucket_and_privacy.confluence.comments import CommentsMixin
+from mcp_atlassian_with_bitbucket_and_privacy.confluence.config import ConfluenceConfig
+from mcp_atlassian_with_bitbucket_and_privacy.models.confluence import ConfluenceComment
 from tests.fixtures.confluence_mocks import (
     MOCK_COMMENT_REPLY_V1_RESPONSE,
     MOCK_COMMENT_REPLY_V2_RESPONSE,
@@ -21,7 +21,7 @@ from tests.fixtures.confluence_mocks import (
 def comments_mixin(confluence_client):
     """Create a CommentsMixin instance for testing."""
     with patch(
-        "mcp_atlassian.confluence.comments.ConfluenceClient.__init__"
+        "mcp_atlassian_with_bitbucket_and_privacy.confluence.comments.ConfluenceClient.__init__"
     ) as mock_init:
         mock_init.return_value = None
         mixin = CommentsMixin()
@@ -38,7 +38,7 @@ def comments_mixin_dc():
     Inline comments on Server/DC use the v1 API path.
     """
     with patch(
-        "mcp_atlassian.confluence.comments.ConfluenceClient.__init__"
+        "mcp_atlassian_with_bitbucket_and_privacy.confluence.comments.ConfluenceClient.__init__"
     ) as mock_init:
         mock_init.return_value = None
         mixin = CommentsMixin()
@@ -600,7 +600,9 @@ class TestAddCommentV2Routing:
         comments_mixin.config.auth_type = auth_type
         comments_mixin.config.url = url
 
-        with patch("mcp_atlassian.confluence.comments.ConfluenceV2Adapter") as adapter:
+        with patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.confluence.comments.ConfluenceV2Adapter"
+        ) as adapter:
             result = comments_mixin._v2_adapter
 
         if uses_v2:

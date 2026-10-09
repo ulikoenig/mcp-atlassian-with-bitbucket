@@ -237,7 +237,7 @@ docker run --rm -p 9000:9000 \
 Create an existing Kubernetes Secret containing the Base64 text key and policy:
 
 ```bash
-kubectl create secret generic mcp-atlassian-identity-privacy \
+kubectl create secret generic mcp-atlassian-with-bitbucket-and-privacy-identity-privacy \
   --from-file=identity-policy.json=identity-policy.json \
   --from-file=identity-keyring.json=identity-keyring.json
 ```
@@ -267,7 +267,7 @@ extraEnv:
 volumes:
   - name: identity-privacy
     secret:
-      secretName: mcp-atlassian-identity-privacy
+      secretName: mcp-atlassian-with-bitbucket-and-privacy-identity-privacy
 
 volumeMounts:
   - name: identity-privacy
