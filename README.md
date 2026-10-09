@@ -672,7 +672,7 @@ src/mcp_atlassian_with_bitbucket_and_privacy/
 | Pipeline tools error on Server | Pipelines are Cloud-only; use `TOOLSETS` to disable |
 | `429 Too Many Requests` | Built-in retry handles this; increase `BITBUCKET_TIMEOUT` if persistent |
 | SSL errors (Server/DC) | Set `BITBUCKET_SSL_VERIFY=false` for self-signed certs |
-| Server name shows old name in `/mcp` | The name shown is the JSON key in your config, not the package name. Rename the key (e.g., `"mcp-atlassian-with-bitbucket-and-privacy"` → `"mcp-atlassian-with-bitbucket-and-privacy"`) and restart |
+| Server name shows old name in `/mcp` | The name shown is the JSON key in your config, not the package name. Rename the key (e.g., `"mcp-atlassian-with-bitbucket"` → `"mcp-atlassian-with-bitbucket-and-privacy"`) and restart |
 | Bitbucket tools not appearing | Ensure `BITBUCKET_URL` and credentials are set. The server auto-detects available services based on which env vars are present |
 
 ## LLM Context Optimization
