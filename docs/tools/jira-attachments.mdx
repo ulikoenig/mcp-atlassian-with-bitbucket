@@ -35,3 +35,8 @@ Get all images attached to a Jira issue as inline image content.
 | `issue_key` | `string` | Yes | Jira issue key (e.g., 'PROJ-123'). Returns image attachments as inline ImageContent for LLM vision. |
 
 ---
+
+
+<Tip>
+For machine-to-machine transfers, pass `as_base64: true` to `jira_download_attachments`. Image attachments are then returned as portable base64 `TextContent` instead of `EmbeddedResource`.
+</Tip>
