@@ -1380,7 +1380,8 @@ async def download_attachments(
             pattern=ISSUE_KEY_PATTERN,
         ),
     ],
-,     as_base64: bool = False, ) -> list[TextContent | EmbeddedResource]:
+    as_base64: bool = False,
+) -> list[TextContent | EmbeddedResource]:
     """Download attachments from a Jira issue.
 
     Returns attachment contents as base64-encoded content so that they are
