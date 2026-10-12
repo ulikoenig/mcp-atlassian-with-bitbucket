@@ -5246,3 +5246,37 @@ async def test_jira_analysis_tools_return_structured_errors(
 
     assert content["success"] is False
     assert content["error"] == "service unavailable"
+
+
+@pytest.mark.anyio
+async def test_download_attachments_as_base64_returns_images_as_text_content(
+    jira_client, mock_jira_fetcher
+):
+    """Machine transfers can request portable base64 for image attachments."""
+    import base64
+
+    image_data = b"\x89PNG\r\n\x1a\nfake png bytes"
+    mock_jira_fetcher.get_issue_attachment_contents.return_value = {
+        "success": True,
+        "issue_key": "TEST-123",
+        "total": 1,
+        "attachments": [
+            {
+                "filename": "screenshot.png",
+                "content_type": "image/png",
+                "size": len(image_data),
+                "data": image_data,
+            }
+        ],
+        "failed": [],
+    }
+
+    response = await jira_client.call_tool(
+        "jira_download_attachments",
+        {"issue_key": "TEST-123", "as_base64": True},
+    )
+
+    payload = json.loads(response.content[1].text)
+    assert response.content[1].type == "text"
+    assert payload["filename"] == "screenshot.png"
+    assert base64.b64decode(payload["content"]) == image_data
