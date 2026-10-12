@@ -1380,7 +1380,15 @@ async def download_attachments(
             pattern=ISSUE_KEY_PATTERN,
         ),
     ],
-    as_base64: bool = False,
+    as_base64: Annotated[
+        bool,
+        Field(
+            description=(
+                "Return image attachments as base64-encoded TextContent "
+                "instead of EmbeddedResource."
+            )
+        ),
+    ] = False,
 ) -> list[TextContent | EmbeddedResource]:
     """Download attachments from a Jira issue.
 
