@@ -1,7 +1,7 @@
 # MCP Atlassian with Bitbucket and Privacy
 
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
-![License](https://img.shields.io/github/license/ulikoenig/mcp-atlassian-with-bitbucket-and-privacy)
+![License](https://img.shields.io/github/license/ulikoenig/mcp-atlassian-with-bitbucket)
 
 Model Context Protocol (MCP) server for Atlassian products — **Jira**, **Confluence**, and **Bitbucket**. Supports both Cloud and Server/Data Center deployments.
 
