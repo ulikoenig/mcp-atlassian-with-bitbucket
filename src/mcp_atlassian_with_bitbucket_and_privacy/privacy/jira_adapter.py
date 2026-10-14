@@ -72,6 +72,8 @@ _LOGIN_SCALAR_FIELDS = frozenset(
         "onBehalfUser",
         "raiseOnBehalfOf",
         "reviewer",
+        "leadUserName",
+        "realAssignee",
     }
 )
 _DISPLAY_SCALAR_FIELDS = frozenset(
