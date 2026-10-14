@@ -3430,6 +3430,78 @@ async def test_download_attachments_allows_normal_size(jira_client, mock_jira_fe
 
 
 @pytest.mark.anyio
+async def test_download_attachments_forwards_attachment_id(
+    jira_client, mock_jira_fetcher
+):
+    """A requested attachment ID is forwarded for single-payload downloads."""
+    mock_jira_fetcher.get_issue_attachment_contents.return_value = {
+        "success": True,
+        "issue_key": "TEST-123",
+        "total": 1,
+        "attachments": [],
+        "failed": [],
+    }
+
+    await jira_client.call_tool(
+        "jira_download_attachments",
+        {"issue_key": "TEST-123", "attachment_id": "42"},
+    )
+
+    mock_jira_fetcher.get_issue_attachment_contents.assert_called_once_with(
+        issue_key="TEST-123", attachment_id="42"
+    )
+
+
+@pytest.mark.anyio
+async def test_download_attachments_returns_all_normal_size_payloads(
+    jira_client, mock_jira_fetcher
+):
+    """All normal-size attachments are returned as separate payloads."""
+    import base64
+
+    first_data = b"first attachment"
+    second_data = b"second attachment"
+
+    mock_jira_fetcher.get_issue_attachment_contents.return_value = {
+        "success": True,
+        "issue_key": "TEST-123",
+        "total": 2,
+        "attachments": [
+            {
+                "filename": "first.txt",
+                "content_type": "text/plain",
+                "size": len(first_data),
+                "data": first_data,
+            },
+            {
+                "filename": "second.txt",
+                "content_type": "text/plain",
+                "size": len(second_data),
+                "data": second_data,
+            },
+        ],
+        "failed": [],
+    }
+
+    response = await jira_client.call_tool(
+        "jira_download_attachments",
+        {"issue_key": "TEST-123"},
+    )
+
+    summary = json.loads(response.content[0].text)
+    assert summary["success"] is True
+    assert summary["downloaded"] == 2
+    assert len(response.content) == 3
+
+    first_payload = json.loads(response.content[1].text)
+    second_payload = json.loads(response.content[2].text)
+    assert first_payload["filename"] == "first.txt"
+    assert base64.b64decode(first_payload["content"]) == first_data
+    assert second_payload["filename"] == "second.txt"
+    assert base64.b64decode(second_payload["content"]) == second_data
+
+
+@pytest.mark.anyio
 async def test_download_attachments_binary_uses_text_content(
     jira_client, mock_jira_fetcher
 ):
