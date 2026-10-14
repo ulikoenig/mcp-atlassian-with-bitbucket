@@ -1380,6 +1380,12 @@ async def download_attachments(
             pattern=ISSUE_KEY_PATTERN,
         ),
     ],
+    attachment_id: Annotated[
+        str | None,
+        Field(
+            description="Optional Jira attachment ID to download exactly one attachment."
+        ),
+    ] = None,
     as_base64: Annotated[
         bool,
         Field(
@@ -1403,6 +1409,7 @@ async def download_attachments(
     Args:
         ctx: The FastMCP context.
         issue_key: Jira issue key.
+        attachment_id: Optional Jira attachment ID for a single-payload download.
 
     Returns:
         A list containing a text summary, one EmbeddedResource per
@@ -1410,7 +1417,9 @@ async def download_attachments(
         per downloaded non-image attachment.
     """
     jira = await get_jira_fetcher(ctx)
-    result = jira.get_issue_attachment_contents(issue_key=issue_key)
+    result = jira.get_issue_attachment_contents(
+        issue_key=issue_key, attachment_id=attachment_id
+    )
 
     contents: list[TextContent | EmbeddedResource] = []
 
