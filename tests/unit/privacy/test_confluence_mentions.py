@@ -14,9 +14,7 @@ from mcp_atlassian_with_bitbucket_and_privacy.privacy.runtime import (
     reset_mention_alias_resolver,
 )
 
-_MENTION_WITH_LOGIN = (
-    '<ac:link><ri:user ri:username="human01" /></ac:link>'
-)
+_MENTION_WITH_LOGIN = '<ac:link><ri:user ri:username="human01" /></ac:link>'
 _MENTION_WITH_USERKEY = '<ac:link><ri:user ri:userkey="abc123" /></ac:link>'
 _PROFILE_MACRO = (
     '<ac:structured-macro ac:name="profile">'
