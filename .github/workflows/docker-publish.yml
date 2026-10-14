@@ -45,6 +45,8 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
+            # Pre-release tags (e.g. v1.1.4rc2) have no semver form, so use the git tag name
+            type=ref,event=tag
             # Only create 'latest' tag for stable version tags (no '-' and no 'rc')
             type=raw,value=latest,enable=${{ github.ref_type == 'tag' && startsWith(github.ref, 'refs/tags/v') && !contains(github.ref, '-') && !contains(github.ref, 'rc') }}
             # Create a tag for PRs (e.g., pr-123) - useful for testing PR builds
