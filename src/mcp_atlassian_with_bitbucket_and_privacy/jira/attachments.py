@@ -162,7 +162,9 @@ class AttachmentsMixin(JiraClient, AttachmentsOperationsProto):
             if isinstance(item, dict)
         ]
 
-    def get_issue_attachment_contents(self, issue_key: str) -> dict[str, Any]:
+    def get_issue_attachment_contents(
+        self, issue_key: str, attachment_id: str | None = None
+    ) -> dict[str, Any]:
         """
         Fetch all attachment contents for a Jira issue into memory.
 
@@ -179,7 +181,7 @@ class AttachmentsMixin(JiraClient, AttachmentsOperationsProto):
                 success (bool)
                 issue_key (str)
                 total (int)
-                attachments (list[dict]): each dict has 'filename',
+                    attachments (list[dict]): each dict has 'filename',
                     'content_type', 'size', and 'data' (bytes)
                 failed (list[dict]): each dict has 'filename' and 'error'
         """
@@ -213,6 +215,20 @@ class AttachmentsMixin(JiraClient, AttachmentsOperationsProto):
         for item in attachment_data:
             if isinstance(item, dict):
                 attachments.append(JiraAttachment.from_api_response(item))
+
+        if attachment_id is not None:
+            requested_id = str(attachment_id)
+            attachments = [
+                attachment
+                for attachment in attachments
+                if attachment.id == requested_id
+            ]
+            if not attachments:
+                return {
+                    "success": False,
+                    "issue_key": issue_key,
+                    "error": f"Attachment {requested_id} not found for issue {issue_key}",
+                }
 
         if not attachments:
             return {
