@@ -1024,7 +1024,8 @@ class TestMCPProtocolIntegration:
             response = client.get("/healthz")
 
         assert response.status_code == 200
-        assert response.json() == {"status": "ok"}
+        assert response.json()["status"] == "ok"
+        assert response.json()["identity_privacy"] == "off"
 
     @pytest.mark.security_regression
     async def test_malformed_host_cannot_bypass_url_path_gate(
