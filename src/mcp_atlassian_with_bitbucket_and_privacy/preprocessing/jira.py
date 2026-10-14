@@ -4,6 +4,7 @@ import logging
 import re
 from typing import Any
 
+from ..privacy.runtime import is_identity_privacy_runtime_active, resolve_mention_alias
 from .base import BasePreprocessor, _extract_blocks, _restore_blocks
 
 logger = logging.getLogger("mcp-atlassian-with-bitbucket-and-privacy")
@@ -129,9 +130,12 @@ class JiraPreprocessor(BasePreprocessor):
         if not text:
             return ""
 
-        # Process user mentions
-        mention_pattern = r"\[~accountid:(.*?)\]"
-        text = self._process_mentions(text, mention_pattern)
+        if is_identity_privacy_runtime_active():
+            text = self._protect_mentions(text)
+        else:
+            # Process user mentions
+            mention_pattern = r"\[~accountid:(.*?)\]"
+            text = self._process_mentions(text, mention_pattern)
 
         # Process Jira smart links
         text = self._process_smart_links(text)
@@ -145,6 +149,17 @@ class JiraPreprocessor(BasePreprocessor):
             text = self._convert_html_to_markdown(text)
 
         return text.strip()
+
+    @staticmethod
+    def _protect_mentions(text: str) -> str:
+        """Replace Jira mentions with pseudonymous aliases or a neutral placeholder."""
+        text = re.sub(r"\[~accountid:[^\]]*\]", "@Nutzer", text)
+
+        def _login_mention(match: re.Match[str]) -> str:
+            alias = resolve_mention_alias(match.group(1))
+            return f"@{alias}" if alias else "@Nutzer"
+
+        return re.sub(r"\[~([^\]:]+)\]", _login_mention, text)
 
     def _process_mentions(self, text: str, pattern: str) -> str:
         """

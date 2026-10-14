@@ -10,6 +10,8 @@ from typing import Any, Protocol
 from bs4 import BeautifulSoup, Tag
 from markdownify import markdownify as md
 
+from ..privacy.runtime import is_identity_privacy_runtime_active, resolve_mention_alias
+
 logger = logging.getLogger("mcp-atlassian-with-bitbucket-and-privacy")
 
 
@@ -151,6 +153,15 @@ class BasePreprocessor:
             ):
                 date_element.string = datetime_value
 
+    def _privacy_mention_text(self, user_ref: Tag | None) -> str:
+        """Return the protected text for a page mention while privacy is active."""
+        username = user_ref.get("ri:username") if user_ref is not None else None
+        if isinstance(username, str) and username:
+            alias = resolve_mention_alias(username)
+            if alias:
+                return f"@{alias}"
+        return "@Nutzer"
+
     def _process_user_mentions_in_soup(
         self, soup: BeautifulSoup, confluence_client: ConfluenceClient | None = None
     ) -> None:
@@ -164,6 +175,13 @@ class BasePreprocessor:
             soup: BeautifulSoup object containing HTML
             confluence_client: Optional Confluence client for user lookups
         """
+        if is_identity_privacy_runtime_active():
+            for user_element in soup.find_all("ac:link"):
+                user_ref = user_element.find("ri:user")
+                if user_ref:
+                    user_element.replace_with(self._privacy_mention_text(user_ref))
+            return
+
         # Find all ac:link elements that might contain user mentions
         user_mentions = soup.find_all("ac:link")
 
@@ -202,6 +220,15 @@ class BasePreprocessor:
             soup: BeautifulSoup object containing HTML
             confluence_client: Optional Confluence client for user lookups
         """
+        if is_identity_privacy_runtime_active():
+            for macro_element in soup.find_all(
+                "ac:structured-macro", attrs={"ac:name": "profile"}
+            ):
+                macro_element.replace_with(
+                    self._privacy_mention_text(macro_element.find("ri:user"))
+                )
+            return
+
         profile_macros = soup.find_all(
             "ac:structured-macro", attrs={"ac:name": "profile"}
         )

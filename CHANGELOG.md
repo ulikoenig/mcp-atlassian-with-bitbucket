@@ -81,6 +81,9 @@ All notable changes to this project will be documented in this file.
 
 - Identity privacy: Bitbucket blame and compare responses are parsed, so author
   and committer identities are pseudonymized instead of passing through as text
+- Identity privacy: Confluence page mentions, profile macros, and Jira mentions use
+  the pseudonymous alias or a neutral placeholder; no REST name lookup in privacy mode
+- Identity privacy: Jira component lead and real assignee logins are pseudonymized
 
 ### Changed
 

@@ -74,6 +74,15 @@ class IdentityResponseTransformer:
             }
         )
 
+    def alias_for_login(self, login: str) -> str | None:
+        """Return the Confluence alias for a login used in page mentions."""
+        from .confluence_adapter import ConfluenceIdentityAdapter
+
+        adapter = self._adapters.get(ToolService.CONFLUENCE)
+        if not isinstance(adapter, ConfluenceIdentityAdapter):
+            return None
+        return adapter.alias_for_login(login)
+
     def transform(
         self,
         *,
