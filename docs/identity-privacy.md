@@ -188,9 +188,11 @@ When active, the final response guard:
   channels;
 - leaves tool inputs and internal Atlassian API requests unchanged.
 
-Registered raw and mixed tools follow an explicit policy. Code, diff, log,
-snippet, page body, Storage-format, comment body, and other general free text
-are not scanned in this release. `MCP_ATLASSIAN_UNSTRUCTURED_CONTENT_POLICY=deny`
+Registered raw and mixed tools follow an explicit policy. Bitbucket blame and
+compare responses are JSON: author, committer, and other identity fields are
+pseudonymized, while source lines and diff content stay unchanged. Code, diff,
+log, snippet, page body, Storage-format, comment body, and other general free
+text are not scanned in this release. `MCP_ATLASSIAN_UNSTRUCTURED_CONTENT_POLICY=deny`
 blocks registered raw outputs instead of returning them.
 
 See [Free-text PII/NER Evaluation](free-text-pii-evaluation.md) for measured
