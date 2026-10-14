@@ -27,7 +27,10 @@ from mcp_atlassian_with_bitbucket_and_privacy.bitbucket.config import (
 )
 from mcp_atlassian_with_bitbucket_and_privacy.confluence.config import ConfluenceConfig
 from mcp_atlassian_with_bitbucket_and_privacy.jira.config import JiraConfig
-from mcp_atlassian_with_bitbucket_and_privacy.privacy import install_identity_privacy
+from mcp_atlassian_with_bitbucket_and_privacy.privacy import (
+    IdentityPrivacyConfig,
+    install_identity_privacy,
+)
 from mcp_atlassian_with_bitbucket_and_privacy.utils.env import is_env_truthy
 from mcp_atlassian_with_bitbucket_and_privacy.utils.environment import (
     get_available_services,
@@ -152,7 +155,8 @@ def _sanitize_schema_for_compatibility(tool: MCPTool) -> MCPTool:
 
 
 async def health_check(request: Request) -> JSONResponse:
-    return JSONResponse({"status": "ok"})
+    mode = IdentityPrivacyConfig.from_env().mode.value
+    return JSONResponse({"status": "ok", "identity_privacy": mode})
 
 
 @asynccontextmanager
@@ -1014,6 +1018,14 @@ main_mcp.mount(jira_mcp, namespace="jira")
 main_mcp.mount(confluence_mcp, namespace="confluence")
 main_mcp.mount(bitbucket_mcp, namespace="bitbucket")
 install_identity_privacy(main_mcp)
+_privacy_config = IdentityPrivacyConfig.from_env()
+if _privacy_config.enabled:
+    logger.info(
+        "Identity privacy mode=%s correlation_scope=%s rotation_hours=%s",
+        _privacy_config.mode.value,
+        _privacy_config.correlation_scope.value,
+        _privacy_config.rotation_hours,
+    )
 
 
 @main_mcp.custom_route("/healthz", methods=["GET"], include_in_schema=False)
