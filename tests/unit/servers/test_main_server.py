@@ -152,7 +152,8 @@ async def test_health_check_endpoint():
         response = await client.get("/healthz")
 
         assert response.status_code == 200
-        assert response.json() == {"status": "ok"}
+        assert response.json()["status"] == "ok"
+        assert response.json()["identity_privacy"] == "off"
 
 
 @pytest.mark.anyio
@@ -163,7 +164,8 @@ async def test_sse_app_health_check_endpoint():
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
         response = await client.get("/healthz")
         assert response.status_code == 200
-        assert response.json() == {"status": "ok"}
+        assert response.json()["status"] == "ok"
+        assert response.json()["identity_privacy"] == "off"
 
 
 @pytest.mark.anyio
@@ -174,7 +176,8 @@ async def test_streamable_http_app_health_check_endpoint():
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
         response = await client.get("/healthz")
         assert response.status_code == 200
-        assert response.json() == {"status": "ok"}
+        assert response.json()["status"] == "ok"
+        assert response.json()["identity_privacy"] == "off"
 
 
 @pytest.mark.anyio
