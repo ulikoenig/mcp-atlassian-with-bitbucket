@@ -190,7 +190,11 @@ When active, the final response guard:
 
 Registered raw and mixed tools follow an explicit policy. Bitbucket blame and
 compare responses are JSON: author, committer, and other identity fields are
-pseudonymized, while source lines and diff content stay unchanged. Code, diff,
+pseudonymized, while source lines and diff content stay unchanged. Confluence page
+mentions, profile macros, and Jira `[~login]` mentions are replaced by the alias for
+the login; without a stable alias, or for mentions that carry only an internal key,
+they become the neutral placeholder `@Nutzer`. No REST name lookup runs in privacy
+mode. The raw Confluence storage format (`convert_to_markdown=false`) is unchanged. Code, diff,
 log, snippet, page body, Storage-format, comment body, and other general free
 text are not scanned in this release. `MCP_ATLASSIAN_UNSTRUCTURED_CONTENT_POLICY=deny`
 blocks registered raw outputs instead of returning them.

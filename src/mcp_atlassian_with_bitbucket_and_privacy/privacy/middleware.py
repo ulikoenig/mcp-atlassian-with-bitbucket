@@ -39,7 +39,9 @@ from .registry import (
 )
 from .runtime import (
     begin_identity_privacy_runtime,
+    begin_mention_alias_resolver,
     reset_identity_privacy_runtime,
+    reset_mention_alias_resolver,
 )
 from .transformer import (
     IdentityResponseTransformer,
@@ -121,6 +123,9 @@ class PrivacyFilterMiddleware(Middleware):
         call_next: CallNext[mt.CallToolRequestParams, ToolResult],
     ) -> ToolResult:
         privacy_runtime = begin_identity_privacy_runtime()
+        mention_resolver = begin_mention_alias_resolver(
+            self._transformer.alias_for_login
+        )
         identity_scope = begin_current_identity_scope()
         alias_caller_scope = begin_alias_caller_scope()
         alias_registry_scope = begin_alias_roundtrip_registry_scope(
@@ -183,6 +188,7 @@ class PrivacyFilterMiddleware(Middleware):
             reset_alias_roundtrip_registry_scope(alias_registry_scope)
             reset_alias_caller_scope(alias_caller_scope)
             reset_current_identity_scope(identity_scope)
+            reset_mention_alias_resolver(mention_resolver)
             reset_identity_privacy_runtime(privacy_runtime)
 
     def _handle_raw(self, tool_name: str, result: ToolResult) -> ToolResult:

@@ -320,6 +320,16 @@ class ConfluenceIdentityAdapter:
             identity_class=identity_class,
         )
 
+    def alias_for_login(self, login: str) -> str | None:
+        """Return the pseudonymous alias for a login, or None without a stable alias."""
+        identity_class = self._classifier.classify(login)
+        alias = self._protected_identifier(
+            login=login,
+            local_id=None,
+            identity_class=identity_class,
+        )
+        return None if alias.startswith("anon:") else alias
+
     def _protected_identifier(
         self,
         *,
