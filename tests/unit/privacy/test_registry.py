@@ -103,7 +103,7 @@ def test_unknown_tool_fails_closed() -> None:
         get_tool_response_policy("jira_no_such_tool")
 
 
-def test_only_bitbucket_mixed_tools_have_opaque_string_contract() -> None:
+def test_only_bitbucket_text_tools_have_opaque_string_contract() -> None:
     opaque_tools = {
         name
         for name, policy in TOOL_RESPONSE_POLICIES.items()
@@ -111,8 +111,6 @@ def test_only_bitbucket_mixed_tools_have_opaque_string_contract() -> None:
     }
 
     assert opaque_tools == {
-        "bitbucket_compare_commits",
-        "bitbucket_get_file_blame",
         "bitbucket_get_pull_request_diff",
         "bitbucket_search_code",
     }

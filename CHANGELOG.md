@@ -77,6 +77,11 @@ All notable changes to this project will be documented in this file.
 - Total: 33 toolsets across Jira (15), Confluence (6), and Bitbucket (12)
 - Cloud-only toolsets (`bitbucket_pipelines`, `bitbucket_deployments`) with clear Server/DC error messages
 
+### Fixed
+
+- Identity privacy: Bitbucket blame and compare responses are parsed, so author
+  and committer identities are pseudonymized instead of passing through as text
+
 ### Changed
 
 - Renamed distribution, CLI, and Python import package to

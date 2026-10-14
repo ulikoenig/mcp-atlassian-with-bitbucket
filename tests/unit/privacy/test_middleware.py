@@ -216,16 +216,16 @@ async def test_registered_raw_tool_passes_through_unchanged() -> None:
 
 
 @pytest.mark.anyio
-async def test_bitbucket_mixed_json_string_is_never_parsed() -> None:
+async def test_bitbucket_opaque_text_json_string_is_never_parsed() -> None:
     adapter = ReplacingAdapter()
     server = _server_with_service_adapter(ToolService.BITBUCKET, adapter)
     opaque_json = '{"display_name":"CANARY SOURCE CONTENT"}'
 
-    @server.tool(name="bitbucket_get_file_blame")
-    async def blame() -> str:
+    @server.tool(name="bitbucket_get_pull_request_diff")
+    async def diff() -> str:
         return opaque_json
 
-    result = await server.call_tool("bitbucket_get_file_blame", {})
+    result = await server.call_tool("bitbucket_get_pull_request_diff", {})
 
     assert adapter.calls == 1
     assert result.content[0].text == opaque_json

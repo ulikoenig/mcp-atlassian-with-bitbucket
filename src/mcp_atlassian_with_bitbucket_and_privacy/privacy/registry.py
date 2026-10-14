@@ -52,6 +52,11 @@ _BITBUCKET_MIXED = (
 
 _BITBUCKET_METADATA = ("bitbucket_browse_directory",)
 
+_BITBUCKET_OPAQUE_TEXT = (
+    "bitbucket_get_pull_request_diff",
+    "bitbucket_search_code",
+)
+
 _BITBUCKET_STRUCTURED = (
     "bitbucket_add_commit_comment",
     "bitbucket_add_default_reviewer",
@@ -276,7 +281,7 @@ def _build_registry() -> dict[str, ToolResponsePolicy]:
                 service=service,
                 category=category,
                 opaque_string_result=(
-                    service is ToolService.BITBUCKET and name in _BITBUCKET_MIXED
+                    service is ToolService.BITBUCKET and name in _BITBUCKET_OPAQUE_TEXT
                 ),
             )
     return result
