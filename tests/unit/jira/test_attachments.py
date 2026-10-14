@@ -1090,6 +1090,41 @@ class TestAttachmentsMixin:
             assert result["attachments"][1]["data"] == b"image_data"
             assert mock_fetch.call_count == 2
 
+    def test_get_issue_attachment_contents_filters_by_attachment_id(
+        self, attachments_mixin: AttachmentsMixin
+    ):
+        """A requested attachment ID prevents downloading unrelated files."""
+        attachments_mixin.jira.issue.return_value = {
+            "fields": {
+                "attachment": [
+                    {"id": "41", "filename": "first.txt", "size": 5},
+                    {"id": "42", "filename": "second.txt", "size": 6},
+                ]
+            }
+        }
+        first = MagicMock(id="41", filename="first.txt", url="https://first", size=5)
+        second = MagicMock(id="42", filename="second.txt", url="https://second", size=6)
+
+        with (
+            patch(
+                "mcp_atlassian_with_bitbucket_and_privacy.models.jira.JiraAttachment.from_api_response",
+                side_effect=[first, second],
+            ),
+            patch.object(
+                attachments_mixin,
+                "fetch_attachment_content",
+                return_value=b"second",
+            ) as fetch,
+        ):
+            result = attachments_mixin.get_issue_attachment_contents(
+                "TEST-123", attachment_id="42"
+            )
+
+        assert result["success"] is True
+        assert result["total"] == 1
+        assert result["attachments"][0]["filename"] == "second.txt"
+        fetch.assert_called_once_with("https://second")
+
     def test_get_issue_attachment_contents_no_attachments(
         self, attachments_mixin: AttachmentsMixin
     ):
