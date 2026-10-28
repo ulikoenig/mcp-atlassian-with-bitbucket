@@ -321,10 +321,25 @@ async def test_roundtrip_across_tool_calls_and_foreign_caller_block() -> None:
     )
     assert captured["resolved"] == "target01"
 
-    with pytest.raises(ToolError, match="failed while identity privacy"):
+    with pytest.raises(
+        ToolError,
+        match=(
+            "failed while identity privacy was enabled: "
+            ".*unknown, expired, or unauthorized.*Hint: aliases"
+        ),
+    ):
         await server.call_tool(
             "jira_assign_issue",
             {"alias": alias, "caller": "foreign"},
+        )
+
+    with pytest.raises(
+        ToolError,
+        match="(?s)ValidationError: .*page_id.*Hint: the tool arguments do not match",
+    ):
+        await server.call_tool(
+            "jira_assign_issue",
+            {"alias": alias, "caller": "caller01", "page_id": "1"},
         )
 
 

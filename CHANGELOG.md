@@ -88,6 +88,10 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- Identity privacy: tool errors are returned and logged completely (exception
+  class, message and, for known classes, a remedy hint) instead of being reduced
+  to the exception type; response data stays pseudonymized. Set
+  `IDENTITY_PRIVACY_REDACT_ERRORS=true` to restore the redacted error texts
 - Renamed distribution, CLI, and Python import package to
   `mcp-atlassian-with-bitbucket-and-privacy`; retained the existing GitHub
   repository identity

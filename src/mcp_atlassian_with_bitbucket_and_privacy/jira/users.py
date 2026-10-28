@@ -12,6 +12,7 @@ from mcp_atlassian_with_bitbucket_and_privacy.exceptions import (
 )
 from mcp_atlassian_with_bitbucket_and_privacy.models.jira.common import JiraUser
 from mcp_atlassian_with_bitbucket_and_privacy.privacy.runtime import (
+    error_details_redacted,
     is_identity_privacy_runtime_active,
     privacy_safe_exception_detail,
 )
@@ -69,7 +70,7 @@ class UsersMixin(JiraClient):
 
             if not isinstance(myself_data, dict):
                 error_msg = "Failed to get user data: response was not a dictionary."
-                if is_identity_privacy_runtime_active():
+                if error_details_redacted():
                     logger.error(
                         "%s Response type: %s",
                         error_msg,
@@ -105,7 +106,7 @@ class UsersMixin(JiraClient):
 
             if account_id is None:
                 error_msg = "Could not find accountId, key, or name in user data"
-                if not is_identity_privacy_runtime_active():
+                if not error_details_redacted():
                     error_msg = f"{error_msg}: {str(myself_data)[:200]}"
                 raise ValueError(error_msg)
 
@@ -123,7 +124,7 @@ class UsersMixin(JiraClient):
                     "increase MCP_ATLASSIAN_VALIDATION_CACHE_TTL to reduce "
                     "validation call frequency."
                 ) from http_err
-            if is_identity_privacy_runtime_active():
+            if error_details_redacted():
                 logger.error(
                     "HTTP error getting current user account ID: status=%s",
                     (
@@ -151,7 +152,7 @@ class UsersMixin(JiraClient):
             detail = privacy_safe_exception_detail(e)
             logger.error("Error getting current user account ID: %s", detail)
             error_msg = "Unable to get current user account ID"
-            if not is_identity_privacy_runtime_active():
+            if not error_details_redacted():
                 error_msg = f"{error_msg}: {detail}"
             raise Exception(error_msg) from e
 

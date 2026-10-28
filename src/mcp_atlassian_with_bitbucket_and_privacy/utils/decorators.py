@@ -16,7 +16,7 @@ from mcp_atlassian_with_bitbucket_and_privacy.exceptions import (
     MCPAtlassianAuthenticationError,
 )
 from mcp_atlassian_with_bitbucket_and_privacy.privacy.runtime import (
-    is_identity_privacy_runtime_active,
+    error_details_redacted,
     privacy_safe_exception_detail,
 )
 from mcp_atlassian_with_bitbucket_and_privacy.utils.toolsets import TOOLSET_TAG_PREFIX
@@ -111,7 +111,7 @@ def handle_tool_errors(func: F) -> F:
             raise
         except Exception as e:
             detail = privacy_safe_exception_detail(e)
-            if is_identity_privacy_runtime_active():
+            if error_details_redacted():
                 logger.error(
                     "Error in tool '%s': %s",
                     tool_name,
@@ -231,7 +231,7 @@ def handle_atlassian_api_errors(service_name: str = "Atlassian API") -> Callable
                     raise MCPAtlassianAuthenticationError(error_msg) from http_err
                 else:
                     operation_name = getattr(func, "__name__", "API operation")
-                    if is_identity_privacy_runtime_active():
+                    if error_details_redacted():
                         logger.error(
                             "HTTP error during %s: status=%s",
                             operation_name,
@@ -254,7 +254,7 @@ def handle_atlassian_api_errors(service_name: str = "Atlassian API") -> Callable
                     detail,
                 )
                 message = f"{operation_name} returned an unexpected response"
-                if not is_identity_privacy_runtime_active():
+                if not error_details_redacted():
                     message = (
                         f"{operation_name} returned an unexpected response from "
                         f"{service_name}: missing key {e}"
@@ -269,7 +269,7 @@ def handle_atlassian_api_errors(service_name: str = "Atlassian API") -> Callable
                     detail,
                 )
                 message = f"Network error during {operation_name}"
-                if not is_identity_privacy_runtime_active():
+                if not error_details_redacted():
                     message = f"{message}: {e}"
                 raise ValueError(message) from e
             except (ValueError, TypeError) as e:
@@ -281,7 +281,7 @@ def handle_atlassian_api_errors(service_name: str = "Atlassian API") -> Callable
                     detail,
                 )
                 message = f"Error processing {operation_name} results"
-                if not is_identity_privacy_runtime_active():
+                if not error_details_redacted():
                     message = f"{message}: {e}"
                 raise ValueError(message) from e
             except Exception as e:  # noqa: BLE001 - Intentional fallback with logging
@@ -292,14 +292,14 @@ def handle_atlassian_api_errors(service_name: str = "Atlassian API") -> Callable
                     operation_name,
                     detail,
                 )
-                if not is_identity_privacy_runtime_active():
+                if not error_details_redacted():
                     logger.debug(
                         "Full exception details for %s:",
                         operation_name,
                         exc_info=True,
                     )
                 message = f"Unexpected error during {operation_name}"
-                if not is_identity_privacy_runtime_active():
+                if not error_details_redacted():
                     message = f"{message}: {e}"
                 raise RuntimeError(message) from e
 
