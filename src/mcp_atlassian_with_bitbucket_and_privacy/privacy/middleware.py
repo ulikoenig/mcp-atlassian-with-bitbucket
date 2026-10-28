@@ -14,8 +14,10 @@ from fastmcp.exceptions import ToolError
 from fastmcp.server.dependencies import get_http_request
 from fastmcp.server.middleware import CallNext, Middleware, MiddlewareContext
 from fastmcp.tools import ToolResult
+from pydantic import ValidationError
 
 from .alias_roundtrip import (
+    AliasResolutionError,
     AliasRoundtripRegistry,
     begin_alias_caller_scope,
     begin_alias_roundtrip_registry_scope,
@@ -54,6 +56,32 @@ logger = logging.getLogger(
 )
 
 _StructuredKind = Literal["dict", "wrap", "wrap_json_string"]
+
+
+def _error_chain(exc: BaseException) -> list[BaseException]:
+    """Return exc and its causes; FastMCP wraps tool errors in a ToolError."""
+    chain: list[BaseException] = []
+    current: BaseException | None = exc
+    while current is not None and current not in chain:
+        chain.append(current)
+        current = current.__cause__
+    return chain
+
+
+def _error_hint(exc: Exception) -> str:
+    """Return a short remedy for well-known failure classes, else an empty string."""
+    chain = _error_chain(exc)
+    if any(isinstance(item, ValidationError) for item in chain):
+        return (
+            "Hint: the tool arguments do not match its schema; pass only the "
+            "parameters defined in the tool schema (tools/list)"
+        )
+    if any(isinstance(item, AliasResolutionError) for item in chain):
+        return (
+            "Hint: aliases are valid only for the same caller and day; "
+            "read the object again in this session before writing"
+        )
+    return ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -138,14 +166,22 @@ class PrivacyFilterMiddleware(Middleware):
             try:
                 result = await call_next(context)
             except Exception as exc:  # noqa: BLE001 - outward boundary must redact
+                # Log access is limited to the operator, so the complete error
+                # is logged and returned to the client to keep it diagnosable.
                 logger.error(
-                    "Tool %s failed inside identity privacy runtime after %s",
+                    "Tool %s failed inside identity privacy runtime after %s: %s",
                     tool_name,
                     type(exc).__name__,
+                    exc,
+                    exc_info=True,
                 )
                 message = (
-                    f"Tool '{tool_name}' failed while identity privacy was enabled"
+                    f"Tool '{tool_name}' failed while identity privacy was enabled: "
+                    f"{type(exc).__name__}: {exc}"
                 )
+                hint = _error_hint(exc)
+                if hint:
+                    message = f"{message}. {hint}"
                 raise ToolError(message) from exc
 
             if policy.category is ResponseCategory.RAW:

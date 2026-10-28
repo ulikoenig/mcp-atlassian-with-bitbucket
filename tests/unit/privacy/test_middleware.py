@@ -299,7 +299,7 @@ async def test_invalid_adapter_output_shape_fails_closed() -> None:
 
 
 @pytest.mark.anyio
-async def test_tool_error_does_not_leak_response_or_log_detail(
+async def test_tool_error_reports_full_detail_in_message_and_log(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     server = _server_with_adapter(ReplacingAdapter())
@@ -312,8 +312,11 @@ async def test_tool_error_does_not_leak_response_or_log_detail(
     with caplog.at_level(logging.ERROR), pytest.raises(ToolError) as exc_info:
         await server.call_tool("jira_get_user_profile", {})
 
-    assert "CANARY-PERSON-123" not in str(exc_info.value)
-    assert "CANARY-PERSON-123" not in caplog.text
+    # Operator decision: errors are returned and logged completely so that
+    # they stay diagnosable; log access is restricted to the operator.
+    assert "failed while identity privacy was enabled" in str(exc_info.value)
+    assert "CANARY-PERSON-123" in str(exc_info.value)
+    assert "CANARY-PERSON-123" in caplog.text
 
 
 @pytest.mark.anyio

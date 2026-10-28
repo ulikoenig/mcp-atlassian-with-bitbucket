@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from collections.abc import Callable
 from contextvars import ContextVar, Token
 
@@ -52,13 +53,31 @@ def is_identity_privacy_runtime_active() -> bool:
     return _privacy_runtime_active.get()
 
 
+def error_details_redacted() -> bool:
+    """Return whether error texts must be reduced to the exception type.
+
+    Response data is always pseudonymized while privacy mode is active. Error
+    texts are returned and logged completely by default, because log access is
+    restricted to the operator and truncated errors are not diagnosable. Set
+    ``IDENTITY_PRIVACY_REDACT_ERRORS=true`` to restore the redacted behaviour.
+    """
+    if not is_identity_privacy_runtime_active():
+        return False
+    return os.getenv("IDENTITY_PRIVACY_REDACT_ERRORS", "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+
+
 def privacy_safe_value(value: object) -> str:
     """Return a redacted diagnostic value while privacy mode is active."""
     return "<redacted>" if is_identity_privacy_runtime_active() else str(value)
 
 
 def privacy_safe_exception_detail(error: BaseException) -> str:
-    """Return only the exception type while privacy mode is active."""
-    if is_identity_privacy_runtime_active():
+    """Return only the exception type while error redaction is active."""
+    if error_details_redacted():
         return type(error).__name__
     return str(error).strip() or type(error).__name__
