@@ -1,6 +1,7 @@
 """Tests for the OAuth utilities."""
 
 import json
+import sys
 import time
 import urllib.parse
 from unittest.mock import MagicMock, call, patch
@@ -1279,6 +1280,10 @@ class TestTokenFilePermissionsRegression:
     """
 
     @pytest.mark.security_regression
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="Windows exposes ACL-backed files through different POSIX mode bits",
+    )
     def test_saved_token_file_is_not_group_or_world_readable(self, tmp_path) -> None:
         """The persisted OAuth token file must be owner-only (0o600)."""
         import os

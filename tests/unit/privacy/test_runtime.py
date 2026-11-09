@@ -51,8 +51,7 @@ def test_runtime_scope_is_isolated_between_concurrent_tasks() -> None:
     try:
         assert is_identity_privacy_runtime_active() is True
         assert privacy_safe_value("CANARY") == "<redacted>"
-        # Error texts stay complete by default; only data values are masked.
-        assert privacy_safe_exception_detail(ValueError("CANARY")) == "CANARY"
+        assert privacy_safe_exception_detail(ValueError("CANARY")) == "ValueError"
     finally:
         reset_identity_privacy_runtime(token)
 
@@ -62,12 +61,15 @@ def test_runtime_scope_is_isolated_between_concurrent_tasks() -> None:
 def test_error_redaction_can_be_enabled_by_environment(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv("IDENTITY_PRIVACY_REDACT_ERRORS", "true")
     assert error_details_redacted() is False  # not inside a privacy runtime
 
     token = begin_identity_privacy_runtime()
     try:
+        monkeypatch.delenv("IDENTITY_PRIVACY_REDACT_ERRORS", raising=False)
         assert error_details_redacted() is True
         assert privacy_safe_exception_detail(ValueError("CANARY")) == "ValueError"
+        monkeypatch.setenv("IDENTITY_PRIVACY_REDACT_ERRORS", "false")
+        assert error_details_redacted() is False
+        assert privacy_safe_exception_detail(ValueError("CANARY")) == "CANARY"
     finally:
         reset_identity_privacy_runtime(token)

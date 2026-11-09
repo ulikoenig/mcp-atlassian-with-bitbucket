@@ -323,10 +323,7 @@ async def test_roundtrip_across_tool_calls_and_foreign_caller_block() -> None:
 
     with pytest.raises(
         ToolError,
-        match=(
-            "failed while identity privacy was enabled: "
-            ".*unknown, expired, or unauthorized.*Hint: aliases"
-        ),
+        match=("failed while identity privacy was enabled\\. Hint: aliases"),
     ):
         await server.call_tool(
             "jira_assign_issue",
@@ -335,7 +332,10 @@ async def test_roundtrip_across_tool_calls_and_foreign_caller_block() -> None:
 
     with pytest.raises(
         ToolError,
-        match="(?s)ValidationError: .*page_id.*Hint: the tool arguments do not match",
+        match=(
+            "failed while identity privacy was enabled\\. "
+            "Hint: the tool arguments do not match"
+        ),
     ):
         await server.call_tool(
             "jira_assign_issue",

@@ -37,6 +37,15 @@ _AMBIGUOUS_MIME_TYPES = frozenset(
 _IMAGE_EXTENSIONS = frozenset(
     {".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".bmp"}
 )
+_MIME_TYPE_ALIASES = {
+    "application/x-zip-compressed": "application/zip",
+}
+
+
+def _guess_mime_type(filename: str) -> str:
+    """Return a platform-independent MIME type for a filename."""
+    guessed = mimetypes.guess_type(filename)[0] or "application/octet-stream"
+    return _MIME_TYPE_ALIASES.get(guessed, guessed)
 
 
 def is_image_attachment(
@@ -133,6 +142,6 @@ def fetch_and_encode_attachment(
     encoded = base64.b64encode(data_bytes).decode("ascii")
 
     if mime_type is None:
-        mime_type = mimetypes.guess_type(filename)[0] or "application/octet-stream"
+        mime_type = _guess_mime_type(filename)
 
     return encoded, mime_type, actual_size

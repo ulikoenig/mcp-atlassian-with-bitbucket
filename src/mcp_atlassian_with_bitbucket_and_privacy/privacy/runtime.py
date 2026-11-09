@@ -57,18 +57,14 @@ def error_details_redacted() -> bool:
     """Return whether error texts must be reduced to the exception type.
 
     Response data is always pseudonymized while privacy mode is active. Error
-    texts are returned and logged completely by default, because log access is
-    restricted to the operator and truncated errors are not diagnosable. Set
-    ``IDENTITY_PRIVACY_REDACT_ERRORS=true`` to restore the redacted behaviour.
+    texts are redacted by default. Set
+    ``IDENTITY_PRIVACY_REDACT_ERRORS=false`` only for explicitly opted-in
+    diagnostic environments.
     """
     if not is_identity_privacy_runtime_active():
         return False
-    return os.getenv("IDENTITY_PRIVACY_REDACT_ERRORS", "").strip().lower() in {
-        "1",
-        "true",
-        "yes",
-        "on",
-    }
+    setting = os.getenv("IDENTITY_PRIVACY_REDACT_ERRORS", "").strip().lower()
+    return setting not in {"0", "false", "no", "off"}
 
 
 def privacy_safe_value(value: object) -> str:
