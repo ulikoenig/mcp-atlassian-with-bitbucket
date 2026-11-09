@@ -180,9 +180,10 @@ class TestFileRoot:
         )
         monkeypatch.chdir(tmp_path)
         root = reset_file_root.configure_file_root_for_transport("streamable-http")
-        assert root == (
-            home / ".mcp-atlassian-with-bitbucket-and-privacy" / "files"
-        ).resolve()
+        assert (
+            root
+            == (home / ".mcp-atlassian-with-bitbucket-and-privacy" / "files").resolve()
+        )
         assert root.is_dir()
 
     @pytest.mark.security_regression
