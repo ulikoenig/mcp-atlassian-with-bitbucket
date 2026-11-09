@@ -42,6 +42,8 @@ from .registry import (
 from .runtime import (
     begin_identity_privacy_runtime,
     begin_mention_alias_resolver,
+    error_details_redacted,
+    privacy_safe_exception_detail,
     reset_identity_privacy_runtime,
     reset_mention_alias_resolver,
 )
@@ -166,18 +168,16 @@ class PrivacyFilterMiddleware(Middleware):
             try:
                 result = await call_next(context)
             except Exception as exc:  # noqa: BLE001 - outward boundary must redact
-                # Log access is limited to the operator, so the complete error
-                # is logged and returned to the client to keep it diagnosable.
+                detail = privacy_safe_exception_detail(exc)
                 logger.error(
                     "Tool %s failed inside identity privacy runtime after %s: %s",
                     tool_name,
                     type(exc).__name__,
-                    exc,
-                    exc_info=True,
+                    detail,
+                    exc_info=not error_details_redacted(),
                 )
                 message = (
-                    f"Tool '{tool_name}' failed while identity privacy was enabled: "
-                    f"{type(exc).__name__}: {exc}"
+                    f"Tool '{tool_name}' failed while identity privacy was enabled"
                 )
                 hint = _error_hint(exc)
                 if hint:

@@ -2,10 +2,12 @@
 
 from unittest.mock import patch
 
+import httpx
 import pytest
 
 from mcp_atlassian_with_bitbucket_and_privacy.bitbucket.client import BitbucketClient
 from mcp_atlassian_with_bitbucket_and_privacy.bitbucket.config import BitbucketConfig
+from mcp_atlassian_with_bitbucket_and_privacy.servers.bitbucket import _resolve_ref
 
 
 @pytest.fixture
@@ -998,3 +1000,64 @@ class TestDeleteTagServer:
             "/projects/PROJ/repos/my-repo/tags/v1.0.0",
             base_url="https://bitbucket.company.com/rest/git/latest",
         )
+
+
+class TestServerGetFileContent:
+    """get_file_content on Server/DC must read the whole file at the given ref."""
+
+    @patch.object(BitbucketClient, "_validate_connection")
+    @patch.object(BitbucketClient, "_request")
+    def test_uses_raw_endpoint_with_ref(
+        self, mock_request, mock_validate, server_config
+    ):
+        mock_request.return_value.text = "<revision>26.8-SNAPSHOT</revision>"
+        client = BitbucketClient(config=server_config)
+        result = client.get_file_content(
+            repo_slug="repo", file_path="pom.xml", ref="support/26.8"
+        )
+        assert result == "<revision>26.8-SNAPSHOT</revision>"
+        mock_request.assert_called_once_with(
+            "GET",
+            "/projects/PROJ/repos/repo/raw/pom.xml",
+            params={"at": "support/26.8"},
+            raw_response=True,
+        )
+
+    @patch.object(BitbucketClient, "_validate_connection")
+    @patch.object(BitbucketClient, "_request")
+    def test_not_truncated_to_one_page(
+        self, mock_request, mock_validate, server_config
+    ):
+        content = "\n".join(f"line {i}" for i in range(2000))
+        mock_request.return_value.text = content
+        client = BitbucketClient(config=server_config)
+        assert client.get_file_content(repo_slug="repo", file_path="big.txt") == content
+
+    @patch.object(BitbucketClient, "_validate_connection")
+    @patch.object(BitbucketClient, "_request")
+    def test_unknown_ref_raises(self, mock_request, mock_validate, server_config):
+        mock_request.side_effect = httpx.HTTPStatusError(
+            "404",
+            request=httpx.Request("GET", "http://x"),
+            response=httpx.Response(404),
+        )
+        client = BitbucketClient(config=server_config)
+        with pytest.raises(httpx.HTTPStatusError):
+            client.get_file_content(repo_slug="repo", file_path="a", ref="nope")
+
+
+class TestResolveRef:
+    """The 'at' alias must never fall back silently to the default branch."""
+
+    def test_at_alias(self):
+        assert _resolve_ref(None, "support/26.8") == "support/26.8"
+
+    def test_ref_only(self):
+        assert _resolve_ref("main", None) == "main"
+
+    def test_none(self):
+        assert _resolve_ref(None, None) is None
+
+    def test_conflict(self):
+        with pytest.raises(ValueError):
+            _resolve_ref("main", "other")

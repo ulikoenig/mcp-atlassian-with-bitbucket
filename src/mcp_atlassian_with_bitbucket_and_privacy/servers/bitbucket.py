@@ -25,6 +25,20 @@ bitbucket_mcp = FastMCP(
 )
 
 
+def _resolve_ref(ref: str | None, at: str | None) -> str | None:
+    """Merge the ``ref`` parameter with its ``at`` alias.
+
+    ``at`` is the name of the revision parameter in the Bitbucket REST API.
+    Clients that pass it must not silently get the default branch.
+
+    Raises:
+        ValueError: If both are given with different values.
+    """
+    if ref and at and ref != at:
+        raise ValueError("Pass either 'ref' or 'at', not both with different values.")
+    return ref or at
+
+
 def _resolve_bitbucket_reviewers(
     reviewers: str | None,
     client: BitbucketClient,
@@ -1450,6 +1464,13 @@ async def get_file_content(
             default=None,
         ),
     ] = None,
+    at: Annotated[
+        str | None,
+        Field(
+            description="Alias for ref (parameter name of the Bitbucket REST API).",
+            default=None,
+        ),
+    ] = None,
     workspace: Annotated[
         str | None,
         Field(description="Workspace slug (Cloud).", default=None),
@@ -1464,7 +1485,7 @@ async def get_file_content(
     return client.get_file_content(
         repo_slug=repo_slug,
         file_path=file_path,
-        ref=ref,
+        ref=_resolve_ref(ref, at),
         workspace=workspace,
         project_key=project_key,
     )
@@ -1484,6 +1505,13 @@ async def browse_directory(
         str | None,
         Field(description="Branch, tag, or commit hash.", default=None),
     ] = None,
+    at: Annotated[
+        str | None,
+        Field(
+            description="Alias for ref (parameter name of the Bitbucket REST API).",
+            default=None,
+        ),
+    ] = None,
     workspace: Annotated[
         str | None,
         Field(description="Workspace slug (Cloud).", default=None),
@@ -1502,7 +1530,7 @@ async def browse_directory(
     result = client.browse_directory(
         repo_slug=repo_slug,
         path=path,
-        ref=ref,
+        ref=_resolve_ref(ref, at),
         workspace=workspace,
         project_key=project_key,
         max_results=max_results,
@@ -1571,6 +1599,13 @@ async def get_file_blame(
         str | None,
         Field(description="Branch, tag, or commit hash.", default=None),
     ] = None,
+    at: Annotated[
+        str | None,
+        Field(
+            description="Alias for ref (parameter name of the Bitbucket REST API).",
+            default=None,
+        ),
+    ] = None,
     workspace: Annotated[
         str | None,
         Field(description="Workspace slug (Cloud).", default=None),
@@ -1585,7 +1620,7 @@ async def get_file_blame(
     result = client.get_file_blame(
         repo_slug=repo_slug,
         file_path=file_path,
-        ref=ref,
+        ref=_resolve_ref(ref, at),
         workspace=workspace,
         project_key=project_key,
     )
@@ -1606,6 +1641,13 @@ async def get_file_history(
         str | None,
         Field(description="Branch, tag, or commit hash.", default=None),
     ] = None,
+    at: Annotated[
+        str | None,
+        Field(
+            description="Alias for ref (parameter name of the Bitbucket REST API).",
+            default=None,
+        ),
+    ] = None,
     workspace: Annotated[
         str | None,
         Field(description="Workspace slug (Cloud).", default=None),
@@ -1624,7 +1666,7 @@ async def get_file_history(
     result = client.get_file_history(
         repo_slug=repo_slug,
         file_path=file_path,
-        ref=ref,
+        ref=_resolve_ref(ref, at),
         workspace=workspace,
         project_key=project_key,
         max_results=max_results,

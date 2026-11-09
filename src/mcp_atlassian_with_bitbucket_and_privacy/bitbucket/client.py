@@ -2216,14 +2216,13 @@ class BitbucketClient:
             project = project_key or self.config.project_key
             if not project:
                 raise ValueError("Project key is required for Bitbucket Server/DC")
-            path = f"/projects/{project}/repos/{repo_slug}/browse/{file_path}"
+            # /browse returns the file in pages of lines (500 by default) and
+            # would silently truncate longer files; /raw returns it whole.
+            path = f"/projects/{project}/repos/{repo_slug}/raw/{file_path}"
             if ref:
                 params["at"] = ref
-            data = self._request("GET", path, params=params)
-            # Server returns lines array
-            if isinstance(data, dict) and "lines" in data:
-                return "\n".join(line.get("text", "") for line in data["lines"])
-            return str(data)
+            response = self._request("GET", path, params=params, raw_response=True)
+            return str(response.text)
 
     def browse_directory(
         self,
