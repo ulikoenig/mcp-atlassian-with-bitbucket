@@ -1048,7 +1048,7 @@ async def test_create_page_with_content_file(
     """content_file should load the body from disk and be passed to the fetcher."""
     body = "# Heading\n\nFrom a file."
     fp = tmp_path / "page.md"
-    fp.write_text(body, encoding="utf-8")
+    fp.write_bytes(body.encode("utf-8"))
     monkeypatch.chdir(tmp_path)  # content_file is confined to the workspace
 
     await client.call_tool(

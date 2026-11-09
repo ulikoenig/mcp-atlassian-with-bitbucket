@@ -478,7 +478,10 @@ def test_confluence_fetcher_attachment_method_calls():
             patch("os.path.isabs", return_value=True),
             patch("os.path.basename", return_value="test.txt"),
             patch("os.path.getsize", return_value=100),
-            patch("builtins.open", MagicMock()),
+            patch(
+                "mcp_atlassian_with_bitbucket_and_privacy.confluence.attachments.open_confined",
+                MagicMock(),
+            ),
         ):
             result = fetcher.upload_attachment("123", "/path/to/test.txt")
             assert result["success"] is True
