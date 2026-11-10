@@ -92,6 +92,9 @@ def mock_jira_fetcher():
     mock_fetcher.get_available_transitions.return_value = []
     mock_fetcher.get_issue_watchers.return_value = {"watchCount": 0, "watchers": []}
     mock_fetcher.get_worklogs.return_value = []
+    # Default: the fixture issue is not an Epic, so epic_summary is
+    # reported not-applicable and get_epic_summary is never called.
+    mock_fetcher._is_epic_issue_type.return_value = False
 
     # Configure search_issues to return fixture data
     def mock_search_issues(jql, **kwargs):
@@ -327,6 +330,14 @@ def mock_jira_fetcher():
 
     mock_get_user_profile.side_effect = side_effect_func
     mock_fetcher.get_user_profile_by_identifier = mock_get_user_profile
+    mock_fetcher.get_current_user_profile.return_value = {
+        "account_id": "5b10ac8d82e05b22cc7d4ef5",
+        "display_name": "Current User",
+        "name": "Current User",
+        "email": "current.user@example.com",
+        "avatar_url": None,
+        "groups": {"size": 1, "items": [{"name": "jira-users"}]},
+    }
 
     mock_service_desk = MagicMock()
     mock_service_desk.to_simplified_dict.return_value = {
@@ -671,49 +682,6 @@ async def test_get_issue(jira_client, mock_jira_fetcher):
         properties=None,
         update_history=True,
     )
-
-
-@pytest.mark.anyio
-@patch(
-    "src.mcp_atlassian_with_bitbucket_and_privacy.servers.jira.is_identity_privacy_runtime_active",
-    return_value=True,
-)
-async def test_get_issue_privacy_runtime_requests_field_metadata(
-    mock_privacy_runtime,
-    jira_client,
-    mock_jira_fetcher,
-):
-    """Privacy mode requests names/schema without changing the tool schema."""
-    response = await jira_client.call_tool(
-        "jira_get_issue",
-        {"issue_key": "TEST-123"},
-    )
-
-    content = json.loads(response.content[0].text)
-    assert content["expand_param"] == "names,schema"
-    mock_privacy_runtime.assert_called()
-
-
-@pytest.mark.anyio
-@patch(
-    "src.mcp_atlassian_with_bitbucket_and_privacy.servers.jira.is_identity_privacy_runtime_active",
-    return_value=True,
-)
-async def test_search_privacy_runtime_requests_field_metadata(
-    mock_privacy_runtime,
-    jira_client,
-    mock_jira_fetcher,
-):
-    """Search also requests names/schema for schema-aware custom fields."""
-    mock_jira_fetcher.search_issues.reset_mock()
-
-    await jira_client.call_tool(
-        "jira_search",
-        {"jql": "project = TEST"},
-    )
-
-    assert mock_jira_fetcher.search_issues.call_args.kwargs["expand"] == "names,schema"
-    mock_privacy_runtime.assert_called()
 
 
 @pytest.mark.anyio
@@ -1266,6 +1234,24 @@ async def test_get_user_profile_tool_success(jira_client, mock_jira_fetcher):
         user_info["avatar_url"]
         == "https://test.atlassian.net/avatar/test.profile@example.com"
     )
+
+
+@pytest.mark.anyio
+async def test_get_user_profile_tool_me_uses_myself_once(
+    jira_client, mock_jira_fetcher
+):
+    """The existing profile tool returns the current user in one lookup."""
+    response = await jira_client.call_tool(
+        "jira_get_user_profile",
+        {"user_identifier": "me", "expand": "groups"},
+    )
+
+    mock_jira_fetcher.get_current_user_profile.assert_called_once_with(expand="groups")
+    mock_jira_fetcher.get_user_profile_by_identifier.assert_not_called()
+    result_data = json.loads(response.content[0].text)
+    assert result_data["success"] is True
+    assert result_data["user"]["account_id"] == ("5b10ac8d82e05b22cc7d4ef5")
+    assert result_data["user"]["groups"]["size"] == 1
 
 
 @pytest.mark.anyio
@@ -3060,43 +3046,6 @@ async def test_update_issue_transition_comment_is_added_once_when_refetch_fails(
 
 
 @pytest.mark.anyio
-@patch(
-    "src.mcp_atlassian_with_bitbucket_and_privacy.servers.jira.privacy_safe_exception_detail",
-    side_effect=lambda error: type(error).__name__,
-)
-async def test_update_issue_privacy_runtime_hides_partial_error_details(
-    mock_safe_detail,
-    jira_client,
-    mock_jira_fetcher,
-):
-    """Partial-success responses must not echo exception text in privacy mode."""
-    mock_jira_fetcher.get_available_transitions.return_value = [
-        {"id": "31", "name": "Done"}
-    ]
-    mock_jira_fetcher.transition_issue.side_effect = RuntimeError(
-        "CANARY TRANSITION PERSON"
-    )
-    mock_jira_fetcher.get_issue.side_effect = RuntimeError("CANARY REFETCH PERSON")
-
-    response = await jira_client.call_tool(
-        "jira_update_issue",
-        {
-            "issue_key": "TEST-123",
-            "transition": "Done",
-            "comment": "Transition comment",
-        },
-    )
-
-    result = json.loads(response.content[0].text)
-    assert result["operations_failed"] == [
-        "transition: RuntimeError",
-        "refetch: RuntimeError",
-    ]
-    assert "CANARY" not in response.content[0].text
-    assert mock_safe_detail.call_count == 2
-
-
-@pytest.mark.anyio
 async def test_update_issue_comment_visibility_uses_separate_comment(
     jira_client, mock_jira_fetcher
 ):
@@ -3430,78 +3379,6 @@ async def test_download_attachments_allows_normal_size(jira_client, mock_jira_fe
 
 
 @pytest.mark.anyio
-async def test_download_attachments_forwards_attachment_id(
-    jira_client, mock_jira_fetcher
-):
-    """A requested attachment ID is forwarded for single-payload downloads."""
-    mock_jira_fetcher.get_issue_attachment_contents.return_value = {
-        "success": True,
-        "issue_key": "TEST-123",
-        "total": 1,
-        "attachments": [],
-        "failed": [],
-    }
-
-    await jira_client.call_tool(
-        "jira_download_attachments",
-        {"issue_key": "TEST-123", "attachment_id": "42"},
-    )
-
-    mock_jira_fetcher.get_issue_attachment_contents.assert_called_once_with(
-        issue_key="TEST-123", attachment_id="42"
-    )
-
-
-@pytest.mark.anyio
-async def test_download_attachments_returns_all_normal_size_payloads(
-    jira_client, mock_jira_fetcher
-):
-    """All normal-size attachments are returned as separate payloads."""
-    import base64
-
-    first_data = b"first attachment"
-    second_data = b"second attachment"
-
-    mock_jira_fetcher.get_issue_attachment_contents.return_value = {
-        "success": True,
-        "issue_key": "TEST-123",
-        "total": 2,
-        "attachments": [
-            {
-                "filename": "first.txt",
-                "content_type": "text/plain",
-                "size": len(first_data),
-                "data": first_data,
-            },
-            {
-                "filename": "second.txt",
-                "content_type": "text/plain",
-                "size": len(second_data),
-                "data": second_data,
-            },
-        ],
-        "failed": [],
-    }
-
-    response = await jira_client.call_tool(
-        "jira_download_attachments",
-        {"issue_key": "TEST-123"},
-    )
-
-    summary = json.loads(response.content[0].text)
-    assert summary["success"] is True
-    assert summary["downloaded"] == 2
-    assert len(response.content) == 3
-
-    first_payload = json.loads(response.content[1].text)
-    second_payload = json.loads(response.content[2].text)
-    assert first_payload["filename"] == "first.txt"
-    assert base64.b64decode(first_payload["content"]) == first_data
-    assert second_payload["filename"] == "second.txt"
-    assert base64.b64decode(second_payload["content"]) == second_data
-
-
-@pytest.mark.anyio
 async def test_download_attachments_binary_uses_text_content(
     jira_client, mock_jira_fetcher
 ):
@@ -3742,7 +3619,7 @@ async def test_add_comment(jira_client, mock_jira_fetcher):
 async def test_add_comment_ignores_empty_optional_fields(
     jira_client, mock_jira_fetcher
 ):
-    """Test add_comment treats a client's default empty fields as omitted."""
+    """Empty visibility is omitted; explicit public=false is preserved (#1726)."""
     mock_jira_fetcher._is_internal_only_project.return_value = False
 
     response = await jira_client.call_tool(
@@ -3756,7 +3633,7 @@ async def test_add_comment_ignores_empty_optional_fields(
     )
 
     mock_jira_fetcher.add_comment.assert_called_once_with(
-        "TEST-123", "Test comment body", None, public=None
+        "TEST-123", "Test comment body", None, public=False
     )
 
     result = json.loads(response.content[0].text)
@@ -3788,8 +3665,9 @@ async def test_add_comment_restricted_visibility_with_client_default_false(
     """A client's default public=false must not break a restricted comment.
 
     Some MCP clients auto-fill omitted optional fields, sending public=false
-    alongside a real visibility. Forwarding that false would trip the
-    public/visibility conflict and break a restricted comment that used to work.
+    alongside a real visibility. That pairing cannot be intentional (public and
+    visibility are mutually exclusive), so the false is dropped while an
+    explicit false without visibility is preserved (#1726).
     """
     mock_jira_fetcher._is_internal_only_project.return_value = False
 
@@ -3838,24 +3716,25 @@ async def test_add_comment_forwards_false_for_internal_only_project(
 
 
 @pytest.mark.anyio
-async def test_add_comment_drops_client_default_false_on_ordinary_project(
+async def test_add_comment_preserves_explicit_false_on_ordinary_project(
     jira_client, mock_jira_fetcher
 ):
-    """On an unlisted project, a bare false stays "omitted".
+    """Explicit public=false must reach the client even off the internal-only list.
 
-    Some MCP clients auto-fill an omitted optional boolean as false. Forwarding
-    that would route ordinary Jira comments through the ServiceDesk API, which
-    answers 403 for non-JSM issues. public=true still routes, as before.
+    Dropping False to None here made JSM internal comments customer-visible
+    (#1726). public=true and an omitted public keep their prior routing.
     """
     mock_jira_fetcher._is_internal_only_project.return_value = False
     base_args = {"issue_key": "TEST-123", "body": "Test comment body"}
 
     await jira_client.call_tool("jira_add_comment", {**base_args, "public": False})
     await jira_client.call_tool("jira_add_comment", {**base_args, "public": True})
+    await jira_client.call_tool("jira_add_comment", base_args)
 
     assert mock_jira_fetcher.add_comment.call_args_list == [
-        call("TEST-123", "Test comment body", None, public=None),
+        call("TEST-123", "Test comment body", None, public=False),
         call("TEST-123", "Test comment body", None, public=True),
+        call("TEST-123", "Test comment body", None, public=None),
     ]
 
 
@@ -4430,6 +4309,88 @@ async def test_get_issue_include_worklogs(jira_client, mock_jira_fetcher):
 
 
 @pytest.mark.anyio
+async def test_get_issue_include_epic_summary_on_epic(jira_client, mock_jira_fetcher):
+    """include=epic_summary aggregates children when the issue is an Epic."""
+    mock_jira_fetcher._is_epic_issue_type.return_value = True
+    mock_jira_fetcher.get_epic_summary.return_value = {
+        "total_children": 3,
+        "by_status": {"Done": 2, "Open": 1},
+        "by_assignee": {"acc-1": 2, "unassigned": 1},
+        "assignee_names": {"acc-1": "Alice"},
+        "by_type": {"Story": 3},
+        "completion_percentage": 66.7,
+        "partial": False,
+        "truncated": False,
+    }
+
+    response = await jira_client.call_tool(
+        "jira_get_issue",
+        {"issue_key": "TEST-123", "include": "epic_summary"},
+    )
+    content = json.loads(response.content[0].text)
+    assert content["epic_summary"]["applicable"] is True
+    assert content["epic_summary"]["completion_percentage"] == 66.7
+    assert content["epic_summary"]["by_assignee"] == {"acc-1": 2, "unassigned": 1}
+    # Aggregate-only by default: no child list unless opted in.
+    assert "children" not in content["epic_summary"]
+    mock_jira_fetcher.get_epic_summary.assert_called_once_with(
+        epic_key="TEST-123", max_children=100, include_children=False
+    )
+
+
+@pytest.mark.anyio
+async def test_get_issue_include_epic_summary_children_opt_in(
+    jira_client, mock_jira_fetcher
+):
+    """epic_summary_children opts into the compact child list."""
+    mock_jira_fetcher._is_epic_issue_type.return_value = True
+    mock_jira_fetcher.get_epic_summary.return_value = {
+        "total_children": 1,
+        "by_status": {"Done": 1},
+        "by_assignee": {"acc-1": 1},
+        "assignee_names": {"acc-1": "Alice"},
+        "by_type": {"Story": 1},
+        "completion_percentage": 100.0,
+        "partial": False,
+        "truncated": False,
+        "children": [{"key": "TEST-1", "status": "Done", "assignee": "Alice"}],
+    }
+
+    response = await jira_client.call_tool(
+        "jira_get_issue",
+        {
+            "issue_key": "TEST-123",
+            "include": "epic_summary",
+            "epic_summary_children": True,
+            "max_epic_children": 25,
+        },
+    )
+    content = json.loads(response.content[0].text)
+    assert content["epic_summary"]["children"] == [
+        {"key": "TEST-1", "status": "Done", "assignee": "Alice"}
+    ]
+    mock_jira_fetcher.get_epic_summary.assert_called_once_with(
+        epic_key="TEST-123", max_children=25, include_children=True
+    )
+
+
+@pytest.mark.anyio
+async def test_get_issue_include_epic_summary_non_epic_makes_zero_calls(
+    jira_client, mock_jira_fetcher
+):
+    """A non-Epic reports applicable=false and fetches no children."""
+    mock_jira_fetcher._is_epic_issue_type.return_value = False
+
+    response = await jira_client.call_tool(
+        "jira_get_issue",
+        {"issue_key": "TEST-123", "include": "epic_summary"},
+    )
+    content = json.loads(response.content[0].text)
+    assert content["epic_summary"] == {"applicable": False, "reason": "not_epic"}
+    mock_jira_fetcher.get_epic_summary.assert_not_called()
+
+
+@pytest.mark.anyio
 async def test_get_issue_include_multiple(jira_client, mock_jira_fetcher):
     """get_issue with multiple include sections."""
     mock_jira_fetcher.get_remote_issue_links.return_value = []
@@ -4479,6 +4440,10 @@ async def test_get_issue_include_all(jira_client, mock_jira_fetcher):
     assert content["worklogs"] == [{"id": "10001"}]
     assert content["comments"] == []
     assert content["changelogs"] == []
+    # The fixture issue is not an Epic, so epic_summary is not-applicable
+    # and no children are fetched.
+    assert content["epic_summary"] == {"applicable": False, "reason": "not_epic"}
+    mock_jira_fetcher.get_epic_summary.assert_not_called()
 
     call_args = mock_jira_fetcher.get_issue.call_args
     assert call_args.kwargs["fields"] == ["summary", "status", "comment"]
@@ -5352,3 +5317,155 @@ async def test_download_attachments_as_base64_returns_images_as_text_content(
     assert response.content[1].type == "text"
     assert payload["filename"] == "screenshot.png"
     assert base64.b64decode(payload["content"]) == image_data
+
+
+@pytest.mark.anyio
+async def test_download_attachments_forwards_attachment_id(
+    jira_client, mock_jira_fetcher
+):
+    """A requested attachment ID is forwarded for single-payload downloads."""
+    mock_jira_fetcher.get_issue_attachment_contents.return_value = {
+        "success": True,
+        "issue_key": "TEST-123",
+        "total": 1,
+        "attachments": [],
+        "failed": [],
+    }
+
+    await jira_client.call_tool(
+        "jira_download_attachments",
+        {"issue_key": "TEST-123", "attachment_id": "42"},
+    )
+
+    mock_jira_fetcher.get_issue_attachment_contents.assert_called_once_with(
+        issue_key="TEST-123", attachment_id="42"
+    )
+
+
+@pytest.mark.anyio
+async def test_download_attachments_returns_all_normal_size_payloads(
+    jira_client, mock_jira_fetcher
+):
+    """All normal-size attachments are returned as separate payloads."""
+    import base64
+
+    first_data = b"first attachment"
+    second_data = b"second attachment"
+
+    mock_jira_fetcher.get_issue_attachment_contents.return_value = {
+        "success": True,
+        "issue_key": "TEST-123",
+        "total": 2,
+        "attachments": [
+            {
+                "filename": "first.txt",
+                "content_type": "text/plain",
+                "size": len(first_data),
+                "data": first_data,
+            },
+            {
+                "filename": "second.txt",
+                "content_type": "text/plain",
+                "size": len(second_data),
+                "data": second_data,
+            },
+        ],
+        "failed": [],
+    }
+
+    response = await jira_client.call_tool(
+        "jira_download_attachments",
+        {"issue_key": "TEST-123"},
+    )
+
+    summary = json.loads(response.content[0].text)
+    assert summary["success"] is True
+    assert summary["downloaded"] == 2
+    assert len(response.content) == 3
+
+    first_payload = json.loads(response.content[1].text)
+    second_payload = json.loads(response.content[2].text)
+    assert first_payload["filename"] == "first.txt"
+    assert base64.b64decode(first_payload["content"]) == first_data
+    assert second_payload["filename"] == "second.txt"
+    assert base64.b64decode(second_payload["content"]) == second_data
+
+
+@pytest.mark.anyio
+@patch(
+    "src.mcp_atlassian_with_bitbucket_and_privacy.servers.jira.is_identity_privacy_runtime_active",
+    return_value=True,
+)
+async def test_get_issue_privacy_runtime_requests_field_metadata(
+    mock_privacy_runtime,
+    jira_client,
+    mock_jira_fetcher,
+):
+    """Privacy mode requests names/schema without changing the tool schema."""
+    response = await jira_client.call_tool(
+        "jira_get_issue",
+        {"issue_key": "TEST-123"},
+    )
+
+    content = json.loads(response.content[0].text)
+    assert content["expand_param"] == "names,schema"
+    mock_privacy_runtime.assert_called()
+
+
+@pytest.mark.anyio
+@patch(
+    "src.mcp_atlassian_with_bitbucket_and_privacy.servers.jira.is_identity_privacy_runtime_active",
+    return_value=True,
+)
+async def test_search_privacy_runtime_requests_field_metadata(
+    mock_privacy_runtime,
+    jira_client,
+    mock_jira_fetcher,
+):
+    """Search also requests names/schema for schema-aware custom fields."""
+    mock_jira_fetcher.search_issues.reset_mock()
+
+    await jira_client.call_tool(
+        "jira_search",
+        {"jql": "project = TEST"},
+    )
+
+    assert mock_jira_fetcher.search_issues.call_args.kwargs["expand"] == "names,schema"
+    mock_privacy_runtime.assert_called()
+
+
+@pytest.mark.anyio
+@patch(
+    "src.mcp_atlassian_with_bitbucket_and_privacy.servers.jira.privacy_safe_exception_detail",
+    side_effect=lambda error: type(error).__name__,
+)
+async def test_update_issue_privacy_runtime_hides_partial_error_details(
+    mock_safe_detail,
+    jira_client,
+    mock_jira_fetcher,
+):
+    """Partial-success responses must not echo exception text in privacy mode."""
+    mock_jira_fetcher.get_available_transitions.return_value = [
+        {"id": "31", "name": "Done"}
+    ]
+    mock_jira_fetcher.transition_issue.side_effect = RuntimeError(
+        "CANARY TRANSITION PERSON"
+    )
+    mock_jira_fetcher.get_issue.side_effect = RuntimeError("CANARY REFETCH PERSON")
+
+    response = await jira_client.call_tool(
+        "jira_update_issue",
+        {
+            "issue_key": "TEST-123",
+            "transition": "Done",
+            "comment": "Transition comment",
+        },
+    )
+
+    result = json.loads(response.content[0].text)
+    assert result["operations_failed"] == [
+        "transition: RuntimeError",
+        "refetch: RuntimeError",
+    ]
+    assert "CANARY" not in response.content[0].text
+    assert mock_safe_detail.call_count == 2

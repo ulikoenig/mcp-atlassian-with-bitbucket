@@ -26,6 +26,7 @@ from .protocols import (
     ProjectsOperationsProto,
     UsersOperationsProto,
 )
+from .scope import allowed_project_keys
 
 logger = logging.getLogger("mcp-jira")
 
@@ -300,6 +301,7 @@ class IssuesMixin(
                 issue,
                 base_url=self.config.url if hasattr(self, "config") else None,
                 requested_fields=model_fields,
+                allowed_projects=allowed_project_keys(self.config),
             )
         except HTTPError as http_err:
             status_code = (
@@ -792,7 +794,9 @@ class IssuesMixin(
                 msg = f"Unexpected return value type from `jira.get_issue`: {type(issue_data)}"
                 logger.error(msg)
                 raise TypeError(msg)
-            return JiraIssue.from_api_response(issue_data)
+            return JiraIssue.from_api_response(
+                issue_data, allowed_projects=allowed_project_keys(self.config)
+            )
 
         except Exception as e:
             self._handle_create_issue_error(e, issue_type)
@@ -1115,6 +1119,16 @@ class IssuesMixin(
             elif key in field_map:  # Check original case for system fields
                 api_field_id = field_map[key]
                 logger.debug(f"Identified field '{key}' as standard system field ID.")
+
+            if api_field_id == "project":
+                # The project comes only from the explicit project_key argument,
+                # which is checked against JIRA_PROJECTS_FILTER. Letting an
+                # additional field replace it would bypass that check.
+                logger.warning(
+                    f"Ignoring additional field '{key}': set the project with "
+                    "project_key instead."
+                )
+                continue
 
             if api_field_id:
                 # Allow None values to pass through for clearing fields
@@ -1457,7 +1471,9 @@ class IssuesMixin(
                 logger.error(msg)
                 raise TypeError(msg)
             issue = JiraIssue.from_api_response(
-                issue_data, requested_fields=return_fields_param
+                issue_data,
+                requested_fields=return_fields_param,
+                allowed_projects=allowed_project_keys(self.config),
             )
 
             # Add attachment results to the response if available
@@ -1579,7 +1595,9 @@ class IssuesMixin(
                 logger.error(msg)
                 raise TypeError(msg)
             return JiraIssue.from_api_response(
-                issue_data, requested_fields=return_fields_param
+                issue_data,
+                requested_fields=return_fields_param,
+                allowed_projects=allowed_project_keys(self.config),
             )
 
         # Get available transitions (uses TransitionsMixin's normalized implementation)
@@ -1684,7 +1702,9 @@ class IssuesMixin(
             logger.error(msg)
             raise TypeError(msg)
         return JiraIssue.from_api_response(
-            issue_data, requested_fields=return_fields_param
+            issue_data,
+            requested_fields=return_fields_param,
+            allowed_projects=allowed_project_keys(self.config),
         )
 
     def delete_issue(self, issue_key: str) -> bool:
@@ -1838,7 +1858,9 @@ class IssuesMixin(
                 msg = f"Unexpected return value type from `jira.get_issue`: {type(issue_data)}"
                 logger.error(msg)
                 raise TypeError(msg)
-            return JiraIssue.from_api_response(issue_data)
+            return JiraIssue.from_api_response(
+                issue_data, allowed_projects=allowed_project_keys(self.config)
+            )
 
         except (ValueError, NotImplementedError, TypeError):
             raise
@@ -2136,6 +2158,7 @@ class IssuesMixin(
                                 base_url=self.config.url
                                 if hasattr(self, "config")
                                 else None,
+                                allowed_projects=allowed_project_keys(self.config),
                             )
                         )
                     except Exception as e:

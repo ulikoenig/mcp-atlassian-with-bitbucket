@@ -16,14 +16,16 @@ if TYPE_CHECKING:
 @dataclass(frozen=True)
 class MainAppContext:
     """
-    Context holding fully configured Jira, Confluence, and Bitbucket
-    configurations loaded from environment variables at server startup.
+    Context holding fully configured Jira and Confluence configurations
+    loaded from environment variables at server startup.
     These configurations include any global/default authentication details.
     """
 
     full_jira_config: JiraConfig | None = None
     full_confluence_config: ConfluenceConfig | None = None
     full_bitbucket_config: BitbucketConfig | None = None
+    has_deferred_jira_auth: bool = False
+    has_deferred_confluence_auth: bool = False
     read_only: bool = False
     enabled_tools: list[str] | None = None
     enabled_toolsets: set[str] | None = None

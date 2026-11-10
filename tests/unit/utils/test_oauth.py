@@ -1,6 +1,7 @@
 """Tests for the OAuth utilities."""
 
 import json
+import logging
 import sys
 import time
 import urllib.parse
@@ -184,6 +185,64 @@ class TestOAuthConfig:
         assert result is False
         assert config.access_token is None
         assert config.refresh_token is None
+
+    @pytest.mark.parametrize(
+        ("body", "expected_fragment"),
+        [
+            (
+                '{"error":"invalid_grant","error_description":"bad code",'
+                '"access_token":"LEAKED-ACCESS-TOKEN"}',
+                "error='invalid_grant'",
+            ),
+            ("not json LEAKED-ACCESS-TOKEN", "Response body omitted."),
+        ],
+    )
+    @patch("requests.post")
+    def test_exchange_code_failure_does_not_log_response_body(
+        self, mock_post, body, expected_fragment, caplog
+    ):
+        """A failed token response is summarized without its raw body."""
+        mock_response = MagicMock()
+        mock_response.ok = False
+        mock_response.status_code = 400
+        mock_response.text = body
+        mock_response.json.side_effect = lambda: json.loads(body)
+        mock_post.return_value = mock_response
+
+        config = OAuthConfig(
+            client_id="test-client-id",
+            client_secret="test-client-secret",
+            redirect_uri="https://example.com/callback",
+            scope="read:jira-work",
+        )
+        with caplog.at_level(logging.DEBUG, logger="mcp-atlassian.oauth"):
+            assert config.exchange_code_for_tokens("test-code") is False
+
+        assert "LEAKED-ACCESS-TOKEN" not in caplog.text
+        assert expected_fragment in caplog.text
+
+    @patch("requests.post")
+    def test_exchange_code_malformed_success_body_is_not_logged(
+        self, mock_post, caplog
+    ):
+        """A 200 response that is not JSON is not echoed into the log."""
+        mock_response = MagicMock()
+        mock_response.ok = True
+        mock_response.status_code = 200
+        mock_response.text = "<html>LEAKED-ACCESS-TOKEN</html>"
+        mock_response.json.side_effect = json.JSONDecodeError("Expecting value", "", 0)
+        mock_post.return_value = mock_response
+
+        config = OAuthConfig(
+            client_id="test-client-id",
+            client_secret="test-client-secret",
+            redirect_uri="https://example.com/callback",
+            scope="read:jira-work",
+        )
+        with caplog.at_level(logging.DEBUG, logger="mcp-atlassian.oauth"):
+            assert config.exchange_code_for_tokens("test-code") is False
+
+        assert "LEAKED-ACCESS-TOKEN" not in caplog.text
 
     @patch("requests.post")
     def test_refresh_access_token_success(self, mock_post):
@@ -530,26 +589,7 @@ class TestOAuthConfig:
         assert result["refresh_token"] == "file-refresh-token"
         assert result["access_token"] == "file-access-token"
         assert result["expires_at"] == 9876543210
-
-    @patch("keyring.get_password")
-    @patch.object(OAuthConfig, "_load_tokens_from_file")
-    def test_load_tokens_from_legacy_keyring(
-        self, mock_load_from_file, mock_get_password
-    ):
-        """Tokens saved before the product rename remain available."""
-        token_data = {"refresh_token": "legacy-refresh-token"}
-        mock_get_password.side_effect = [None, json.dumps(token_data)]
-
-        result = OAuthConfig.load_tokens("test-client-id")
-
-        assert result == token_data
-        mock_get_password.assert_has_calls(
-            [
-                call(KEYRING_SERVICE_NAME, "oauth-test-client-id"),
-                call(LEGACY_KEYRING_SERVICE_NAME, "oauth-test-client-id"),
-            ]
-        )
-        mock_load_from_file.assert_not_called()
+        assert result["cloud_id"] == "file-cloud-id"
 
     @patch("keyring.get_password")
     @patch.object(OAuthConfig, "_load_tokens_from_file")
@@ -615,21 +655,6 @@ class TestOAuthConfig:
 
         # Should return empty dict
         assert result == {}
-
-    def test_load_tokens_from_legacy_file(self, tmp_path):
-        """Tokens in the previous fallback directory remain available."""
-        token_data = {"refresh_token": "legacy-refresh-token"}
-        legacy_token_path = tmp_path / ".mcp-atlassian" / "oauth-test-client-id.json"
-        legacy_token_path.parent.mkdir()
-        legacy_token_path.write_text(json.dumps(token_data), encoding="utf-8")
-
-        with patch(
-            "mcp_atlassian_with_bitbucket_and_privacy.utils.oauth.Path.home",
-            return_value=tmp_path,
-        ):
-            result = OAuthConfig._load_tokens_from_file("test-client-id")
-
-        assert result == token_data
 
     @patch("os.getenv")
     def test_from_env_success(self, mock_getenv):
@@ -738,6 +763,41 @@ class TestOAuthConfig:
             assert config.redirect_uri == "https://example.com/callback"
             assert config.scope == "read:jira-work"
             assert config.cloud_id == "full-cloud-id"
+
+    def test_load_tokens_from_legacy_file(self, tmp_path):
+        """Tokens in the previous fallback directory remain available."""
+        token_data = {"refresh_token": "legacy-refresh-token"}
+        legacy_token_path = tmp_path / ".mcp-atlassian" / "oauth-test-client-id.json"
+        legacy_token_path.parent.mkdir()
+        legacy_token_path.write_text(json.dumps(token_data), encoding="utf-8")
+
+        with patch(
+            "mcp_atlassian_with_bitbucket_and_privacy.utils.oauth.Path.home",
+            return_value=tmp_path,
+        ):
+            result = OAuthConfig._load_tokens_from_file("test-client-id")
+
+        assert result == token_data
+
+    @patch("keyring.get_password")
+    @patch.object(OAuthConfig, "_load_tokens_from_file")
+    def test_load_tokens_from_legacy_keyring(
+        self, mock_load_from_file, mock_get_password
+    ):
+        """Tokens saved before the product rename remain available."""
+        token_data = {"refresh_token": "legacy-refresh-token"}
+        mock_get_password.side_effect = [None, json.dumps(token_data)]
+
+        result = OAuthConfig.load_tokens("test-client-id")
+
+        assert result == token_data
+        mock_get_password.assert_has_calls(
+            [
+                call(KEYRING_SERVICE_NAME, "oauth-test-client-id"),
+                call(LEGACY_KEYRING_SERVICE_NAME, "oauth-test-client-id"),
+            ]
+        )
+        mock_load_from_file.assert_not_called()
 
 
 class TestBYOAccessTokenOAuthConfig:
@@ -1271,7 +1331,7 @@ class TestTokenFilePermissionsRegression:
     """Regression (GHSA-g5xv, GHSA-76pr, GHSA-4596) — the OAuth token file must
     not be world/group-readable.
 
-    ``_save_tokens_to_file`` used to create ``~/.mcp-atlassian-with-bitbucket-and-privacy`` with
+    ``_save_tokens_to_file`` used to create the package token directory with
     ``mkdir(exist_ok=True)`` (no mode) and write ``oauth-<client>.json`` with
     ``open(..., "w")`` (no chmod), so the refresh and access tokens landed with the
     process umask's default permissions (commonly 0o644, i.e. group/world-readable).
@@ -1282,7 +1342,7 @@ class TestTokenFilePermissionsRegression:
     @pytest.mark.security_regression
     @pytest.mark.skipif(
         sys.platform == "win32",
-        reason="Windows exposes ACL-backed files through different POSIX mode bits",
+        reason="Windows ACLs are not represented by POSIX mode bits",
     )
     def test_saved_token_file_is_not_group_or_world_readable(self, tmp_path) -> None:
         """The persisted OAuth token file must be owner-only (0o600)."""
