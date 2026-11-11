@@ -323,6 +323,28 @@ never retried. Set `ATLASSIAN_RETRY_TOTAL=0` to turn retries off.
 | `ATLASSIAN_CIRCUIT_BREAKER_THRESHOLD` | Open a process-wide circuit breaker after this many consecutive `429/503` responses. `0` or unset disables it. |
 | `ATLASSIAN_CIRCUIT_BREAKER_COOLDOWN` | Circuit breaker cooldown in seconds before allowing a probe request (default: `30.0`). |
 
+### Client Header Check
+
+On the HTTP transports the server can check a header that identifies the
+calling client, for example `X-Example-Client: example/1.4.2` sent by a company
+wrapper. It is disabled unless `MCP_CLIENT_HEADER_NAME` is set. The header is
+**not a security control**: any caller can set it. It only distinguishes clients
+that announce themselves from those that do not. The check runs before any
+credential handling, and `/healthz` is never checked.
+
+| Variable | Description |
+|----------|-------------|
+| `MCP_CLIENT_HEADER_NAME` | Header to check. Unset or empty disables the check. |
+| `MCP_CLIENT_HEADER_MODE` | `count` (default) lets every request through and logs the announced value; `enforce` answers requests without a valid value with HTTP 426. An unknown value counts as `count`. |
+| `MCP_CLIENT_HEADER_PATTERN` | Regular expression a valid value must match completely (default: a short `name/version` token). |
+| `MCP_CLIENT_HEADER_REJECT_MESSAGE` | Text of the 426 response (default: `Unsupported or outdated client.`). |
+
+Each request logs one line `Client header <value>`, where the value is the
+announced token, `missing` or `invalid`. The log contains no address, no other
+header and no credentials. To roll the check out, run in `count` mode first,
+count the lines (`docker logs <container> 2>&1 | grep "Client header" | sort | uniq -c`)
+and switch to `enforce` once the unknown callers are accounted for.
+
 ## Proxy Configuration
 
 MCP Atlassian with Bitbucket and Privacy supports routing API requests through HTTP/HTTPS/SOCKS proxies,
