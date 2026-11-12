@@ -32,6 +32,10 @@ from mcp_atlassian_with_bitbucket_and_privacy.privacy import (
     IdentityPrivacyConfig,
     install_identity_privacy,
 )
+from mcp_atlassian_with_bitbucket_and_privacy.servers.client_header import (
+    ClientHeaderConfig,
+    ClientHeaderMiddleware,
+)
 from mcp_atlassian_with_bitbucket_and_privacy.utils.credential_command import (
     deferred_pat_outranks,
     get_resolver,
@@ -550,6 +554,13 @@ class AtlassianMCP(ErrorPreservingFastMCP[MainAppContext]):
             auth_mounts=auth_mounts,
         )
         final_middleware_list = [user_token_mw]
+        # Optional client header check (opt-in): outermost, so it runs before any
+        # credential handling.
+        client_header_config = ClientHeaderConfig.from_env()
+        if client_header_config is not None:
+            final_middleware_list.insert(
+                0, Middleware(ClientHeaderMiddleware, config=client_header_config)
+            )
         if middleware:
             final_middleware_list.extend(middleware)
         app = super().http_app(

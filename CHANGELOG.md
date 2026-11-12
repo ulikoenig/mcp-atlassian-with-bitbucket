@@ -6,6 +6,13 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+**Client header check (opt-in)**
+
+- Optional ASGI middleware for the HTTP transports that counts or enforces a
+  client identification header (`MCP_CLIENT_HEADER_NAME`, `_MODE`, `_PATTERN`,
+  `_REJECT_MESSAGE`); disabled by default, `count` mode only logs the value,
+  `enforce` answers with HTTP 426; `/healthz` is exempt
+
 **Structured Identity Privacy (opt-in)**
 
 - Final FastMCP response guard for Jira, Confluence, and Bitbucket structured
