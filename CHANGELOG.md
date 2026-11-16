@@ -86,6 +86,13 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Jira creation resolves project issue type names case-insensitively to IDs and
+  accepts numeric IDs while retaining Epic and Subtask alias handling
+- Identity privacy preserves project and other Jira entity metadata, including
+  avatars, while continuing to protect nested users such as project leads
+- Jira creation exposes known identity-free HTTP 400 validation messages with
+  actionable hints; unknown error text remains redacted. `get_issue` no longer
+  includes worklogs when the `jira_worklog` toolset is disabled
 - Identity privacy: Bitbucket blame and compare responses are parsed, so author
   and committer identities are pseudonymized instead of passing through as text
 - Identity privacy: Confluence page mentions, profile macros, and Jira mentions use
@@ -95,10 +102,10 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
-- Identity privacy: tool errors are returned and logged completely (exception
-  class, message and, for known classes, a remedy hint) instead of being reduced
-  to the exception type; response data stays pseudonymized. Set
-  `IDENTITY_PRIVACY_REDACT_ERRORS=true` to restore the redacted error texts
+- Identity privacy: arbitrary tool error text is redacted by default. Setting
+  `IDENTITY_PRIVACY_REDACT_ERRORS=false` exposes diagnostic log details, not raw
+  client errors. Jira create validation uses a closed set of safe messages;
+  response identities remain protected
 - Renamed distribution, CLI, and Python import package to
   `mcp-atlassian-with-bitbucket-and-privacy`; retained the existing GitHub
   repository identity

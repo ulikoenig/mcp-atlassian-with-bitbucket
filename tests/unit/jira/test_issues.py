@@ -343,6 +343,52 @@ class TestIssuesMixin:
         assert issue.key == "TEST-123"
         assert issue.summary == "Test Issue"
 
+    @pytest.mark.parametrize(
+        ("requested_type", "available_types", "expected"),
+        [
+            ("Aufgabe", [{"id": "10101", "name": "Aufgabe"}], {"id": "10101"}),
+            ("aUfGaBe", [{"id": 10101, "name": "Aufgabe"}], {"id": "10101"}),
+            ("Unknown", [{"id": "10101", "name": "Aufgabe"}], {"name": "Unknown"}),
+            ("Task", [], {"name": "Task"}),
+            ("10101", [], {"id": "10101"}),
+            ("Epic", [{"id": "10102", "name": "Epic"}], {"id": "10102"}),
+            ("Epic", [{"id": "10102", "name": "Team Epic"}], {"id": "10102"}),
+            (
+                "Subtask",
+                [{"id": "10103", "name": "Child", "subtask": True}],
+                {"id": "10103"},
+            ),
+            (
+                "Sub-task",
+                [{"id": "10103", "name": "Sub-Task", "subtask": True}],
+                {"id": "10103"},
+            ),
+        ],
+    )
+    def test_create_issue_resolves_project_type(
+        self, issues_mixin, make_issue_data, requested_type, available_types, expected
+    ):
+        """Localized names and aliases use IDs, never a conflicting REST name."""
+        issues_mixin.config.url = "https://jira.example.test"
+        issues_mixin.get_project_issue_types = MagicMock(return_value=available_types)
+        issues_mixin.get_create_fields = MagicMock(return_value=[])
+        issues_mixin._prepare_epic_fields = MagicMock()
+        issues_mixin.jira.get_issue.return_value = make_issue_data()
+
+        def create_stub(*, fields):
+            assert fields["issuetype"] == expected
+            return {"key": "TEST-123"}
+
+        issues_mixin.jira.create_issue.side_effect = create_stub
+        issue = issues_mixin.create_issue(
+            "TEST", "Type resolution", requested_type, parent="TEST-1"
+        )
+
+        assert issue.key == "TEST-123"
+        sent = issues_mixin.jira.create_issue.call_args.kwargs["fields"]
+        assert sent["parent"] == {"key": "TEST-1"}
+        assert issues_mixin._prepare_epic_fields.called is (requested_type == "Epic")
+
     def test_create_issue_textarea_custom_field_uses_cloud_v3(
         self, issues_mixin: IssuesMixin, make_issue_data
     ):

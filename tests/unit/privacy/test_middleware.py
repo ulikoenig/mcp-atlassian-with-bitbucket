@@ -10,6 +10,8 @@ from typing import Any
 import pytest
 from fastmcp import FastMCP
 from fastmcp.exceptions import ToolError
+from requests import Response
+from requests.exceptions import HTTPError
 
 from mcp_atlassian_with_bitbucket_and_privacy.privacy import (
     CurrentIdentityResolver,
@@ -315,6 +317,114 @@ async def test_tool_error_redacts_detail_in_message_and_log(
     assert "failed while identity privacy was enabled" in str(exc_info.value)
     assert "CANARY-PERSON-123" not in str(exc_info.value)
     assert "CANARY-PERSON-123" not in caplog.text
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("redact_errors", [None, "true", "false"])
+@pytest.mark.parametrize(
+    ("payload", "expected", "hint"),
+    [
+        (
+            {
+                "errors": {
+                    "security": (
+                        "Field 'security' cannot be set. It is not on the appropriate "
+                        "screen, or unknown."
+                    )
+                }
+            },
+            "Field 'security' cannot be set.",
+            "jira_get_create_fields",
+        ),
+        (
+            {"errorMessages": ["Der ausgew\u00e4hlte Vorgangstyp ist ung\u00fcltig."]},
+            "Der ausgew\u00e4hlte Vorgangstyp ist ung\u00fcltig.",
+            "jira_get_project_issue_types",
+        ),
+        (
+            {"errors": {"issuetype": "The issue type selected is invalid."}},
+            "The issue type selected is invalid.",
+            "jira_get_project_issue_types",
+        ),
+        (
+            {
+                "errors": {"CANARY-FIELD": "CANARY-PERSON-123"},
+                "errorMessages": ["The issue type selected is invalid."],
+            },
+            "<redacted>",
+            "jira_get_project_issue_types",
+        ),
+        (
+            {"errors": {"assignee": "CANARY-PERSON-123 cannot be assigned"}},
+            "<redacted>",
+            "jira_get_create_fields",
+        ),
+        (
+            {
+                "errorMessages": [
+                    "The issue type selected is invalid. CANARY-PERSON-123",
+                    "Field 'CANARY-PERSON-123' cannot be set. It is not on the "
+                    "appropriate screen, or unknown.",
+                ]
+            },
+            "<redacted>",
+            "jira_get_create_fields",
+        ),
+    ],
+)
+async def test_jira_create_validation_error_preserves_only_safe_details(
+    payload: dict[str, Any],
+    expected: str,
+    hint: str,
+    redact_errors: str | None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    if redact_errors is None:
+        monkeypatch.delenv("IDENTITY_PRIVACY_REDACT_ERRORS", raising=False)
+    else:
+        monkeypatch.setenv("IDENTITY_PRIVACY_REDACT_ERRORS", redact_errors)
+    server = _server_with_adapter(ReplacingAdapter())
+    response = Response()
+    response.status_code = 400
+    response._content = json.dumps(payload).encode()
+
+    @server.tool(name="jira_create_issue")
+    async def create() -> dict[str, str]:
+        raise HTTPError("CANARY-WRAPPER", response=response)
+
+    with pytest.raises(ToolError) as exc_info:
+        await server.call_tool("jira_create_issue", {})
+
+    message = str(exc_info.value)
+    assert "HTTP 400" in message
+    assert expected in message
+    assert "Hint:" in message
+    assert hint in message
+    assert "CANARY" not in message
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize(
+    ("status", "content"),
+    [(403, b'{"errorMessages":["CANARY"]}'), (400, b"CANARY"), (400, b"[]")],
+)
+async def test_jira_create_unstructured_errors_remain_redacted(
+    status: int, content: bytes
+) -> None:
+    server = _server_with_adapter(ReplacingAdapter())
+    response = Response()
+    response.status_code = status
+    response._content = content
+
+    @server.tool(name="jira_create_issue")
+    async def create() -> dict[str, str]:
+        raise HTTPError("CANARY", response=response)
+
+    with pytest.raises(ToolError) as exc_info:
+        await server.call_tool("jira_create_issue", {})
+
+    assert "failed while identity privacy was enabled" in str(exc_info.value)
+    assert "CANARY" not in str(exc_info.value)
 
 
 @pytest.mark.anyio

@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 from dataclasses import dataclass
 from typing import Any, Literal, cast
 
@@ -15,6 +16,7 @@ from fastmcp.server.dependencies import get_http_request
 from fastmcp.server.middleware import CallNext, Middleware, MiddlewareContext
 from fastmcp.tools import ToolResult
 from pydantic import ValidationError
+from requests.exceptions import HTTPError
 
 from .alias_roundtrip import (
     AliasResolutionError,
@@ -59,6 +61,19 @@ logger = logging.getLogger(
 
 _StructuredKind = Literal["dict", "wrap", "wrap_json_string"]
 
+_INVALID_ISSUE_TYPE_MESSAGES = frozenset(
+    {
+        "Der ausgew\u00e4hlte Vorgangstyp ist ung\u00fcltig.",
+        "The issue type selected is invalid.",
+    }
+)
+_CREATE_SCREEN_ERROR = re.compile(
+    r"Field '(?:security|summary|description|issuetype|priority|components|labels|"
+    r"project|assignee|reporter|fixVersions|versions|parent|duedate|environment|"
+    r"resolution|customfield_[0-9]+)' cannot be set\. "
+    r"It is not on the appropriate screen, or unknown\."
+)
+
 
 def _error_chain(exc: BaseException) -> list[BaseException]:
     """Return exc and its causes; FastMCP wraps tool errors in a ToolError."""
@@ -84,6 +99,46 @@ def _error_hint(exc: Exception) -> str:
             "read the object again in this session before writing"
         )
     return ""
+
+
+def _jira_create_validation_detail(exc: Exception) -> str | None:
+    """Expose only closed, identity-free Jira 400 templates, never arbitrary text."""
+    for error in _error_chain(exc):
+        if not isinstance(error, HTTPError):
+            continue
+        response = error.response
+        if response is None or response.status_code != 400:
+            continue
+        try:
+            payload = response.json()
+        except ValueError:
+            return None
+        if not isinstance(payload, dict):
+            return None
+        messages = payload.get("errorMessages", [])
+        fields = payload.get("errors", {})
+        if not isinstance(messages, list) or not isinstance(fields, dict):
+            return None
+        safe_messages: list[str] = []
+        hints: list[str] = []
+        for message in [*messages, *fields.values()]:
+            if isinstance(message, str) and message in _INVALID_ISSUE_TYPE_MESSAGES:
+                safe_messages.append(message)
+                hints.append(
+                    "issue type name not accepted; pass the id from "
+                    "jira_get_project_issue_types"
+                )
+            elif isinstance(message, str) and _CREATE_SCREEN_ERROR.fullmatch(message):
+                safe_messages.append(message)
+                hints.append("field not on create screen; check jira_get_create_fields")
+            else:
+                safe_messages.append("<redacted>")
+        if not safe_messages:
+            return None
+        detail = "; ".join(dict.fromkeys(safe_messages))
+        hint = "; ".join(dict.fromkeys(hints)) or "check jira_get_create_fields"
+        return f"HTTPError (HTTP 400): {detail} Hint: {hint}"
+    return None
 
 
 @dataclass(frozen=True, slots=True)
@@ -179,6 +234,13 @@ class PrivacyFilterMiddleware(Middleware):
                 message = (
                     f"Tool '{tool_name}' failed while identity privacy was enabled"
                 )
+                validation_detail = (
+                    _jira_create_validation_detail(exc)
+                    if tool_name == "jira_create_issue"
+                    else None
+                )
+                if validation_detail is not None:
+                    message = f"Tool '{tool_name}' failed: {validation_detail}"
                 hint = _error_hint(exc)
                 if hint:
                     message = f"{message}. {hint}"

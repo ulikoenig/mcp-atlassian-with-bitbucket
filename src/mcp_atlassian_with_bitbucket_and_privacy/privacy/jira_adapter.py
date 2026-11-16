@@ -56,6 +56,20 @@ _USER_OBJECT_HINTS = (
         }
     )
 )
+_NON_USER_FIELDS = frozenset(
+    {
+        "project",
+        "projects",
+        "components",
+        "issue_type",
+        "issuetype",
+        "status",
+        "priority",
+        "fixVersions",
+        "fix_versions",
+        "versions",
+    }
+)
 _STANDARD_USER_FIELDS = frozenset(
     {
         "assignee",
@@ -447,6 +461,12 @@ class JiraIdentityAdapter:
         field_name: str | None,
     ) -> bool:
         if self._is_unassigned(value):
+            return False
+        # Jira entities also have avatars/display names. Only explicit user
+        # identifiers override their schema role; nested users are still walked.
+        if field_name in _NON_USER_FIELDS and not set(value).intersection(
+            _USER_OBJECT_HINTS - _URL_KEYS - _DISPLAY_KEYS
+        ):
             return False
         if field_name in _STANDARD_USER_FIELDS:
             return bool(

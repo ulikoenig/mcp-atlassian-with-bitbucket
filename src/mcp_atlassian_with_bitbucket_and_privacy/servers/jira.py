@@ -2053,7 +2053,10 @@ async def create_issue(
         str,
         Field(
             description=(
-                "Issue type (e.g. 'Task', 'Bug', 'Story', 'Epic', 'Subtask'). "
+                "Project issue type name or numeric ID "
+                "(e.g. 'Task', 'Bug', 'Story', 'Epic', 'Subtask', '10001'). "
+                "Names are resolved case-insensitively using "
+                "jira_get_project_issue_types; IDs avoid localized-name ambiguity. "
                 "The available types depend on your project configuration. "
                 "For subtasks, use 'Subtask' (not 'Sub-task') and include parent in additional_fields."
             ),
@@ -2111,7 +2114,7 @@ async def create_issue(
         ctx: The FastMCP context.
         project_key: The JIRA project key.
         summary: Summary/title of the issue.
-        issue_type: Issue type (e.g., 'Task', 'Bug', 'Story', 'Epic', 'Subtask').
+        issue_type: Project issue type name or numeric ID.
         assignee: Assignee's user identifier (string): Email, display name, or account ID (e.g., 'user@example.com', 'John Doe', 'accountid:...').
         description: Issue description in Markdown format.
         components: Comma-separated list of component names.

@@ -631,7 +631,7 @@ class IssuesMixin(
         Args:
             project_key: The key of the project
             summary: The issue summary
-            issue_type: The type of issue to create
+            issue_type: The project issue type name or numeric ID to create
             description: The issue description
             assignee: The username or account ID of the assignee
             components: List of component names to assign (e.g., ["Frontend", "API"])
@@ -661,22 +661,9 @@ class IssuesMixin(
                     "Provide issue_type like 'Task', 'Story', or 'Bug'."
                 )
 
-            # Handle Epic and Subtask issue type names across different languages
-            actual_issue_id = None
-            if self._is_epic_issue_type(issue_type) and issue_type.lower() == "epic":
-                # If the user provided "Epic" but we need to find the localized name
-                epic_type_id = self._find_epic_issue_type_id(project_key)
-                if epic_type_id:
-                    actual_issue_id = epic_type_id
-                    logger.info(f"Using localized Epic issue type id: {epic_type_id}")
-            elif self._normalize_issue_type_name(issue_type) == "subtask":
-                # If the user provided "Subtask" but we need to find the localized name
-                subtask_type_id = self._find_subtask_issue_type_id(project_key)
-                if subtask_type_id:
-                    actual_issue_id = subtask_type_id
-                    logger.info(
-                        f"Using localized Subtask issue type id: {subtask_type_id}"
-                    )
+            actual_issue_id = self._resolve_create_issue_type_id(
+                project_key, issue_type
+            )
 
             # Prepare fields
             fields: dict[str, Any] = {
@@ -684,7 +671,7 @@ class IssuesMixin(
                 "summary": summary,
                 "issuetype": {"name": issue_type}
                 if actual_issue_id is None
-                else {"id": actual_issue_id, "name": issue_type},
+                else {"id": actual_issue_id},
             }
 
             # Add description if provided (convert from Markdown to Jira format)
@@ -802,6 +789,30 @@ class IssuesMixin(
             self._handle_create_issue_error(e, issue_type)
             raise  # Re-raise after logging
 
+    def _resolve_create_issue_type_id(
+        self, project_key: str, issue_type: str
+    ) -> str | None:
+        """Resolve project display names without sending localized REST names."""
+        if issue_type.isascii() and issue_type.isdecimal():
+            return issue_type
+        issue_types = self.get_project_issue_types(project_key)
+        for candidate in issue_types:
+            name = candidate.get("name")
+            type_id = candidate.get("id")
+            if (
+                isinstance(name, str)
+                and name.casefold() == issue_type.casefold()
+                and type_id is not None
+            ):
+                return str(type_id)
+        if issue_type.casefold() == "epic":
+            return self._find_epic_issue_type_id(project_key, issue_types=issue_types)
+        if self._normalize_issue_type_name(issue_type) == "subtask":
+            return self._find_subtask_issue_type_id(
+                project_key, issue_types=issue_types
+            )
+        return None
+
     def _is_epic_issue_type(self, issue_type: str) -> bool:
         """
         Check if an issue type is an Epic, handling localized names.
@@ -828,17 +839,24 @@ class IssuesMixin(
 
         return issue_type.lower() in epic_names or "epic" in issue_type.lower()
 
-    def _find_epic_issue_type_id(self, project_key: str) -> str | None:
+    def _find_epic_issue_type_id(
+        self,
+        project_key: str,
+        *,
+        issue_types: list[dict[str, Any]] | None = None,
+    ) -> str | None:
         """Find the Epic issue type ID for a project.
 
         Args:
             project_key: The project key
+            issue_types: Already fetched project metadata, when available
 
         Returns:
             The Epic issue type ID if found, None otherwise
         """
         try:
-            issue_types = self.get_project_issue_types(project_key)
+            if issue_types is None:
+                issue_types = self.get_project_issue_types(project_key)
             # First pass: prefer exact match on "Epic" (case-insensitive)
             for issue_type in issue_types:
                 type_name = issue_type.get("name", "")
@@ -889,18 +907,25 @@ class IssuesMixin(
         """
         return issue_type.lower().replace("-", "").replace(" ", "")
 
-    def _find_subtask_issue_type_id(self, project_key: str) -> str | None:
+    def _find_subtask_issue_type_id(
+        self,
+        project_key: str,
+        *,
+        issue_types: list[dict[str, Any]] | None = None,
+    ) -> str | None:
         """
         Find the best matching subtask issue type id for a project.
 
         Args:
             project_key: The project key
+            issue_types: Already fetched project metadata, when available
 
         Returns:
             The best matching subtask issue type id if found, None otherwise
         """
         try:
-            issue_types = self.get_project_issue_types(project_key)
+            if issue_types is None:
+                issue_types = self.get_project_issue_types(project_key)
 
             # Prefer a server-returned subtask issue type name that
             # normalizes to "subtask" before falling back.
@@ -910,12 +935,14 @@ class IssuesMixin(
                     issue_type.get("subtask", False)
                     and self._normalize_issue_type_name(type_name) == "subtask"
                 ):
-                    return issue_type.get("id")
+                    type_id = issue_type.get("id")
+                    return str(type_id) if type_id is not None else None
 
             # Final fallback: first available subtask-capable issue type.
             for issue_type in issue_types:
                 if issue_type.get("subtask", False):
-                    return issue_type.get("id")
+                    type_id = issue_type.get("id")
+                    return str(type_id) if type_id is not None else None
             return None
         except Exception as e:
             logger.warning(f"Could not get issue types for project {project_key}: {e}")

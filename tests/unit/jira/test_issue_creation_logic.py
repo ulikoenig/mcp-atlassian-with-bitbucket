@@ -121,9 +121,8 @@ def test_create_issue_uses_epic_id_when_found(issues_mixin):
     call_args = issues_mixin.jira.create_issue.call_args
     assert call_args is not None
     fields = call_args[1]["fields"]
-    assert "id" in fields["issuetype"].keys()
-    assert "name" in fields["issuetype"].keys()
-    assert fields["issuetype"]["id"] == "10001"
+    assert fields["issuetype"] == {"id": "10001"}
+    issues_mixin._prepare_epic_fields.assert_called_once()
 
 
 def test_create_issue_uses_subtask_id_when_found(issues_mixin):
@@ -143,9 +142,8 @@ def test_create_issue_uses_subtask_id_when_found(issues_mixin):
     call_args = issues_mixin.jira.create_issue.call_args
     assert call_args is not None
     fields = call_args[1]["fields"]
-    assert "id" in fields["issuetype"].keys()
-    assert "name" in fields["issuetype"].keys()
-    assert fields["issuetype"]["id"] == "10002"
+    assert fields["issuetype"] == {"id": "10002"}
+    issues_mixin._prepare_parent_fields.assert_called_once()
 
 
 def test_create_issue_falls_back_to_name_if_id_not_found(issues_mixin):

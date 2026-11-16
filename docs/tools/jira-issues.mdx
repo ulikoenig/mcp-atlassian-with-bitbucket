@@ -53,7 +53,7 @@ Create a new Jira issue with optional Epic link or parent for subtasks.
 |-----------|------|----------|-------------|
 | `project_key` | `string` | Yes | The JIRA project key (e.g. 'PROJ', 'DEV', 'ACV2'). This is the prefix of issue keys in your project. Never assume what it might be, always ask the user. |
 | `summary` | `string` | Yes | Summary/title of the issue |
-| `issue_type` | `string` | Yes | Issue type (e.g. 'Task', 'Bug', 'Story', 'Epic', 'Subtask'). The available types depend on your project configuration. For subtasks, use 'Subtask' (not 'Sub-task') and include parent in additional_fields. |
+| `issue_type` | `string` | Yes | Project issue type name or numeric ID (e.g. 'Task', 'Bug', 'Story', 'Epic', 'Subtask', '10001'). Names are resolved case-insensitively using jira_get_project_issue_types; IDs avoid localized-name ambiguity. The available types depend on your project configuration. For subtasks, use 'Subtask' (not 'Sub-task') and include parent in additional_fields. |
 | `assignee` | `string` | No | (Optional) Assignee user identifier: email, display name, account ID, or a caller-bound pid:v1: alias when identity alias roundtrip is enabled. |
 | `description` | `string` | No | Issue description in Markdown format. On Jira Cloud, use '`{expand:Title}`...`{expand}`' for a collapsible section and '`{status:color=green\|title=Done}`' for an inline status lozenge. |
 | `components` | `string` | No | (Optional) Comma-separated list of component names to assign (e.g., 'Frontend,API') |
