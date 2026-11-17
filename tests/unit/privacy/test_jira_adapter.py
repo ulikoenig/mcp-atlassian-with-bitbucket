@@ -3,8 +3,10 @@
 from datetime import datetime, timezone
 from typing import Any
 
+import pytest
 from fastmcp import FastMCP
 
+from mcp_atlassian_with_bitbucket_and_privacy.models.jira import JiraIssue
 from mcp_atlassian_with_bitbucket_and_privacy.privacy import (
     CurrentIdentity,
     IdentityPolicy,
@@ -91,6 +93,92 @@ def test_pseudonymizes_simplified_dc_user() -> None:
         "actor_type": "human",
     }
     assert "Sensitive" not in str(result)
+
+
+@pytest.mark.parametrize(
+    "tool_name", ["jira_create_issue", "jira_get_issue", "jira_search"]
+)
+def test_issue_project_avatar_is_not_an_identity(tool_name: str) -> None:
+    issue = JiraIssue.from_api_response(
+        {
+            "id": "10001",
+            "key": "TEST-1",
+            "fields": {
+                "summary": "Synthetic issue",
+                "project": {
+                    "key": "TEST",
+                    "name": "Example project",
+                    "avatarUrls": {"48x48": "https://jira.example/project-avatar"},
+                },
+            },
+        }
+    ).to_simplified_dict()
+    if tool_name == "jira_create_issue":
+        payload = {"message": "Issue created successfully", "issue": issue}
+    elif tool_name == "jira_search":
+        payload = {"issues": [issue]}
+    else:
+        payload = issue
+
+    result = _adapter().transform(
+        tool_name=tool_name,
+        policy=ToolResponsePolicy(
+            service=ToolService.JIRA, category=ResponseCategory.STRUCTURED
+        ),
+        value=payload,
+        current_identity=None,
+    )
+    if tool_name == "jira_create_issue":
+        result = result["issue"]
+    elif tool_name == "jira_search":
+        result = result["issues"][0]
+    assert result["project"] == issue["project"]
+    assert result["project"]["key"] == "TEST"
+    assert "identity_class" not in result["project"]
+
+
+@pytest.mark.parametrize(
+    "field",
+    [
+        "project",
+        "components",
+        "issue_type",
+        "issuetype",
+        "status",
+        "priority",
+        "fixVersions",
+        "fix_versions",
+        "versions",
+    ],
+)
+@pytest.mark.parametrize("mode", [PrivacyMode.PSEUDONYMIZE, PrivacyMode.ANONYMIZE])
+def test_non_user_objects_preserve_metadata_but_protect_lead(
+    field: str, mode: PrivacyMode
+) -> None:
+    entity = {
+        "id": "10001",
+        "key": "TEST",
+        "name": "Example metadata",
+        "avatar_url": "https://jira.example/entity-avatar",
+        "lead": {"name": "human01", "displayName": "Synthetic Lead"},
+    }
+    result = _transform({field: [entity]}, adapter=_adapter(mode))[field][0]
+
+    assert result["key"] == "TEST"
+    assert result["name"] == "Example metadata"
+    assert result["avatar_url"] == entity["avatar_url"]
+    assert "identity_class" not in result
+    assert "identity_class" in result["lead"]
+    assert result["lead"]["name"] != "human01"
+    assert entity["lead"]["name"] == "human01"
+
+
+def test_explicit_user_identifiers_override_non_user_field_hint() -> None:
+    result = _transform(
+        {"project": {"accountId": "synthetic-account", "displayName": "Synthetic User"}}
+    )
+    assert result["project"]["accountId"].startswith("pid:v1:")
+    assert "Synthetic User" not in str(result)
 
 
 def test_cloud_display_name_is_not_mistaken_for_login() -> None:

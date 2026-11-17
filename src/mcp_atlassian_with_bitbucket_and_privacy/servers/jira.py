@@ -53,6 +53,9 @@ from mcp_atlassian_with_bitbucket_and_privacy.utils.media import (
     fetch_and_encode_attachment,
     is_image_attachment,
 )
+from mcp_atlassian_with_bitbucket_and_privacy.utils.toolsets import (
+    get_enabled_toolsets,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -159,6 +162,7 @@ _GET_ISSUE_INCLUDE_OUTPUT_KEYS: dict[str, str] = {
     "worklogs": "worklogs",
     "epic_summary": "epic_summary",
 }
+_WORKLOG_TOOLSET = "jira_worklog"
 _GET_ISSUE_INCLUDE_ALIASES = {
     "comment": "comments",
     "worklog": "worklogs",
@@ -992,10 +996,18 @@ async def get_issue(
             result["watchers"] = {}
 
     if "worklogs" in include_sections:
-        try:
-            result["worklogs"] = jira.get_worklogs(issue_key)
-        except Exception:  # noqa: BLE001
+        # Worklogs are only reachable when the jira_worklog toolset is enabled;
+        # otherwise include=worklogs would bypass a disabled toolset.
+        if _WORKLOG_TOOLSET not in get_enabled_toolsets():
             result["worklogs"] = []
+            result["worklogs_unavailable"] = (
+                f"Toolset '{_WORKLOG_TOOLSET}' is disabled on this server."
+            )
+        else:
+            try:
+                result["worklogs"] = jira.get_worklogs(issue_key)
+            except Exception:  # noqa: BLE001
+                result["worklogs"] = []
 
     if "epic_summary" in include_sections:
         # Gate on the already-fetched issue type: a non-Epic makes ZERO
@@ -2041,7 +2053,10 @@ async def create_issue(
         str,
         Field(
             description=(
-                "Issue type (e.g. 'Task', 'Bug', 'Story', 'Epic', 'Subtask'). "
+                "Project issue type name or numeric ID "
+                "(e.g. 'Task', 'Bug', 'Story', 'Epic', 'Subtask', '10001'). "
+                "Names are resolved case-insensitively using "
+                "jira_get_project_issue_types; IDs avoid localized-name ambiguity. "
                 "The available types depend on your project configuration. "
                 "For subtasks, use 'Subtask' (not 'Sub-task') and include parent in additional_fields."
             ),
@@ -2099,7 +2114,7 @@ async def create_issue(
         ctx: The FastMCP context.
         project_key: The JIRA project key.
         summary: Summary/title of the issue.
-        issue_type: Issue type (e.g., 'Task', 'Bug', 'Story', 'Epic', 'Subtask').
+        issue_type: Project issue type name or numeric ID.
         assignee: Assignee's user identifier (string): Email, display name, or account ID (e.g., 'user@example.com', 'John Doe', 'accountid:...').
         description: Issue description in Markdown format.
         components: Comma-separated list of component names.
