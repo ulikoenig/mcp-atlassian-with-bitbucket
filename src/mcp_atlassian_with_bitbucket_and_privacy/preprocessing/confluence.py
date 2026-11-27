@@ -9,6 +9,7 @@ import re
 import sys
 import tempfile
 import xml.etree.ElementTree as ET
+from collections import deque
 from collections.abc import Callable, Iterator
 from pathlib import Path
 from typing import Any
@@ -18,6 +19,7 @@ import markdown  # type: ignore[import-untyped]
 import md2conf.converter as md2conf_converter
 from bs4 import BeautifulSoup, NavigableString, Tag
 from markdown import (  # type: ignore[import-untyped]
+    blockparser,
     blockprocessors,
     inlinepatterns,
     preprocessors,
@@ -508,11 +510,34 @@ def _detab(processor: Any, text: str, length: int | None = None) -> tuple[str, s
     return "\n".join(kept), text[pos:]
 
 
+class _BlockQueue(deque[str]):
+    """Pending Markdown blocks; processors consume and put back the first block."""
+
+    def pop(self, index: int = -1) -> str:
+        if index == 0:
+            return self.popleft()
+        value = self[index]
+        del self[index]
+        return value
+
+
 def _linear_block_retests(converter: Any) -> None:
-    """Give the block processors that read a whole block linear retests."""
-    processors = getattr(getattr(converter, "parser", None), "blockprocessors", None)
+    """Avoid shifting the pending blocks or rescanning a block on every retest."""
+    parser = getattr(converter, "parser", None)
+    processors = getattr(parser, "blockprocessors", None)
     if processors is None:
         return
+    parse_chunk = getattr(parser, "parseChunk", None)
+    if (
+        _has_parameters(parse_chunk, ["parent", "text"])
+        and getattr(parse_chunk, "__func__", None) is blockparser.BlockParser.parseChunk
+    ):
+        # Stock parseChunk uses a list. Every pop(0) or insert(0, ...) then
+        # shifts all remaining paragraphs, even when a processor declines a block.
+        def parse_chunk_with_queue(parent: ET.Element, text: str) -> None:
+            parser.parseBlocks(parent, _BlockQueue(text.split("\n\n")))
+
+        parser.parseChunk = parse_chunk_with_queue
     for name, attribute in _BLOCK_SEARCHES.items():
         if name not in processors:
             continue

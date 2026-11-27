@@ -797,6 +797,10 @@ def test_storage_conversion_matches_stock(monkeypatch: pytest.MonkeyPatch) -> No
         for _ in range(400)
     ]
     texts += [
+        # A footnote consumes the next indented block and leaves the following
+        # paragraph for the parser. Lists and references also share the queue.
+        "Intro[^n].\n\n[^n]: First.\n\n    Second.\n\nFollowing [link][ref]."
+        "\n\n- one\n\n- two\n\n[ref]: https://example.invalid",
         "# T\n\n- [ ] a\n- [x] b\n\n| a | b |\n|---|---|\n| 1 | 2 |\n\n"
         "```py\nx\n```\n\n> q [^1]\n\n[^1]: note\n\n<b>raw</b> ![i](a.png)",
         "[a](b) " * 300 + "\n\n" + "`c` *e* " * 300,
