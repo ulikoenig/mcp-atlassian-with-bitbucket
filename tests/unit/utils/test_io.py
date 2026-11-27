@@ -230,7 +230,31 @@ class TestFileRoot:
         monkeypatch.chdir("/")
         root = reset_file_root.configure_file_root_for_transport("stdio")
         assert root == Path("/").resolve()
+        # /etc is a symlink on macOS, and validate_safe_path resolves symlinks.
         assert validate_safe_path("/etc/hostname") == Path("/etc/hostname").resolve()
+
+    @pytest.mark.security_regression
+    @pytest.mark.parametrize("wide", ["root", "home"])
+    def test_stdio_warns_about_wide_root(
+        self, reset_file_root, tmp_path, monkeypatch, caplog, wide
+    ):
+        """stdio keeps a wide root (no behaviour change) but says so at start."""
+        home = tmp_path / "home"
+        home.mkdir()
+        monkeypatch.setattr(reset_file_root, "_home_dir", lambda: home)
+        monkeypatch.chdir("/" if wide == "root" else home)
+        with caplog.at_level("WARNING"):
+            root = reset_file_root.configure_file_root_for_transport("stdio")
+        assert root == (Path("/") if wide == "root" else home).resolve()
+        assert reset_file_root.FILES_DIR_ENV in caplog.text
+
+    def test_stdio_narrow_root_does_not_warn(
+        self, reset_file_root, tmp_path, monkeypatch, caplog
+    ):
+        monkeypatch.chdir(tmp_path)
+        with caplog.at_level("WARNING"):
+            reset_file_root.configure_file_root_for_transport("stdio")
+        assert reset_file_root.FILES_DIR_ENV not in caplog.text
 
     def test_is_in_cwd_root(self, reset_file_root, tmp_path, monkeypatch):
         monkeypatch.chdir(tmp_path)
@@ -267,6 +291,27 @@ def _swap_after_validation(monkeypatch, swap):
     monkeypatch.setattr(io_mod, "validate_safe_path", validate_then_swap)
 
 
+def _cannot_open_a_directory(monkeypatch):
+    """Make ``os.open`` refuse directories, as Windows does."""
+    real_open = os.open
+
+    def windows_open(path, flags, mode=0o777, *, dir_fd=None):
+        if os.path.isdir(path):
+            raise PermissionError(13, "Permission denied", str(path))
+        return real_open(path, flags, mode, dir_fd=dir_fd)
+
+    monkeypatch.setattr(os, "open", windows_open)
+
+
+def _symlink_or_skip(link: Path, target: Path, *, directory: bool = False) -> None:
+    try:
+        link.symlink_to(target, target_is_directory=directory)
+    except OSError as exc:
+        if getattr(exc, "winerror", None) == 1314:
+            pytest.skip("This Windows process lacks permission to create symlinks")
+        raise
+
+
 class TestOpenConfined:
     def test_reads_file_inside_boundary(self, boundary):
         from mcp_atlassian_with_bitbucket_and_privacy.utils.io import open_confined
@@ -289,14 +334,12 @@ class TestOpenConfined:
     def test_directory_swapped_to_symlink_is_refused(self, boundary, monkeypatch, mode):
         from mcp_atlassian_with_bitbucket_and_privacy.utils.io import open_confined
 
-        if os.name == "nt":
-            pytest.skip("Creating symlinks requires elevated Windows privileges")
         base, outside = boundary
 
         def swap():
             (base / "sub" / "in.txt").unlink()
             (base / "sub").rmdir()
-            (base / "sub").symlink_to(outside, target_is_directory=True)
+            _symlink_or_skip(base / "sub", outside, directory=True)
 
         _swap_after_validation(monkeypatch, swap)
         with pytest.raises(ValueError, match="outside"):
@@ -308,14 +351,12 @@ class TestOpenConfined:
     def test_file_swapped_to_symlink_is_refused(self, boundary, monkeypatch, mode):
         from mcp_atlassian_with_bitbucket_and_privacy.utils.io import open_confined
 
-        if os.name == "nt":
-            pytest.skip("Creating symlinks requires elevated Windows privileges")
         base, outside = boundary
         target = base / "sub" / "in.txt"
 
         def swap():
             target.unlink()
-            target.symlink_to(outside / "in.txt")
+            _symlink_or_skip(target, outside / "in.txt")
 
         _swap_after_validation(monkeypatch, swap)
         with pytest.raises(ValueError):
@@ -335,3 +376,111 @@ class TestOpenConfined:
         base, _ = boundary
         with pytest.raises(ValueError, match="Path traversal"):
             open_confined(base / ".." / "outside" / "in.txt", "rb", base_dir=base)
+
+    def test_opens_file_where_a_directory_cannot_be_opened(self, boundary, monkeypatch):
+        """A platform that cannot open a directory (Windows) still opens the file."""
+        base, _ = boundary
+        _cannot_open_a_directory(monkeypatch)
+        from mcp_atlassian_with_bitbucket_and_privacy.utils.io import open_confined
+
+        with open_confined(base / "sub" / "in.txt", "rb", base_dir=base) as f:
+            assert f.read() == b"inside"
+
+    @pytest.mark.security_regression
+    def test_symlink_is_refused_where_a_directory_cannot_be_opened(
+        self, boundary, monkeypatch
+    ):
+        """The fallback keeps refusing a symlink when no directory is opened."""
+        base, outside = boundary
+        target = base / "sub" / "in.txt"
+        _cannot_open_a_directory(monkeypatch)
+        from mcp_atlassian_with_bitbucket_and_privacy.utils.io import open_confined
+
+        def swap():
+            target.unlink()
+            _symlink_or_skip(target, outside / "in.txt")
+
+        _swap_after_validation(monkeypatch, swap)
+        with pytest.raises(ValueError):
+            open_confined(target, "rb", base_dir=base)
+        assert (outside / "in.txt").read_text() == "SECRET"
+
+    @pytest.mark.security_regression
+    @pytest.mark.skipif(
+        os.open not in os.supports_dir_fd, reason="needs dir_fd support"
+    )
+    def test_unopenable_directory_is_an_error_where_dir_fd_is_supported(
+        self, boundary, monkeypatch
+    ):
+        """With dir_fd support, a directory that cannot be opened is not
+        downgraded to the path-based open."""
+        base, _ = boundary
+        from mcp_atlassian_with_bitbucket_and_privacy.utils import io as io_mod
+
+        real_open = os.open
+
+        def refusing_open(path, flags, mode=0o777, *, dir_fd=None):
+            if dir_fd is None and os.path.isdir(path):
+                raise PermissionError(13, "Permission denied", str(path))
+            return real_open(path, flags, mode, dir_fd=dir_fd)
+
+        monkeypatch.setattr(io_mod.os, "open", refusing_open)
+        monkeypatch.setattr(
+            io_mod.os, "supports_dir_fd", os.supports_dir_fd | {refusing_open}
+        )
+        with pytest.raises(PermissionError):
+            io_mod.open_confined(base / "sub" / "in.txt", "rb", base_dir=base)
+
+    @pytest.mark.security_regression
+    @pytest.mark.skipif(
+        os.open not in os.supports_dir_fd, reason="needs dir_fd support"
+    )
+    @pytest.mark.parametrize("mode", ["rb", "wb"])
+    def test_parent_swapped_back_during_the_check_is_refused(
+        self, boundary, monkeypatch, mode
+    ):
+        """A parent that is a symlink when opened and a directory when checked
+        does not let the open reach the symlink's target."""
+        base, outside = boundary
+        from mcp_atlassian_with_bitbucket_and_privacy.utils import io as io_mod
+
+        sub, saved = base / "sub", base / "sub-saved"
+
+        def to_link():
+            sub.rename(saved)
+            sub.symlink_to(outside, target_is_directory=True)
+
+        def to_dir():
+            sub.unlink()
+            saved.rename(sub)
+
+        real_realpath = os.path.realpath
+        armed = {"on": False}
+
+        def swapping_realpath(path, *args, **kwargs):
+            if not armed["on"]:
+                return real_realpath(path, *args, **kwargs)
+            armed["on"] = False
+            to_dir()
+            try:
+                return real_realpath(path, *args, **kwargs)
+            finally:
+                to_link()
+
+        def arm():
+            to_link()
+            armed["on"] = True
+
+        _swap_after_validation(monkeypatch, arm)
+        monkeypatch.setattr(io_mod.os.path, "realpath", swapping_realpath)
+        try:
+            with pytest.raises(ValueError):
+                with io_mod.open_confined(sub / "in.txt", mode, base_dir=base) as f:
+                    if mode == "rb":
+                        f.read()
+                    else:
+                        f.write(b"overwritten")
+        finally:
+            if sub.is_symlink():
+                to_dir()
+        assert (outside / "in.txt").read_text() == "SECRET"

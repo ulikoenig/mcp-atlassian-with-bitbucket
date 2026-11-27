@@ -394,7 +394,7 @@ class TestGetFetcherExternalAuth:
                 return_value=request,
             ),
             patch(
-                "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.validate_url_for_ssrf",
+                "mcp_atlassian_with_bitbucket_and_privacy.servers.async_utils.validate_url_for_ssrf",
                 return_value=None,  # no SSRF issue
             ),
             patch(
@@ -449,7 +449,7 @@ class TestGetFetcherExternalAuth:
                 return_value=request,
             ),
             patch(
-                "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.validate_url_for_ssrf",
+                "mcp_atlassian_with_bitbucket_and_privacy.servers.async_utils.validate_url_for_ssrf",
                 return_value=None,
             ),
             patch(
@@ -501,7 +501,7 @@ class TestGetFetcherExternalAuth:
                 return_value=request,
             ),
             patch(
-                "mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies.validate_url_for_ssrf",
+                "mcp_atlassian_with_bitbucket_and_privacy.servers.async_utils.validate_url_for_ssrf",
                 return_value=None,
             ),
             patch(

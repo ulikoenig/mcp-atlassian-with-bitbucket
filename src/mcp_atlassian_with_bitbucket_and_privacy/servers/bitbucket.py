@@ -12,6 +12,9 @@ from mcp_atlassian_with_bitbucket_and_privacy.privacy.alias_roundtrip import (
     resolve_identity_alias,
 )
 from mcp_atlassian_with_bitbucket_and_privacy.privacy.registry import ToolService
+from mcp_atlassian_with_bitbucket_and_privacy.servers.async_utils import (
+    run_fetcher_call,
+)
 from mcp_atlassian_with_bitbucket_and_privacy.servers.dependencies import (
     get_bitbucket_fetcher,
 )
@@ -96,7 +99,8 @@ async def list_repositories(
 ) -> str:
     """List repositories in a workspace (Cloud) or project (Server/DC)."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.list_repositories(
+    result = await run_fetcher_call(
+        client.list_repositories,
         workspace=workspace,
         project_key=project_key,
         query=query,
@@ -130,7 +134,8 @@ async def get_repository(
 ) -> str:
     """Get details of a specific repository."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.get_repository(
+    result = await run_fetcher_call(
+        client.get_repository,
         repo_slug=repo_slug,
         workspace=workspace,
         project_key=project_key,
@@ -169,7 +174,8 @@ async def create_repository(
 ) -> str:
     """Create a new repository."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.create_repository(
+    result = await run_fetcher_call(
+        client.create_repository,
         repo_slug=repo_slug,
         workspace=workspace,
         project_key=project_key,
@@ -214,7 +220,8 @@ async def update_repository(
 ) -> str:
     """Update repository settings."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.update_repository(
+    result = await run_fetcher_call(
+        client.update_repository,
         repo_slug=repo_slug,
         workspace=workspace,
         project_key=project_key,
@@ -248,7 +255,8 @@ async def delete_repository(
 ) -> str:
     """Delete a repository. This action is irreversible."""
     client = await get_bitbucket_fetcher(ctx)
-    client.delete_repository(
+    await run_fetcher_call(
+        client.delete_repository,
         repo_slug=repo_slug,
         workspace=workspace,
         project_key=project_key,
@@ -291,7 +299,8 @@ async def fork_repository(
 ) -> str:
     """Fork a repository."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.fork_repository(
+    result = await run_fetcher_call(
+        client.fork_repository,
         repo_slug=repo_slug,
         workspace=workspace,
         project_key=project_key,
@@ -324,7 +333,8 @@ async def list_forks(
 ) -> str:
     """List forks of a repository."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.list_forks(
+    result = await run_fetcher_call(
+        client.list_forks,
         repo_slug=repo_slug,
         workspace=workspace,
         project_key=project_key,
@@ -376,7 +386,8 @@ async def list_pull_requests(
 ) -> str:
     """List pull requests for a repository."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.list_pull_requests(
+    result = await run_fetcher_call(
+        client.list_pull_requests,
         repo_slug=repo_slug,
         workspace=workspace,
         project_key=project_key,
@@ -415,7 +426,8 @@ async def get_pull_request(
 ) -> str:
     """Get details of a specific pull request."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.get_pull_request(
+    result = await run_fetcher_call(
+        client.get_pull_request,
         repo_slug=repo_slug,
         pr_id=pr_id,
         workspace=workspace,
@@ -454,7 +466,8 @@ async def get_pull_request_diff(
 ) -> str:
     """Get the diff for a pull request."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.get_pull_request_diff(
+    result = await run_fetcher_call(
+        client.get_pull_request_diff,
         repo_slug=repo_slug,
         pr_id=pr_id,
         workspace=workspace,
@@ -509,8 +522,11 @@ async def create_pull_request(
 ) -> str:
     """Create a new pull request."""
     client = await get_bitbucket_fetcher(ctx)
-    reviewer_list = _resolve_bitbucket_reviewers(reviewers, client)
-    result = client.create_pull_request(
+    reviewer_list = await run_fetcher_call(
+        _resolve_bitbucket_reviewers, reviewers, client
+    )
+    result = await run_fetcher_call(
+        client.create_pull_request,
         repo_slug=repo_slug,
         title=title,
         source_branch=source_branch,
@@ -559,7 +575,8 @@ async def merge_pull_request(
 ) -> str:
     """Merge a pull request."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.merge_pull_request(
+    result = await run_fetcher_call(
+        client.merge_pull_request,
         repo_slug=repo_slug,
         pr_id=pr_id,
         workspace=workspace,
@@ -595,7 +612,8 @@ async def add_pull_request_comment(
 ) -> str:
     """Add a comment to a pull request."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.add_pull_request_comment(
+    result = await run_fetcher_call(
+        client.add_pull_request_comment,
         repo_slug=repo_slug,
         pr_id=pr_id,
         content=content,
@@ -651,8 +669,11 @@ async def update_pull_request(
 ) -> str:
     """Update a pull request's title, description, destination, or reviewers."""
     client = await get_bitbucket_fetcher(ctx)
-    reviewer_list = _resolve_bitbucket_reviewers(reviewers, client)
-    result = client.update_pull_request(
+    reviewer_list = await run_fetcher_call(
+        _resolve_bitbucket_reviewers, reviewers, client
+    )
+    result = await run_fetcher_call(
+        client.update_pull_request,
         repo_slug=repo_slug,
         pr_id=pr_id,
         workspace=workspace,
@@ -689,7 +710,8 @@ async def decline_pull_request(
 ) -> str:
     """Decline a pull request."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.decline_pull_request(
+    result = await run_fetcher_call(
+        client.decline_pull_request,
         repo_slug=repo_slug,
         pr_id=pr_id,
         workspace=workspace,
@@ -722,7 +744,8 @@ async def approve_pull_request(
 ) -> str:
     """Approve a pull request."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.approve_pull_request(
+    result = await run_fetcher_call(
+        client.approve_pull_request,
         repo_slug=repo_slug,
         pr_id=pr_id,
         workspace=workspace,
@@ -755,7 +778,8 @@ async def unapprove_pull_request(
 ) -> str:
     """Remove approval from a pull request."""
     client = await get_bitbucket_fetcher(ctx)
-    client.unapprove_pull_request(
+    await run_fetcher_call(
+        client.unapprove_pull_request,
         repo_slug=repo_slug,
         pr_id=pr_id,
         workspace=workspace,
@@ -788,7 +812,8 @@ async def request_changes_pull_request(
 ) -> str:
     """Request changes on a pull request."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.request_changes_pull_request(
+    result = await run_fetcher_call(
+        client.request_changes_pull_request,
         repo_slug=repo_slug,
         pr_id=pr_id,
         workspace=workspace,
@@ -820,7 +845,8 @@ async def get_pull_request_commits(
 ) -> str:
     """Get the list of commits in a pull request."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.get_pull_request_commits(
+    result = await run_fetcher_call(
+        client.get_pull_request_commits,
         repo_slug=repo_slug,
         pr_id=pr_id,
         workspace=workspace,
@@ -853,7 +879,8 @@ async def list_pull_request_comments(
 ) -> str:
     """List all comments on a pull request."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.list_pull_request_comments(
+    result = await run_fetcher_call(
+        client.list_pull_request_comments,
         repo_slug=repo_slug,
         pr_id=pr_id,
         workspace=workspace,
@@ -896,7 +923,8 @@ async def add_inline_comment(
 ) -> str:
     """Add an inline comment on a specific file and line in a pull request."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.add_inline_comment(
+    result = await run_fetcher_call(
+        client.add_inline_comment,
         repo_slug=repo_slug,
         pr_id=pr_id,
         content=content,
@@ -937,7 +965,8 @@ async def reply_to_comment(
 ) -> str:
     """Reply to an existing pull request comment."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.reply_to_comment(
+    result = await run_fetcher_call(
+        client.reply_to_comment,
         repo_slug=repo_slug,
         pr_id=pr_id,
         comment_id=comment_id,
@@ -974,7 +1003,8 @@ async def update_comment(
 ) -> str:
     """Update an existing pull request comment."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.update_comment(
+    result = await run_fetcher_call(
+        client.update_comment,
         repo_slug=repo_slug,
         pr_id=pr_id,
         comment_id=comment_id,
@@ -1010,7 +1040,8 @@ async def delete_comment(
 ) -> str:
     """Delete a pull request comment."""
     client = await get_bitbucket_fetcher(ctx)
-    client.delete_comment(
+    await run_fetcher_call(
+        client.delete_comment,
         repo_slug=repo_slug,
         pr_id=pr_id,
         comment_id=comment_id,
@@ -1043,7 +1074,8 @@ async def list_pull_request_statuses(
 ) -> str:
     """List build statuses for a pull request."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.list_pull_request_statuses(
+    result = await run_fetcher_call(
+        client.list_pull_request_statuses,
         repo_slug=repo_slug,
         pr_id=pr_id,
         workspace=workspace,
@@ -1084,7 +1116,8 @@ async def list_branches(
 ) -> str:
     """List branches in a repository."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.list_branches(
+    result = await run_fetcher_call(
+        client.list_branches,
         repo_slug=repo_slug,
         workspace=workspace,
         project_key=project_key,
@@ -1121,7 +1154,8 @@ async def create_branch(
 ) -> str:
     """Create a new branch in a repository."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.create_branch(
+    result = await run_fetcher_call(
+        client.create_branch,
         repo_slug=repo_slug,
         branch_name=branch_name,
         start_point=start_point,
@@ -1155,7 +1189,8 @@ async def delete_branch(
 ) -> str:
     """Delete a branch from a repository."""
     client = await get_bitbucket_fetcher(ctx)
-    client.delete_branch(
+    await run_fetcher_call(
+        client.delete_branch,
         repo_slug=repo_slug,
         branch_name=branch_name,
         workspace=workspace,
@@ -1182,7 +1217,8 @@ async def get_branching_model(
 ) -> str:
     """Get the branching model configuration for a repository."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.get_branching_model(
+    result = await run_fetcher_call(
+        client.get_branching_model,
         repo_slug=repo_slug,
         workspace=workspace,
         project_key=project_key,
@@ -1212,7 +1248,8 @@ async def list_branch_restrictions(
 ) -> str:
     """List branch restrictions/permissions for a repository."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.list_branch_restrictions(
+    result = await run_fetcher_call(
+        client.list_branch_restrictions,
         repo_slug=repo_slug,
         workspace=workspace,
         project_key=project_key,
@@ -1252,7 +1289,8 @@ async def list_commits(
 ) -> str:
     """List commits for a repository."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.list_commits(
+    result = await run_fetcher_call(
+        client.list_commits,
         repo_slug=repo_slug,
         workspace=workspace,
         project_key=project_key,
@@ -1283,7 +1321,8 @@ async def get_commit(
 ) -> str:
     """Get details of a specific commit."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.get_commit(
+    result = await run_fetcher_call(
+        client.get_commit,
         repo_slug=repo_slug,
         commit_hash=commit_hash,
         workspace=workspace,
@@ -1314,7 +1353,8 @@ async def compare_commits(
 ) -> str:
     """Compare two commits or refs (branches/tags) and get the diff."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.compare_commits(
+    result = await run_fetcher_call(
+        client.compare_commits,
         repo_slug=repo_slug,
         source=source,
         destination=destination,
@@ -1349,7 +1389,8 @@ async def list_commit_statuses(
 ) -> str:
     """List build statuses for a specific commit."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.list_commit_statuses(
+    result = await run_fetcher_call(
+        client.list_commit_statuses,
         repo_slug=repo_slug,
         commit_hash=commit_hash,
         workspace=workspace,
@@ -1395,7 +1436,8 @@ async def create_commit_status(
 ) -> str:
     """Create a build status for a commit."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.create_commit_status(
+    result = await run_fetcher_call(
+        client.create_commit_status,
         repo_slug=repo_slug,
         commit_hash=commit_hash,
         state=state,
@@ -1434,7 +1476,8 @@ async def add_commit_comment(
 ) -> str:
     """Add a comment to a specific commit."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.add_commit_comment(
+    result = await run_fetcher_call(
+        client.add_commit_comment,
         repo_slug=repo_slug,
         commit_hash=commit_hash,
         content=content,
@@ -1482,7 +1525,8 @@ async def get_file_content(
 ) -> str:
     """Get the content of a file from a repository."""
     client = await get_bitbucket_fetcher(ctx)
-    return client.get_file_content(
+    return await run_fetcher_call(
+        client.get_file_content,
         repo_slug=repo_slug,
         file_path=file_path,
         ref=_resolve_ref(ref, at),
@@ -1527,7 +1571,8 @@ async def browse_directory(
 ) -> str:
     """Browse directory contents in a repository."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.browse_directory(
+    result = await run_fetcher_call(
+        client.browse_directory,
         repo_slug=repo_slug,
         path=path,
         ref=_resolve_ref(ref, at),
@@ -1577,7 +1622,8 @@ async def search_code(
 ) -> str:
     """Search for code across repositories."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.search_code(
+    result = await run_fetcher_call(
+        client.search_code,
         query=query,
         repo_slug=repo_slug,
         workspace=workspace,
@@ -1617,7 +1663,8 @@ async def get_file_blame(
 ) -> str:
     """Get blame/annotation information for a file, showing line-by-line authorship."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.get_file_blame(
+    result = await run_fetcher_call(
+        client.get_file_blame,
         repo_slug=repo_slug,
         file_path=file_path,
         ref=_resolve_ref(ref, at),
@@ -1663,7 +1710,8 @@ async def get_file_history(
 ) -> str:
     """Get commit history for a specific file."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.get_file_history(
+    result = await run_fetcher_call(
+        client.get_file_history,
         repo_slug=repo_slug,
         file_path=file_path,
         ref=_resolve_ref(ref, at),
@@ -1701,7 +1749,8 @@ async def list_tags(
 ) -> str:
     """List tags for a repository."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.list_tags(
+    result = await run_fetcher_call(
+        client.list_tags,
         repo_slug=repo_slug,
         workspace=workspace,
         project_key=project_key,
@@ -1736,7 +1785,8 @@ async def create_tag(
 ) -> str:
     """Create a new tag."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.create_tag(
+    result = await run_fetcher_call(
+        client.create_tag,
         repo_slug=repo_slug,
         tag_name=tag_name,
         target_hash=target_hash,
@@ -1771,7 +1821,8 @@ async def delete_tag(
 ) -> str:
     """Delete a tag from a repository."""
     client = await get_bitbucket_fetcher(ctx)
-    client.delete_tag(
+    await run_fetcher_call(
+        client.delete_tag,
         repo_slug=repo_slug,
         tag_name=tag_name,
         workspace=workspace,
@@ -1803,7 +1854,8 @@ async def list_pipelines(
 ) -> str:
     """List pipeline runs for a repository (Cloud only)."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.list_pipelines(
+    result = await run_fetcher_call(
+        client.list_pipelines,
         repo_slug=repo_slug,
         workspace=workspace,
         max_results=max_results,
@@ -1826,7 +1878,8 @@ async def get_pipeline(
 ) -> str:
     """Get details of a specific pipeline run (Cloud only)."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.get_pipeline(
+    result = await run_fetcher_call(
+        client.get_pipeline,
         repo_slug=repo_slug,
         pipeline_uuid=pipeline_uuid,
         workspace=workspace,
@@ -1869,7 +1922,8 @@ async def trigger_pipeline(
             if "=" in pair:
                 k, v = pair.split("=", 1)
                 var_dict[k.strip()] = v.strip()
-    result = client.trigger_pipeline(
+    result = await run_fetcher_call(
+        client.trigger_pipeline,
         repo_slug=repo_slug,
         branch=branch,
         workspace=workspace,
@@ -1898,7 +1952,8 @@ async def stop_pipeline(
 ) -> str:
     """Stop a running pipeline (Cloud only)."""
     client = await get_bitbucket_fetcher(ctx)
-    client.stop_pipeline(
+    await run_fetcher_call(
+        client.stop_pipeline,
         repo_slug=repo_slug,
         pipeline_uuid=pipeline_uuid,
         workspace=workspace,
@@ -1922,7 +1977,8 @@ async def get_pipeline_step_log(
 ) -> str:
     """Get log output for a pipeline step (Cloud only)."""
     client = await get_bitbucket_fetcher(ctx)
-    return client.get_pipeline_step_log(
+    return await run_fetcher_call(
+        client.get_pipeline_step_log,
         repo_slug=repo_slug,
         pipeline_uuid=pipeline_uuid,
         step_uuid=step_uuid,
@@ -1948,7 +2004,8 @@ async def list_pipeline_variables(
 ) -> str:
     """List pipeline variables for a repository (Cloud only)."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.list_pipeline_variables(
+    result = await run_fetcher_call(
+        client.list_pipeline_variables,
         repo_slug=repo_slug,
         workspace=workspace,
         max_results=max_results,
@@ -1981,7 +2038,8 @@ async def create_pipeline_variable(
 ) -> str:
     """Create a pipeline variable for a repository (Cloud only)."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.create_pipeline_variable(
+    result = await run_fetcher_call(
+        client.create_pipeline_variable,
         repo_slug=repo_slug,
         key=key,
         value=value,
@@ -2005,7 +2063,8 @@ async def get_pipeline_config(
 ) -> str:
     """Get pipeline configuration for a repository (Cloud only)."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.get_pipeline_config(
+    result = await run_fetcher_call(
+        client.get_pipeline_config,
         repo_slug=repo_slug,
         workspace=workspace,
     )
@@ -2031,7 +2090,8 @@ async def list_environments(
 ) -> str:
     """List deployment environments for a repository (Cloud only)."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.list_environments(
+    result = await run_fetcher_call(
+        client.list_environments,
         repo_slug=repo_slug,
         workspace=workspace,
     )
@@ -2053,7 +2113,8 @@ async def get_deployment(
 ) -> str:
     """Get deployment details for an environment (Cloud only)."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.get_deployment(
+    result = await run_fetcher_call(
+        client.get_deployment,
         repo_slug=repo_slug,
         environment_uuid=environment_uuid,
         workspace=workspace,
@@ -2080,7 +2141,8 @@ async def list_deployment_releases(
 ) -> str:
     """List deployment releases for an environment (Cloud only)."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.list_deployment_releases(
+    result = await run_fetcher_call(
+        client.list_deployment_releases,
         repo_slug=repo_slug,
         environment_uuid=environment_uuid,
         workspace=workspace,
@@ -2112,7 +2174,8 @@ async def list_webhooks(
 ) -> str:
     """List webhooks configured for a repository."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.list_webhooks(
+    result = await run_fetcher_call(
+        client.list_webhooks,
         repo_slug=repo_slug,
         workspace=workspace,
         project_key=project_key,
@@ -2157,7 +2220,8 @@ async def create_webhook(
     """Create a webhook for a repository."""
     client = await get_bitbucket_fetcher(ctx)
     event_list = [e.strip() for e in events.split(",")]
-    result = client.create_webhook(
+    result = await run_fetcher_call(
+        client.create_webhook,
         repo_slug=repo_slug,
         url=url,
         events=event_list,
@@ -2212,7 +2276,8 @@ async def update_webhook(
     """Update an existing webhook."""
     client = await get_bitbucket_fetcher(ctx)
     event_list = [e.strip() for e in events.split(",")] if events else None
-    result = client.update_webhook(
+    result = await run_fetcher_call(
+        client.update_webhook,
         repo_slug=repo_slug,
         webhook_id=webhook_id,
         workspace=workspace,
@@ -2251,7 +2316,8 @@ async def delete_webhook(
 ) -> str:
     """Delete a webhook from a repository."""
     client = await get_bitbucket_fetcher(ctx)
-    client.delete_webhook(
+    await run_fetcher_call(
+        client.delete_webhook,
         repo_slug=repo_slug,
         webhook_id=webhook_id,
         workspace=workspace,
@@ -2278,7 +2344,7 @@ async def list_workspaces(
 ) -> str:
     """List workspaces (Cloud) or projects (Server/DC)."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.list_workspaces(max_results=max_results)
+    result = await run_fetcher_call(client.list_workspaces, max_results=max_results)
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 
@@ -2304,7 +2370,8 @@ async def get_workspace(
 ) -> str:
     """Get workspace (Cloud) or project (Server/DC) details."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.get_workspace(
+    result = await run_fetcher_call(
+        client.get_workspace,
         workspace=workspace,
         project_key=project_key,
     )
@@ -2332,7 +2399,8 @@ async def list_workspace_members(
 ) -> str:
     """List members of a workspace (Cloud) or project permissions (Server/DC)."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.list_workspace_members(
+    result = await run_fetcher_call(
+        client.list_workspace_members,
         workspace=workspace,
         project_key=project_key,
         max_results=max_results,
@@ -2358,7 +2426,8 @@ async def get_default_reviewers(
 ) -> str:
     """Get default reviewers configured for a repository."""
     client = await get_bitbucket_fetcher(ctx)
-    result = client.get_default_reviewers(
+    result = await run_fetcher_call(
+        client.get_default_reviewers,
         repo_slug=repo_slug,
         workspace=workspace,
         project_key=project_key,
@@ -2404,7 +2473,8 @@ async def add_default_reviewer(
         instance=str(client.config.url),
         prefer_local_id=bool(client.config.is_cloud),
     )
-    result = client.add_default_reviewer(
+    result = await run_fetcher_call(
+        client.add_default_reviewer,
         repo_slug=repo_slug,
         username=username,
         workspace=workspace,

@@ -59,7 +59,7 @@ cd mcp-atlassian-with-bitbucket
 uv sync --frozen --all-extras
 ```
 
-Then add to your MCP configuration:
+Then add the server to your Claude Desktop, Cursor, or GitHub Copilot MCP configuration:
 
 ```json
 {
