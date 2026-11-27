@@ -33,6 +33,12 @@ from mcp_atlassian_with_bitbucket_and_privacy.privacy.current_user import (
     record_current_identity,
 )
 from mcp_atlassian_with_bitbucket_and_privacy.privacy.registry import ToolService
+from mcp_atlassian_with_bitbucket_and_privacy.servers.async_utils import (
+    URL_CHECK_BUSY_MESSAGE,
+    UrlCheckBusy,
+    run_fetcher_call,
+    run_url_check,
+)
 from mcp_atlassian_with_bitbucket_and_privacy.servers.context import MainAppContext
 from mcp_atlassian_with_bitbucket_and_privacy.utils.credential_command import (
     get_resolver,
@@ -48,6 +54,8 @@ from mcp_atlassian_with_bitbucket_and_privacy.utils.proxy import (
 )
 from mcp_atlassian_with_bitbucket_and_privacy.utils.ssrf_adapter import (
     is_operator_trusted_url,
+    is_trusted_for_origins,
+    url_origin,
 )
 from mcp_atlassian_with_bitbucket_and_privacy.utils.urls import validate_url_for_ssrf
 
@@ -118,8 +126,6 @@ class _ServiceSpec:
     url_header: str  # X-Atlassian-{Service}-Url
     token_header: str  # X-Atlassian-{Service}-Personal-Token
     passthrough_env_var: str  # {SERVICE}_PASSTHROUGH_HEADERS
-    filter_attr: str  # "projects_filter" / "spaces_filter"
-    filter_env_var: str  # JIRA_PROJECTS_FILTER / CONFLUENCE_SPACES_FILTER
     get_session: Callable[[Any], Any]  # fetcher → session
     validate_fn: Callable[[Any], Any]  # fetcher → validation data
     on_validated: Callable[
@@ -302,6 +308,56 @@ def _validate_with_cache(
     return validation_data
 
 
+# Validation results are kept in a process-wide cache, so only the identity
+# fields the server uses are kept, each bounded in length. A real account id,
+# email or display name is far shorter.
+_MAX_IDENTITY_CHARS = 256
+_CONFLUENCE_IDENTITY_KEYS = (
+    "username",
+    "name",
+    "userKey",
+    "key",
+    "accountId",
+    "account_id",
+    "email",
+    "emailAddress",
+)
+
+
+def _bounded_text(value: object) -> str | None:
+    if not isinstance(value, str):
+        return None
+    return value[:_MAX_IDENTITY_CHARS]
+
+
+def _jira_identity(fetcher: Any) -> str | None:
+    """Validate a Jira fetcher and return its bounded account id."""
+    value = fetcher.get_current_user_account_id()
+    return (
+        value if isinstance(value, str) and len(value) <= _MAX_IDENTITY_CHARS else None
+    )
+
+
+def _confluence_identity(fetcher: Any) -> dict[str, str]:
+    """Keep only the bounded identifiers used for email backfill and privacy.
+
+    An email longer than the limit is dropped rather than cut, so a cut value
+    is never used as the caller's email.
+    """
+    info = fetcher.get_current_user_info()
+    identity: dict[str, str] = {}
+    if not isinstance(info, dict):
+        return identity
+    for key in _CONFLUENCE_IDENTITY_KEYS:
+        value = info.get(key)
+        if isinstance(value, str) and len(value) <= _MAX_IDENTITY_CHARS:
+            identity[key] = value
+    display_name = _bounded_text(info.get("displayName"))
+    if display_name is not None:
+        identity["displayName"] = display_name
+    return identity
+
+
 def _jira_on_validated(
     fn_name: str,
     request: Request,
@@ -335,20 +391,10 @@ def _confluence_on_validated(
     derived_email = (
         validation_data.get("email") if isinstance(validation_data, dict) else None
     )
-    confluence_identifiers: list[object] = [user_email, derived_email]
+    confluence_identifiers: list[object] = [user_email]
     if isinstance(validation_data, dict):
         confluence_identifiers.extend(
-            validation_data.get(key)
-            for key in (
-                "username",
-                "name",
-                "userKey",
-                "key",
-                "accountId",
-                "account_id",
-                "email",
-                "emailAddress",
-            )
+            validation_data.get(key) for key in _CONFLUENCE_IDENTITY_KEYS
         )
     _record_request_current_identity(
         request,
@@ -390,10 +436,8 @@ def _jira_spec() -> _ServiceSpec:
         url_header="X-Atlassian-Jira-Url",
         token_header="X-Atlassian-Jira-Personal-Token",  # noqa: S106
         passthrough_env_var="JIRA_PASSTHROUGH_HEADERS",
-        filter_attr="projects_filter",
-        filter_env_var="JIRA_PROJECTS_FILTER",
         get_session=lambda f: f.jira._session,
-        validate_fn=lambda f: f.get_current_user_account_id(),
+        validate_fn=_jira_identity,
         on_validated=_jira_on_validated,
     )
 
@@ -413,10 +457,8 @@ def _confluence_spec() -> _ServiceSpec:
         url_header="X-Atlassian-Confluence-Url",
         token_header="X-Atlassian-Confluence-Personal-Token",  # noqa: S106
         passthrough_env_var="CONFLUENCE_PASSTHROUGH_HEADERS",
-        filter_attr="spaces_filter",
-        filter_env_var="CONFLUENCE_SPACES_FILTER",
         get_session=lambda f: f.confluence._session,
-        validate_fn=lambda f: f.get_current_user_info(),
+        validate_fn=_confluence_identity,
         on_validated=_confluence_on_validated,
     )
 
@@ -544,44 +586,66 @@ def _header_url_passthrough_names(url: str, spec: _ServiceSpec) -> list[str]:
     return []
 
 
-def _get_header_pat_network_config(ctx: Context, spec: _ServiceSpec) -> dict[str, Any]:
+def _get_header_pat_network_config(
+    ctx: Context, spec: _ServiceSpec, url: str
+) -> dict[str, Any]:
     """Resolve operator-controlled network settings for header PAT requests.
+
+    The operator's ``*_SSL_VERIFY=false`` is meant for the operator's own
+    instance, so it applies only when ``url`` has this service's configured
+    origin (not the other service's) or a host under ``MCP_ALLOWED_URL_DOMAINS``.
+    Any other request-supplied host keeps certificate verification on.
 
     Args:
         ctx: FastMCP request context.
         spec: Service specification for Jira or Confluence.
+        url: The service URL taken from the request header.
 
     Returns:
-        SSL and proxy settings from the global config when available, otherwise
-        from service-specific or shared environment variables.
+        SSL, proxy and timeout settings from the global config when available,
+        otherwise from service-specific or shared environment variables.
     """
+    env_prefix = spec.name.upper()
     try:
         global_config = _get_global_config(ctx, spec)
     except ValueError:
-        env_prefix = spec.name.upper()
-        proxy_settings = get_proxy_settings_from_env(env_prefix)
-        return {
+        service_url = os.environ.get(f"{env_prefix}_URL", "")
+        settings: dict[str, Any] = {
             "ssl_verify": is_env_ssl_verify(f"{env_prefix}_SSL_VERIFY"),
-            **proxy_settings,
+            **get_proxy_settings_from_env(env_prefix),
         }
+    else:
+        service_url = global_config.url
+        settings = {
+            "ssl_verify": global_config.ssl_verify,
+            "http_proxy": global_config.http_proxy,
+            "https_proxy": global_config.https_proxy,
+            "no_proxy": global_config.no_proxy,
+            "socks_proxy": global_config.socks_proxy,
+            "proxy_wpad_enable": global_config.proxy_wpad_enable,
+            "proxy_wpad_url": global_config.proxy_wpad_url,
+        }
+    # Only this service's own origin: the other service's SSL_VERIFY may differ.
+    service_origin = url_origin(service_url)
+    own_origins = [service_origin] if service_origin is not None else []
+    if not settings["ssl_verify"] and not is_trusted_for_origins(url, own_origins):
+        logger.warning(
+            "%s SSL verification stays on for %s: SSL_VERIFY=false applies only "
+            "to the configured URL origin or MCP_ALLOWED_URL_DOMAINS.",
+            spec.name,
+            urlparse(url).hostname or "<no host>",
+        )
+        settings["ssl_verify"] = True
+    return settings
 
-    return {
-        "ssl_verify": global_config.ssl_verify,
-        "http_proxy": global_config.http_proxy,
-        "https_proxy": global_config.https_proxy,
-        "no_proxy": global_config.no_proxy,
-        "socks_proxy": global_config.socks_proxy,
-        "proxy_wpad_enable": global_config.proxy_wpad_enable,
-        "proxy_wpad_url": global_config.proxy_wpad_url,
-    }
 
+def _get_operator_policy_kwargs(ctx: Context, spec: _ServiceSpec) -> dict[str, Any]:
+    """Return the operator policy settings for a per-request config.
 
-def _get_operator_filter_kwargs(ctx: Context, spec: _ServiceSpec) -> dict[str, Any]:
-    """Return the operator's project/space allowlist for a per-request config.
-
-    The allowlist is operator policy and must bound every request, whatever
-    credentials the caller supplied. It comes from the global config when
-    available, otherwise from the environment variable.
+    Policy settings (the config class's ``OPERATOR_POLICY_FIELDS``: allowlists,
+    internal-only projects, markup translation, timeouts) bound every request,
+    whatever credentials the caller supplied. They come from the global config
+    when available, otherwise from the environment.
 
     Args:
         ctx: FastMCP request context.
@@ -593,9 +657,11 @@ def _get_operator_filter_kwargs(ctx: Context, spec: _ServiceSpec) -> dict[str, A
     try:
         global_config = _get_global_config(ctx, spec)
     except ValueError:
-        value = os.getenv(spec.filter_env_var)
-        return {spec.filter_attr: value if value and value.strip() else None}
-    return {spec.filter_attr: getattr(global_config, spec.filter_attr, None)}
+        return spec.config_class.operator_policy_from_env()  # type: ignore[attr-defined, no-any-return]
+    return {
+        name: getattr(global_config, name)
+        for name in spec.config_class.OPERATOR_POLICY_FIELDS  # type: ignore[attr-defined]
+    }
 
 
 def _create_and_validate(
@@ -629,6 +695,7 @@ def _create_and_validate(
     """
     fn_name = f"get_{spec.name.lower()}_fetcher"
     auth_desc = "header-based" if auth_branch == "header_pat" else "user"
+    fetcher = None
     try:
         request_passthrough_headers = _get_request_passthrough_headers(
             request, spec, config
@@ -678,11 +745,58 @@ def _create_and_validate(
         setattr(request.state, spec.state_key, fetcher)
         return fetcher
     except Exception as e:
+        if fetcher is not None:
+            close = getattr(fetcher, "close", None)
+            if callable(close):
+                try:
+                    close()
+                except Exception:
+                    logger.debug(
+                        f"{fn_name}: Error closing {spec.name}Fetcher after "
+                        "failed validation",
+                        exc_info=True,
+                    )
         logger.error(
             f"{fn_name}: Failed to create/validate {auth_desc} {spec.name}Fetcher: {e}",
             exc_info=True,
         )
         raise ValueError(f"Invalid {auth_desc} {spec.name} token or configuration: {e}")
+
+
+async def _validate_for_request(
+    request: Request,
+    spec: _ServiceSpec,
+    config: JiraConfig | ConfluenceConfig,
+    auth_branch: str,
+    user_email: str | None = None,
+) -> Any:
+    fetcher = await run_fetcher_call(
+        _create_and_validate,
+        request,
+        spec,
+        config,
+        auth_branch,
+        user_email=user_email,
+        attach_ssrf_hook=True,
+    )
+    # ContextVar writes made by validation in a worker do not propagate back.
+    _restore_request_current_identity(request, _service_for_spec(spec))
+    return fetcher
+
+
+async def _global_fetcher(
+    request: Request | None, spec: _ServiceSpec, config: JiraConfig | ConfluenceConfig
+) -> Any:
+    fetcher = await run_fetcher_call(spec.fetcher_class, config=config)
+    if request is not None:
+        # UserTokenMiddleware owns and closes HTTP request-scoped sessions.
+        setattr(request.state, spec.state_key, fetcher)
+        _record_request_current_identity(
+            request, _service_for_spec(spec), config.username
+        )
+    else:
+        record_current_identity(_service_for_spec(spec), config.username)
+    return fetcher
 
 
 def _resolve_oauth_access_token(fallback_token: str, service: str) -> str:
@@ -992,19 +1106,18 @@ async def _get_fetcher(ctx: Context, spec: _ServiceSpec) -> Any:
                 url=url_header_val,
                 auth_type="pat",
                 personal_token=token_header_val,
-                **_get_header_pat_network_config(ctx, spec),
+                **_get_header_pat_network_config(ctx, spec, url_header_val),
                 # Never forward instance-specific custom headers to a URL
                 # selected per request.
                 custom_headers=None,
                 passthrough_headers=_header_url_passthrough_names(url_header_val, spec),
-                **_get_operator_filter_kwargs(ctx, spec),
+                **_get_operator_policy_kwargs(ctx, spec),
             )
-            return _create_and_validate(
+            return await _validate_for_request(
                 request,
                 spec,
                 header_config,
                 "header_pat",
-                attach_ssrf_hook=True,
             )
 
         # --- Branch 2: basic auth ---
@@ -1030,13 +1143,12 @@ async def _get_fetcher(ctx: Context, spec: _ServiceSpec) -> Any:
                 auth_type="basic",
                 credentials=credentials,
             )
-            return _create_and_validate(
+            return await _validate_for_request(
                 request,
                 spec,
                 user_config,
                 "basic",
                 user_email=user_email,
-                attach_ssrf_hook=True,
             )
 
         # --- Branch 3: OAuth / PAT with token ---
@@ -1079,13 +1191,12 @@ async def _get_fetcher(ctx: Context, spec: _ServiceSpec) -> Any:
                 credentials=credentials,
                 cloud_id=user_cloud_id,
             )
-            return _create_and_validate(
+            return await _validate_for_request(
                 request,
                 spec,
                 user_config,
                 "oauth_pat",
                 user_email=user_email,
-                attach_ssrf_hook=True,
             )
 
         else:
@@ -1151,7 +1262,7 @@ async def _get_fetcher(ctx: Context, spec: _ServiceSpec) -> Any:
             )
         else:
             config = spec.config_class.from_env()  # type: ignore[attr-defined]
-            fetcher = spec.fetcher_class(config=config)
+            fetcher = await _global_fetcher(request, spec, config)
             logger.info(
                 "%s credentials resolved from *_COMMAND env vars on first use.",
                 spec.name,
@@ -1181,7 +1292,13 @@ async def _get_fetcher(ctx: Context, spec: _ServiceSpec) -> Any:
                             "exfiltration."
                         )
                         raise ValueError(error_msg)
-                    ssrf_error = validate_url_for_ssrf(url_from_header)
+                    try:
+                        ssrf_error = await run_url_check(url_from_header)
+                    except UrlCheckBusy as exc:
+                        # This runs inside the tool call, after the HTTP
+                        # status is sent, so it cannot be the middleware's
+                        # 503; the tool error carries the same retry text.
+                        raise ValueError(URL_CHECK_BUSY_MESSAGE) from exc
                     if ssrf_error:
                         error_msg = f"Forbidden: Invalid {spec.name} URL - {ssrf_error}"
                         raise ValueError(error_msg)
@@ -1202,11 +1319,7 @@ async def _get_fetcher(ctx: Context, spec: _ServiceSpec) -> Any:
             global_config_fallback = _with_request_passthrough_headers(
                 request, spec, global_config_fallback
             )
-        record_current_identity(
-            _service_for_spec(spec),
-            getattr(global_config_fallback, "username", None),
-        )
-        return spec.fetcher_class(config=global_config_fallback)
+        return await _global_fetcher(request, spec, global_config_fallback)
 
     logger.error(f"{spec.name} configuration could not be resolved.")
     raise ValueError(
@@ -1253,8 +1366,7 @@ async def get_confluence_fetcher(ctx: Context) -> ConfluenceFetcher:
 async def get_bitbucket_fetcher(ctx: Context) -> BitbucketClient:
     """Returns a BitbucketClient instance for the current request context.
 
-    Uses the global BitbucketConfig from the lifespan context. Header-based
-    per-request auth may be added in the future.
+    Uses the caller's service PAT or the explicitly enabled global fallback.
 
     Args:
         ctx: The FastMCP context.
@@ -1269,7 +1381,11 @@ async def get_bitbucket_fetcher(ctx: Context) -> BitbucketClient:
 
     # Try to get cached client from request state
     try:
-        request: Request = get_http_request()
+        request: Request | None = get_http_request()
+    except RuntimeError:
+        request = None
+
+    if request is not None:
         cached = getattr(request.state, "bitbucket_client", None)
         if cached:
             _restore_request_current_identity(
@@ -1298,17 +1414,20 @@ async def get_bitbucket_fetcher(ctx: Context) -> BitbucketClient:
                 personal_token=bb_token,
                 ssl_verify=True,
             )
-            client = BitbucketClient(config=header_config)
+            client = await run_fetcher_call(BitbucketClient, config=header_config)
             request.state.bitbucket_client = client
             return client
-
-    except RuntimeError:
-        logger.debug(f"{fn_name}: Not in HTTP request context. Using global fallback.")
 
     # Fallback to global config
     app_ctx = _get_app_lifespan_ctx(ctx)
     global_config = getattr(app_ctx, "full_bitbucket_config", None) if app_ctx else None
     if global_config:
+        if request is not None and not is_env_truthy("ALLOW_GLOBAL_CRED_FALLBACK"):
+            raise ValueError(
+                "Bitbucket client not available: provide a Bitbucket URL and "
+                "personal token, or enable ALLOW_GLOBAL_CRED_FALLBACK for a "
+                "single-user deployment."
+            )
         logger.debug(
             f"{fn_name}: Using global BitbucketClient. Auth type: {global_config.auth_type}"
         )
@@ -1316,7 +1435,10 @@ async def get_bitbucket_fetcher(ctx: Context) -> BitbucketClient:
             ToolService.BITBUCKET,
             global_config.username,
         )
-        return BitbucketClient(config=global_config)
+        client = await run_fetcher_call(BitbucketClient, config=global_config)
+        if request is not None:
+            request.state.bitbucket_client = client
+        return client
 
     logger.error("Bitbucket configuration could not be resolved.")
     raise ValueError(

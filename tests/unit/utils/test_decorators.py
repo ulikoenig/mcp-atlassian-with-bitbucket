@@ -14,9 +14,11 @@ from mcp_atlassian_with_bitbucket_and_privacy.exceptions import (
 from mcp_atlassian_with_bitbucket_and_privacy.utils.decorators import (
     check_write_access,
     deprecated_tool,
+    handle_atlassian_api_errors,
     handle_auth_errors,
     handle_tool_errors,
 )
+from mcp_atlassian_with_bitbucket_and_privacy.utils.http import ResponseTooLargeError
 
 
 class DummyContext:
@@ -211,3 +213,17 @@ def test_handle_auth_errors_passes_through_no_response():
 
     with pytest.raises(HTTPError):
         Svc().fail()
+
+
+def test_api_errors_name_a_too_large_response_instead_of_a_network_error():
+    class Service:
+        @handle_atlassian_api_errors("Jira API")
+        def search(self) -> None:
+            raise ResponseTooLargeError("Response body passed the 10 byte limit")
+
+    with pytest.raises(ValueError) as exc:
+        Service().search()
+    assert str(exc.value) == (
+        "Jira API response to search is too large: "
+        "Response body passed the 10 byte limit"
+    )

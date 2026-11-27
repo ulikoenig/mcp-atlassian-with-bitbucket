@@ -19,6 +19,7 @@ from mcp_atlassian_with_bitbucket_and_privacy.privacy.runtime import (
     error_details_redacted,
     privacy_safe_exception_detail,
 )
+from mcp_atlassian_with_bitbucket_and_privacy.utils.http import ResponseTooLargeError
 from mcp_atlassian_with_bitbucket_and_privacy.utils.toolsets import TOOLSET_TAG_PREFIX
 
 logger = logging.getLogger(__name__)
@@ -259,6 +260,17 @@ def handle_atlassian_api_errors(service_name: str = "Atlassian API") -> Callable
                         f"{operation_name} returned an unexpected response from "
                         f"{service_name}: missing key {e}"
                     )
+                raise ValueError(message) from e
+            except ResponseTooLargeError as e:
+                operation_name = getattr(func, "__name__", "API operation")
+                logger.error(
+                    "Response too large in %s: %s",
+                    operation_name,
+                    privacy_safe_exception_detail(e),
+                )
+                message = f"{service_name} response to {operation_name} is too large"
+                if not error_details_redacted():
+                    message = f"{message}: {e}"
                 raise ValueError(message) from e
             except requests.RequestException as e:
                 operation_name = getattr(func, "__name__", "API operation")

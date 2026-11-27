@@ -86,6 +86,14 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Synced Jira and Confluence fixes through upstream `29518e3`, including Cloud
+  OAuth API compatibility, attachment size limits and project/space filtering.
+- Converting Markdown with many paragraphs to Confluence storage no longer
+  shifts all remaining blocks for each paragraph.
+- Hardened request handling and content conversion, and close request-scoped
+  Atlassian sessions after use.
+- Bitbucket over HTTP now requires caller credentials unless the operator
+  explicitly enables `ALLOW_GLOBAL_CRED_FALLBACK`; stdio is unchanged.
 - Jira creation resolves project issue type names case-insensitively to IDs and
   accepts numeric IDs while retaining Epic and Subtask alias handling
 - Identity privacy preserves project and other Jira entity metadata, including

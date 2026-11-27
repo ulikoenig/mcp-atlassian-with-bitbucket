@@ -1,5 +1,6 @@
 """Base client module for Confluence API interactions."""
 
+import inspect
 import logging
 import os
 
@@ -8,13 +9,15 @@ from requests import Session
 from requests.exceptions import ConnectionError as RequestsConnectionError
 
 from ..exceptions import MCPAtlassianAuthenticationError
+from ..preprocessing.base import user_lookup_scope
 from ..utils.http import (
     configure_circuit_breaker,
     configure_concurrency,
+    configure_default_timeout,
     configure_rate_limit,
     configure_retry,
 )
-from ..utils.logging import get_masked_session_headers, log_config_param, mask_sensitive
+from ..utils.logging import get_masked_session_headers, log_config_param
 from ..utils.oauth import configure_oauth_session
 from ..utils.proxy import apply_proxy_configuration
 from ..utils.ssl import configure_ssl_verification
@@ -29,6 +32,20 @@ logger = logging.getLogger("mcp-atlassian-with-bitbucket-and-privacy")
 
 class ConfluenceClient:
     """Base client for Confluence API interactions."""
+
+    def __init_subclass__(cls, **kwargs: object) -> None:
+        """Give every public method of a mixin one user lookup budget per call.
+
+        A tool call runs one fetcher method; the documents it converts share
+        that call's budget, however many helpers the method calls.
+        """
+        super().__init_subclass__(**kwargs)
+        for name, value in list(vars(cls).items()):
+            if name.startswith("_") or not inspect.isfunction(value):
+                continue
+            if inspect.isgeneratorfunction(value) or inspect.iscoroutinefunction(value):
+                continue
+            setattr(cls, name, user_lookup_scope(value))
 
     def __init__(self, config: ConfluenceConfig | None = None) -> None:
         """Initialize the Confluence client with given or environment config.
@@ -94,7 +111,7 @@ class ConfluenceClient:
             logger.debug(
                 f"Initializing Confluence client with Token (PAT) auth. "
                 f"URL: {self.config.url}, "
-                f"Token (masked): {mask_sensitive(str(self.config.personal_token))}"
+                f"Token length: {len(str(self.config.personal_token))}"
             )
             self.confluence = Confluence(
                 url=self.config.url,
@@ -202,6 +219,9 @@ class ConfluenceClient:
         configure_concurrency(self.confluence._session, service="Confluence")
         configure_rate_limit(self.confluence._session, service="Confluence")
         configure_circuit_breaker(self.confluence._session, service="Confluence")
+        configure_default_timeout(
+            self.confluence._session, self.config.timeout, service="Confluence"
+        )
 
         self.confluence._session = apply_proxy_configuration(
             logger=logger,
@@ -241,6 +261,12 @@ class ConfluenceClient:
                     "Authentication validation failed during client initialization - "
                     "continuing anyway"
                 )
+
+    def close(self) -> None:
+        """Close the underlying requests session and release pooled connections."""
+        session = getattr(self.confluence, "_session", None)
+        if session is not None:
+            session.close()
 
     def _v1_rest_base_url(self) -> str:
         """Return the base URL for direct Confluence REST API v1 calls.
